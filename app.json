@@ -56,13 +56,7 @@
     "extra": {
       "eas": {
         "projectId": "7054509d-7c0a-42fb-938a-661787de17e1"
-      },
-      "supabaseUrl": "https://jwslcxgnwlsqbrtmmqvf.supabase.co",
-      "supabaseAnonKey": "[REDACTED]",
-      "projectRef": "jwslcxgnwlsqbrtmmqvf",
-      "firebaseApiKey": "[FIREBASE_KEY_REDACTED]",
-      "firebaseProjectId": "t1d-heal",
-      "firebaseAppId": "1:670137436886:web:b5e3f93507c38a60115777"
+      }
     }
   }
 }
