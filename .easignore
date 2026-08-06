@@ -1,7 +1,16 @@
-node_modules/
-.expo/
-dist/
-.git/
-.supabase/
-*.md
-scripts/
+node_modules/**
+.expo/**
+.git/**
+.android/**
+.ios/**
+dist/**
+web-build/**
+*.apk
+*.keystore
+*.jks
+*.pem
+.env
+.env.*
+! .env.example
+scripts/**
+docs/**
