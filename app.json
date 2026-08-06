@@ -1,0 +1,62 @@
+{
+  "expo": {
+    "name": "T1D Saathi",
+    "slug": "T1D-Saathi",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "scheme": "com.t1dsaathi.app",
+    "userInterfaceStyle": "light",
+    "owner": "alokthapas-team",
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.t1dsaathi.app",
+      "infoPlist": {
+        "NSCameraUsageDescription": "T1D Saathi needs camera access to take food photos for carb estimation.",
+        "NSPhotoLibraryUsageDescription": "T1D Saathi needs photo library access to upload food photos and medical documents."
+      }
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#E6F4FE",
+        "foregroundImage": "./assets/android-icon-foreground.png",
+        "backgroundImage": "./assets/android-icon-background.png",
+        "monochromeImage": "./assets/android-icon-monochrome.png"
+      },
+      "package": "com.t1dsaathi.app",
+      "permissions": [
+        "android.permission.CAMERA",
+        "android.permission.READ_EXTERNAL_STORAGE",
+        "android.permission.ACCESS_FINE_LOCATION",
+        "android.permission.ACCESS_COARSE_LOCATION",
+        "android.permission.RECORD_AUDIO"
+      ]
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      "expo-secure-store",
+      "expo-sharing",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Allow T1D Saathi to access your photos for food photo estimation and document upload.",
+          "cameraPermission": "Allow T1D Saathi to use the camera for food photo estimation."
+        }
+      ],
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/android-icon-foreground.png",
+          "color": "#1a73e8"
+        }
+      ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "7054509d-7c0a-42fb-938a-661787de17e1"
+      }
+    }
+  }
+}

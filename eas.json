@@ -1,0 +1,24 @@
+{
+  "cli": { "version": ">= 5.0" },
+  "build": {
+    "development": {
+      "developmentClient": true,
+      "distribution": "internal"
+    },
+    "preview": {
+      "android": { "buildType": "apk" },
+      "distribution": "internal"
+    },
+    "production": {
+      "android": { "buildType": "app-bundle" },
+      "ios": { "image": "latest" },
+      "distribution": "store"
+    }
+  },
+  "submit": {
+    "production": {
+      "android": { "track": "internal" },
+      "ios": { "appleId": "thisispratha@gmail.com" }
+    }
+  }
+}

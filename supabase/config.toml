@@ -1,0 +1,20 @@
+# Supabase configuration for T1D Saathi
+
+[db]
+port = 54322
+
+[api]
+port = 54321
+schemas = ["public", "graphql_public", "storage"]
+extra_search_path = ["public", "extensions"]
+max_rows = 1000
+
+[auth]
+enabled = true
+site_url = "http://localhost:3000"
+additional_redirect_urls = ["com.t1dsaathi.app://auth/callback"]
+jwt_expiry = 3600
+enable_signup = true
+email.enable_signup = true
+email.double_confirm_changes = true
+email.enable_confirmations = false
