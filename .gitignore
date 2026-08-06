@@ -41,3 +41,4 @@ yarn-error.*
 /android
 .env
 T1D-Saathi-v1.0.0.apk
+*.keystore
