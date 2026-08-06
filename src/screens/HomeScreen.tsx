@@ -1,13 +1,17 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { View, Text, FlatList, TouchableOpacity, StyleSheet, RefreshControl, Alert } from 'react-native';
+import { View, Text, FlatList, TouchableOpacity, StyleSheet, RefreshControl, ActivityIndicator } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
 import { supabase } from '../lib/supabase';
+import { T, card, section, fab, avatar } from '../theme';
 import type { PatientProfile } from '../types';
 
 export default function HomeScreen({ navigation }: any) {
   const { user, role } = useAuth();
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
+  const isNe = language === 'ne';
   const [patients, setPatients] = useState<PatientProfile[]>([]);
   const [refreshing, setRefreshing] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -30,48 +34,68 @@ export default function HomeScreen({ navigation }: any) {
 
   const renderPatient = ({ item }: { item: PatientProfile }) => (
     <TouchableOpacity
-      style={styles.card}
+      style={styles.patientCard}
       onPress={() => navigation.navigate('PatientDashboard', { patient: item })}
+      activeOpacity={0.7}
     >
-      <View style={styles.cardLeft}>
-        <View style={styles.avatar}>
-          <Text style={styles.avatarText}>{item.name[0]?.toUpperCase()}</Text>
+      <View style={styles.cardContent}>
+        <View style={styles.avBox}>
+          <View style={styles.av}>
+            <Text style={styles.avText}>{item.name[0]?.toUpperCase()}</Text>
+          </View>
         </View>
-      </View>
-      <View style={styles.cardCenter}>
-        <Text style={styles.patientName}>{item.name}</Text>
-        <Text style={styles.patientMeta}>
-          {item.sex} · {item.insulin_type}
-        </Text>
-      </View>
-      <View style={styles.cardRight}>
-        <Text style={styles.chevron}>›</Text>
+        <View style={styles.cardInfo}>
+          <Text style={styles.patientName}>{item.name}</Text>
+          <Text style={styles.patientMeta}>
+            {item.sex} · {item.insulin_type || (isNe ? 'इन्सुलिन' : 'Insulin')}
+          </Text>
+        </View>
+        <Ionicons name="chevron-forward" size={20} color={T.muted} />
       </View>
     </TouchableOpacity>
   );
 
-  if (loading) {
-    return <View style={styles.centered}><Text style={styles.loading}>{t('loading')}</Text></View>;
-  }
-
   return (
-    <View style={styles.container}>
-      <View style={styles.headerBar}>
-        <Text style={styles.title}>{t('appName')}</Text>
-        <TouchableOpacity onPress={() => navigation.navigate('Settings')}>
-          <Text style={styles.settingsIcon}>⚙️</Text>
+    <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
+      {/* Header — Kapoori Ka pattern */}
+      <View style={styles.headerRow}>
+        <View style={styles.headerLeft}>
+          <Text style={styles.headerTitle}>T1D साथी</Text>
+          <Text style={styles.headerSubtitle}>T1D Saathi</Text>
+        </View>
+        <TouchableOpacity style={styles.settingsBtn} onPress={() => navigation.navigate('Settings')}>
+          <Ionicons name="settings-outline" size={22} color={T.muted} />
         </TouchableOpacity>
       </View>
-      {patients.length === 0 ? (
-        <View style={styles.centered}>
-          <Text style={styles.emptyTitle}>{t('noPatientsYet')}</Text>
-          <Text style={styles.emptySub}>{t('addYourFirstPatient')}</Text>
-          <TouchableOpacity
-            style={styles.addButton}
-            onPress={() => navigation.navigate('AddPatient', {})}
-          >
-            <Text style={styles.addButtonText}>+ {t('addChild')}</Text>
-          </TouchableOpacity>
+
+      {loading ? (
+        <ActivityIndicator size="large" color={T.blue} style={styles.loader} />
+      ) : patients.length === 0 ? (
+        <View style={styles.emptyState}>
+          <Text style={styles.emptyIcon}>💙</Text>
+          <Text style={styles.emptyTitle}>{isNe ? 'कुनै बिरामी छैन' : t('noPatientsYet')}</Text>
+          <Text style={styles.emptyHint}>
+            {isNe
+              ? 'तलको ⊕ बटन थिचेर आफ्नो बच्चाको प्रोफाइल बनाउनुहोस्।'
+              : 'Tap the ⊕ button below to add your child\'s profile.'}
+          </Text>
+          <View style={styles.fabPointer}>
+            <Text style={styles.fabPointerText}>{isNe ? 'यहाँ थिच्नुहोस्' : 'Tap here to add'}</Text>
+            <Text style={styles.fabPointerArrow}>↓</Text>
+          </View>
+          <View style={styles.featurePreview}>
+            {[
+              { icon: '📊', label: isNe ? 'ग्लुकोज लग' : 'Glucose Log' },
+              { icon: '📸', label: isNe ? 'खाना फोटो' : 'Food Photo' },
+              { icon: '🏥', label: isNe ? 'स्वास्थ्य केन्द्र' : 'Health Centers' },
+              { icon: '📚', label: isNe ? 'शिक्षा' : 'Education' },
+            ].map((f, i) => (
+              <View key={i} style={styles.featureChip}>
+                <Text style={styles.featureChipIcon}>{f.icon}</Text>
+                <Text style={styles.featureChipLabel}>{f.label}</Text>
+              </View>
+            ))}
+          </View>
         </View>
       ) : (
         <FlatList
@@ -79,52 +103,113 @@ export default function HomeScreen({ navigation }: any) {
           keyExtractor={(item) => item.id}
           renderItem={renderPatient}
           contentContainerStyle={styles.list}
-          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
-          ListFooterComponent={
-            <TouchableOpacity
-              style={styles.addInlineButton}
-              onPress={() => navigation.navigate('AddPatient', {})}
-            >
-              <Text style={styles.addInlineText}>+ {t('addChild')}</Text>
-            </TouchableOpacity>
+          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={T.blue} />}
+          ListHeaderComponent={
+            <Text style={styles.sectionLabel}>
+              {isNe ? 'तपाईंको बिरामीहरू' : 'Your Patients'}
+            </Text>
           }
         />
       )}
+
+      {/* FAB — Kapoori Ka pattern */}
+      <TouchableOpacity
+        style={styles.fab}
+        activeOpacity={0.85}
+        onPress={() => navigation.navigate('AddPatient', {})}
+      >
+        <Ionicons name="add" size={30} color="#fff" />
+      </TouchableOpacity>
+
+      {/* Clinician switch */}
       {role === 'clinician' && (
         <TouchableOpacity
-          style={styles.clinicianSwitch}
+          style={styles.clinicianBar}
           onPress={() => navigation.reset({ index: 0, routes: [{ name: 'ClinicianPatientList' }] })}
         >
-          <Text style={styles.clinicianSwitchText}>{t('clinician')} ›</Text>
+          <Ionicons name="people-outline" size={18} color="#fff" />
+          <Text style={styles.clinicianBarText}>{isNe ? 'क्लिनिसियन पोर्टल' : 'Clinician Portal'} ›</Text>
         </TouchableOpacity>
       )}
-    </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#F0F7FF' },
-  headerBar: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 20, paddingTop: 60, paddingBottom: 16 },
-  title: { fontSize: 28, fontWeight: '800', color: '#1a73e8' },
-  settingsIcon: { fontSize: 24 },
-  centered: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 40 },
-  loading: { fontSize: 16, color: '#5f6368' },
-  emptyTitle: { fontSize: 20, fontWeight: '600', color: '#202124', marginBottom: 8, textAlign: 'center' },
-  emptySub: { fontSize: 14, color: '#5f6368', marginBottom: 24, textAlign: 'center' },
-  addButton: { backgroundColor: '#1a73e8', borderRadius: 12, paddingHorizontal: 32, paddingVertical: 14 },
-  addButtonText: { color: '#fff', fontSize: 16, fontWeight: '600' },
-  list: { padding: 16, paddingBottom: 100 },
-  card: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#fff', borderRadius: 12, padding: 16, marginBottom: 10, borderWidth: 1, borderColor: '#e8eaed' },
-  cardLeft: { marginRight: 14 },
-  avatar: { width: 50, height: 50, borderRadius: 25, backgroundColor: '#e8f0fe', justifyContent: 'center', alignItems: 'center' },
-  avatarText: { fontSize: 22, fontWeight: '700', color: '#1a73e8' },
-  cardCenter: { flex: 1 },
-  patientName: { fontSize: 17, fontWeight: '600', color: '#202124' },
-  patientMeta: { fontSize: 13, color: '#5f6368', marginTop: 2 },
-  cardRight: {},
-  chevron: { fontSize: 24, color: '#dadce0' },
-  addInlineButton: { alignItems: 'center', paddingVertical: 16 },
-  addInlineText: { color: '#1a73e8', fontSize: 16, fontWeight: '600' },
-  clinicianSwitch: { position: 'absolute', bottom: 20, left: 20, right: 20, backgroundColor: '#1a73e8', borderRadius: 12, padding: 16, alignItems: 'center' },
-  clinicianSwitchText: { color: '#fff', fontSize: 16, fontWeight: '600' },
+  container: { flex: 1, backgroundColor: T.bg },
+  headerRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    justifyContent: 'space-between',
+    paddingHorizontal: 20,
+    paddingTop: 10,
+    paddingBottom: 6,
+  },
+  headerLeft: { flex: 1 },
+  headerTitle: { fontWeight: '800', fontSize: 22, color: T.text },
+  headerSubtitle: { fontSize: 13, color: T.muted, marginTop: 1 },
+  settingsBtn: { padding: 4 },
+
+  loader: { flex: 1 },
+
+  // Section label (Kapoori Ka pattern)
+  sectionLabel: { ...section, paddingHorizontal: 20, paddingTop: 14, paddingBottom: 10 },
+
+  // Patient list
+  list: { paddingHorizontal: 12, paddingBottom: 100 },
+  patientCard: { ...card },
+  cardContent: { flexDirection: 'row', alignItems: 'center' },
+  avBox: { marginRight: 14 },
+  av: { ...avatar, backgroundColor: T.blueLight },
+  avText: { fontSize: 22, fontWeight: '700', color: T.blue },
+  cardInfo: { flex: 1 },
+  patientName: { fontSize: 16, fontWeight: '700', color: T.text },
+  patientMeta: { fontSize: 13, color: T.muted, marginTop: 2 },
+
+  // Empty state (Kapoori Ka pattern)
+  emptyState: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 40, paddingBottom: 180 },
+  emptyIcon: { fontSize: 64, marginBottom: 16 },
+  emptyTitle: { fontSize: 18, fontWeight: '700', color: T.text, textAlign: 'center' },
+  emptyHint: { fontSize: 13, color: T.blue, textAlign: 'center', marginTop: 8, fontStyle: 'italic' },
+  fabPointer: {
+    backgroundColor: T.blueLight,
+    borderRadius: 20,
+    paddingHorizontal: 14,
+    paddingVertical: 6,
+    alignItems: 'center',
+    marginTop: 20,
+  },
+  fabPointerText: { fontWeight: '700', fontSize: 13, color: T.blue, textAlign: 'center' },
+  fabPointerArrow: { fontSize: 20, color: T.blue, textAlign: 'center', marginTop: 2 },
+  featurePreview: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', marginTop: 24, gap: 10 },
+  featureChip: {
+    alignItems: 'center',
+    backgroundColor: T.surface,
+    borderRadius: 12,
+    padding: 12,
+    width: 80,
+    borderWidth: 1,
+    borderColor: T.border,
+  },
+  featureChipIcon: { fontSize: 24, marginBottom: 4 },
+  featureChipLabel: { fontSize: 11, color: T.muted, fontWeight: '600', textAlign: 'center' },
+
+  // FAB
+  fab: { ...fab },
+
+  // Clinician bar
+  clinicianBar: {
+    position: 'absolute',
+    bottom: 16,
+    left: 16,
+    right: 16,
+    backgroundColor: T.blue,
+    borderRadius: 12,
+    padding: 14,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+  },
+  clinicianBarText: { color: '#fff', fontSize: 15, fontWeight: '600' },
 });

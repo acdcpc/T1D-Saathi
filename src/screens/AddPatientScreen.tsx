@@ -7,6 +7,7 @@ import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
 import { supabase } from '../lib/supabase';
 import BSDatePicker from '../components/BSDatePicker';
+import { T, input, section, primBtn } from '../theme';
 
 const COMORBID_OPTIONS = ['celiac', 'thyroid', 'downSyndrome'];
 const SEX_OPTIONS = ['male', 'female', 'other'] as const;
@@ -165,19 +166,19 @@ export default function AddPatientScreen({ navigation }: any) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#F0F7FF' },
-  content: { padding: 20 },
-  section: { fontSize: 20, fontWeight: '700', color: '#1a73e8', marginTop: 24, marginBottom: 12 },
-  label: { fontSize: 14, fontWeight: '600', color: '#202124', marginBottom: 6, marginTop: 10 },
-  input: { backgroundColor: '#fff', borderRadius: 10, padding: 14, fontSize: 16, borderWidth: 1, borderColor: '#dadce0' },
+  container: { flex: 1, backgroundColor: T.bg },
+  content: { padding: 16 },
+  section: { ...section, color: T.blue, fontSize: 16, marginTop: 24, marginBottom: 12 },
+  label: { fontSize: 13, fontWeight: '600', color: T.text, marginBottom: 6, marginTop: 10 },
+  input: { ...input },
   multiline: { minHeight: 70, textAlignVertical: 'top' },
   chipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  chip: { borderRadius: 20, paddingHorizontal: 16, paddingVertical: 8, backgroundColor: '#e8eaed' },
-  chipActive: { backgroundColor: '#1a73e8' },
-  chipActiveWarn: { backgroundColor: '#ea4335' },
-  chipText: { fontSize: 14, color: '#3c4043' },
+  chip: { borderRadius: 20, paddingHorizontal: 16, paddingVertical: 8, backgroundColor: T.surface, borderWidth: 1, borderColor: T.border },
+  chipActive: { backgroundColor: T.blue, borderColor: T.blue },
+  chipActiveWarn: { backgroundColor: T.red, borderColor: T.red },
+  chipText: { fontSize: 14, color: T.muted },
   chipTextActive: { color: '#fff' },
   chipTextWarn: { color: '#fff' },
-  saveBtn: { backgroundColor: '#1a73e8', borderRadius: 12, padding: 16, alignItems: 'center', marginTop: 30 },
-  saveText: { color: '#fff', fontSize: 17, fontWeight: '600' },
+  saveBtn: { ...primBtn, marginTop: 30 },
+  saveText: { color: '#fff', fontSize: 16, fontWeight: '600' },
 });

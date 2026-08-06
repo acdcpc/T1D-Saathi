@@ -1,81 +1,131 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Linking, ActivityIndicator } from 'react-native';
+import React from 'react';
+import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Linking } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLanguage } from '../context/LanguageContext';
-import { supabase } from '../lib/supabase';
-import type { Hospital, CareTeam } from '../types';
+import { T, card, section } from '../theme';
 
-export default function EmergencyScreen({ route }: any) {
-  const { patientId } = route.params;
-  const { t } = useLanguage();
-  const [hospital, setHospital] = useState<Hospital | null>(null);
-  const [careTeam, setCareTeam] = useState<CareTeam | null>(null);
-  const [loading, setLoading] = useState(true);
+const HELPLINE = '9851350883';
 
-  useEffect(() => {
-    (async () => {
-      const { data: ct } = await supabase.from('care_team').select('*, hospitals(*)').eq('patient_id', patientId).limit(1).single();
-      if (ct) {
-        setCareTeam(ct);
-        const { data: h } = await supabase.from('hospitals').select('*').eq('id', ct.hospital_id).single();
-        setHospital(h);
-      }
-      setLoading(false);
-    })();
-  }, [patientId]);
+export default function EmergencyScreen({ navigation }: any) {
+  const { language } = useLanguage();
+  const isNe = language === 'ne';
 
-  if (loading) return <View style={styles.centered}><ActivityIndicator size="large" color="#ea4335" /></View>;
+  const callHelpline = () => Linking.openURL(`tel:${HELPLINE}`);
+
+  const protocols = [
+    {
+      icon: '🔴',
+      title: isNe ? 'गम्भीर हाइपो' : 'Severe Hypoglycemia',
+      subtitle: isNe ? 'ग्लुकोज ५४ mg/dL भन्दा कम वा बेहोस' : 'Glucose < 54 mg/dL or unconscious',
+      steps: [
+        isNe ? 'यदि बेहोस छ भने — मुखमा केहि नराख्नुहोस्' : 'If unconscious — do NOT put anything in mouth',
+        isNe ? 'ग्लुकागन इन्जेक्सन दिनुहोस् (यदि उपलब्ध छ)' : 'Give glucagon injection (if available)',
+        isNe ? 'तुरुन्त ९८५१३५०८८३ मा फोन गर्नुहोस्' : 'Call 9851350883 immediately',
+        isNe ? 'रिकभरी पोजिसनमा राख्नुहोस्' : 'Place in recovery position',
+      ],
+    },
+    {
+      icon: '🟠',
+      title: isNe ? 'गम्भीर हाइपर' : 'Severe Hyperglycemia',
+      subtitle: isNe ? 'ग्लुकोज २५० mg/dL भन्दा माथि + केटोन्स सहित' : 'Glucose > 250 mg/dL with ketones',
+      steps: [
+        isNe ? 'प्रशस्त पानी पिउनुहोस्' : 'Drink plenty of water',
+        isNe ? 'केटोन्स जाँच गर्नुहोस्' : 'Check ketones',
+        isNe ? 'सुधार डोज दिनुहोस् (चिकित्सकको सल्लाह अनुसार)' : 'Give correction dose (per clinician plan)',
+        isNe ? '९८५१३५०८८३ मा फोन गर्नुहोस्' : 'Call 9851350883',
+      ],
+    },
+    {
+      icon: '⚫',
+      title: 'DKA',
+      subtitle: isNe ? 'उच्च केटोन्स + वाकवाकी + पेट दुखाइ' : 'High ketones + nausea + abdominal pain',
+      steps: [
+        isNe ? 'यो मेडिकल इमर्जेन्सी हो' : 'This is a medical emergency',
+        isNe ? 'तुरुन्त अस्पताल जानुहोस्' : 'Go to hospital immediately',
+        isNe ? 'बाटोमा पानी पिउन जारी राख्नुहोस्' : 'Continue drinking water en route',
+        isNe ? '९८५१३५०८८३ मा फोन गर्नुहोस्' : 'Call 9851350883',
+      ],
+    },
+  ];
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>🚨 {t('emergency')}</Text>
-
-      {hospital ? (
-        <View style={styles.card}>
-          <Text style={styles.cardTitle}>{t('hospitalContact')}</Text>
-          <Text style={styles.name}>{hospital.name}</Text>
-          <Text style={styles.detail}>{hospital.address}</Text>
-          <Text style={styles.detail}>{hospital.region}</Text>
-          {hospital.phone ? (
-            <TouchableOpacity style={styles.callBtn} onPress={() => Linking.openURL(`tel:${hospital.phone}`)}>
-              <Text style={styles.callText}>📞 Call {hospital.phone}</Text>
-            </TouchableOpacity>
-          ) : null}
+    <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
+      <ScrollView contentContainerStyle={styles.content}>
+        <View style={styles.headerRow}>
+          <TouchableOpacity onPress={() => navigation.goBack()}>
+            <Text style={styles.backArrow}>‹</Text>
+          </TouchableOpacity>
+          <Text style={styles.title}>{isNe ? 'आपतकालीन' : 'Emergency'}</Text>
+          <View style={{ width: 30 }} />
         </View>
-      ) : (
-        <View style={styles.card}>
-          <Text style={styles.noData}>No hospital assigned. Please set up in patient profile.</Text>
+
+        <View style={styles.callCard}>
+          <Text style={styles.callTitle}>{isNe ? 'तुरुन्त सहायता' : 'Immediate Help'}</Text>
+          <TouchableOpacity style={styles.callBtn} onPress={callHelpline} activeOpacity={0.7}>
+            <Text style={styles.callIcon}>📞</Text>
+            <Text style={styles.callNum}>{HELPLINE}</Text>
+          </TouchableOpacity>
+          <Text style={styles.callSub}>{isNe ? 'डा. अर्चना — २४/७ हेल्पलाइन' : 'Dr. Archana — 24/7 Helpline'}</Text>
         </View>
-      )}
 
-      <View style={styles.dkaWarning}>
-        <Text style={styles.dkaTitle}>⚠️ DKA Emergency Signs</Text>
-        <Text style={styles.dkaItem}>• Excessive thirst and frequent urination</Text>
-        <Text style={styles.dkaItem}>• Nausea, vomiting, abdominal pain</Text>
-        <Text style={styles.dkaItem}>• Fruity-smelling breath</Text>
-        <Text style={styles.dkaItem}>• Deep, rapid breathing (Kussmaul)</Text>
-        <Text style={styles.dkaItem}>• Confusion, drowsiness, or loss of consciousness</Text>
-        <Text style={styles.dkaAction}>If these signs appear → Go to emergency NOW</Text>
-      </View>
+        <Text style={styles.sectionLabel}>{isNe ? 'आपतकालीन प्रोटोकलहरू' : 'Emergency Protocols'}</Text>
 
-      <Text style={styles.disclaimer}>{t('disclaimer')}</Text>
-    </View>
+        {protocols.map((p, i) => (
+          <View key={i} style={styles.protocolCard}>
+            <Text style={styles.protocolIcon}>{p.icon}</Text>
+            <Text style={styles.protocolTitle}>{p.title}</Text>
+            <Text style={styles.protocolSub}>{p.subtitle}</Text>
+            {p.steps.map((s, j) => (
+              <View key={j} style={styles.stepRow}>
+                <Text style={styles.stepNum}>{j + 1}.</Text>
+                <Text style={styles.stepText}>{s}</Text>
+              </View>
+            ))}
+          </View>
+        ))}
+
+        <Text style={styles.footer}>
+          {isNe
+            ? 'यो एप चिकित्सकीय उपकरण होइन। आपतकालमा सधैं चिकित्सकको सल्लाह लिनुहोस्।'
+            : 'This app is not a medical device. Always consult a clinician in an emergency.'}
+        </Text>
+      </ScrollView>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#F0F7FF', padding: 20, paddingTop: 60 },
-  centered: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  title: { fontSize: 28, fontWeight: '800', color: '#ea4335', marginBottom: 20 },
-  card: { backgroundColor: '#fff', borderRadius: 12, padding: 18, marginBottom: 16, borderWidth: 1, borderColor: '#e8eaed' },
-  cardTitle: { fontSize: 16, fontWeight: '700', color: '#202124', marginBottom: 8 },
-  name: { fontSize: 20, fontWeight: '600', color: '#1a73e8', marginBottom: 4 },
-  detail: { fontSize: 14, color: '#5f6368', paddingVertical: 1 },
-  noData: { fontSize: 14, color: '#80868b', fontStyle: 'italic' },
-  callBtn: { backgroundColor: '#ea4335', borderRadius: 10, padding: 14, alignItems: 'center', marginTop: 12 },
-  callText: { color: '#fff', fontSize: 17, fontWeight: '700' },
-  dkaWarning: { backgroundColor: '#fce8e6', borderRadius: 12, padding: 18, marginBottom: 16, borderWidth: 2, borderColor: '#ea4335' },
-  dkaTitle: { fontSize: 18, fontWeight: '700', color: '#ea4335', marginBottom: 8 },
-  dkaItem: { fontSize: 14, color: '#202124', paddingVertical: 2 },
-  dkaAction: { fontSize: 15, fontWeight: '700', color: '#ea4335', marginTop: 10 },
-  disclaimer: { textAlign: 'center', color: '#5f6368', fontSize: 11 },
+  container: { flex: 1, backgroundColor: T.bg },
+  content: { padding: 16, paddingTop: 10 },
+  headerRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 },
+  backArrow: { fontSize: 32, color: T.text, fontWeight: '300' },
+  title: { fontSize: 22, fontWeight: '800', color: T.red },
+
+  callCard: {
+    backgroundColor: T.redLight, borderRadius: 16, padding: 20,
+    alignItems: 'center', borderWidth: 2, borderColor: T.red, marginBottom: 20,
+  },
+  callTitle: { fontSize: 14, fontWeight: '700', color: T.redDark, marginBottom: 10 },
+  callBtn: {
+    flexDirection: 'row', alignItems: 'center', gap: 8,
+    backgroundColor: T.red, borderRadius: 28, paddingHorizontal: 24, paddingVertical: 14,
+  },
+  callIcon: { fontSize: 20 },
+  callNum: { color: '#fff', fontSize: 22, fontWeight: '800' },
+  callSub: { fontSize: 12, color: T.redDark, marginTop: 10 },
+
+  sectionLabel: { ...section },
+
+  protocolCard: {
+    ...card, borderLeftWidth: 4, borderLeftColor: T.red, marginBottom: 12,
+  },
+  protocolIcon: { fontSize: 24, marginBottom: 6 },
+  protocolTitle: { fontSize: 16, fontWeight: '700', color: T.text, marginBottom: 2 },
+  protocolSub: { fontSize: 13, color: T.muted, marginBottom: 10 },
+
+  stepRow: { flexDirection: 'row', marginBottom: 6, gap: 6 },
+  stepNum: { fontSize: 13, fontWeight: '700', color: T.red, width: 18 },
+  stepText: { fontSize: 13, color: T.text, flex: 1, lineHeight: 18 },
+
+  footer: { textAlign: 'center', color: T.muted, fontSize: 11, marginTop: 20, lineHeight: 16 },
 });

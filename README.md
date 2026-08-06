@@ -1,145 +1,164 @@
-# T1D Saathi — Type 1 Diabetes Management App for Nepali Children
+# 🩺 T1D Saathi — Type 1 Diabetes Companion for Nepali Families
 
-A mobile application that helps children with Type 1 Diabetes (T1D) and their families in **resource-limited settings in Nepal** understand, monitor, and manage the condition day-to-day, with a dedicated interface for sick-day management and a companion clinician view.
+**T1D Saathi** is a mobile app built for Nepali children with Type 1 Diabetes and their families. It helps parents and caregivers track glucose, count carbs from photos of Nepali meals, follow ISPAD sick-day guidelines, find nearby health centers, and connect with clinicians — all in Nepali and English.
+
+---
+
+## Features
+
+| Module | Description |
+|--------|-------------|
+| 📊 **Glucose Logging** | Log blood glucose in mg/dL or mmol/L with ISPAD-coded color badges |
+| 📸 **Food Photo Estimator** | Take a photo of a Nepali meal → AI estimates items/portions → carb count → insulin dose calculator |
+| 🏥 **Sick-Day Wizard** | ISPAD 2022–based step-by-step guide: glucose monitoring, ketone checks, DKA red screen |
+| 🗺️ **Health Centers** | Curated map of diabetes-ready hospitals in Nepal with tap-to-call and directions |
+| 📞 **Helpline** | One-tap call to Dr. Archana's diabetes helpline (9851350883) |
+| 📚 **Education** | ISPAD-aligned modules: hypoglycemia protocol, carb counting, sick-day rules |
+| ❓ **Quiz** | Knowledge check for caregivers with Nepali-language questions |
+| 💬 **Messages** | In-app chat with clinicians (role-based access) |
+| 🆘 **Emergency** | Red Alert screen with severe hypo/severe hyper/DKA protocols |
+| 👩‍⚕️ **Clinician Portal** | Patient list with drill-down to glucose history, dosing review, regimen settings |
+
+---
 
 ## Tech Stack
 
 - **Frontend**: React Native + Expo SDK 57 + TypeScript
-- **Navigation**: React Navigation (Native Stack)
-- **Backend**: Supabase (Postgres + Auth + Storage + RLS)
-- **Charts**: Victory Native
-- **Dates**: nepali-date-converter (Bikram Sambat / Gregorian)
-- **Notifications**: expo-notifications
-- **Localization**: Nepali (नेपाली) + English with `LanguageContext`
+- **Backend**: Supabase (PostgreSQL + Auth + RLS)
+- **Analytics**: Firebase (Analytics, Crashlytics, Cloud Messaging)
+- **Vision**: LogMeal API / FatSecret API (food photo recognition)
+- **Calendar**: `nepali-date-converter` (Bikram Sambat date picker)
 
-## Getting Started
-
-### Prerequisites
-
-- Node.js 18+
-- Expo CLI
-- Supabase account & project
-
-### Installation
-
-```bash
-cd T1D-Saathi
-npm install
-```
-
-### Environment Setup
-
-Create a `.env` file in the project root:
-
-```
-EXPO_PUBLIC_SUPABASE_URL=https://YOUR_PROJECT.supabase.co
-EXPO_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
-```
-
-### Database Setup
-
-1. Go to your Supabase project SQL Editor
-2. Run the contents of `supabase_schema.sql`
-3. Set up Auth providers (Email, Google OAuth)
-4. Create a Storage bucket `patient-documents`
-
-### Run
-
-```bash
-npx expo start
-```
-
-Press `i` for iOS simulator, `a` for Android, or scan the QR code with Expo Go.
+---
 
 ## Project Structure
 
 ```
-T1D-Saathi/
-├── App.tsx                    # Root with Navigation + Auth/Language providers
-├── supabase_schema.sql        # Database schema to run in Supabase
-├── src/
-│   ├── types/index.ts         # All TypeScript types
-│   ├── i18n/translations.ts   # English + Nepali translations
-│   ├── lib/supabase.ts        # Supabase client + SecureStore adapter
-│   ├── context/
-│   │   ├── AuthContext.tsx     # Auth state (email, Google, guest)
-│   │   └── LanguageContext.tsx # en/ne language switching
-│   ├── rules/
-│   │   └── sickDayRules.ts    # ISPAD clinical rules engine
-│   ├── navigation/types.ts    # Route param types
-│   └── screens/
-│       ├── LoginScreen.tsx
-│       ├── HomeScreen.tsx
-│       ├── AddPatientScreen.tsx
-│       ├── PatientDashboard.tsx
-│       ├── LogGlucoseScreen.tsx
-│       ├── SickDayWizardScreen.tsx
-│       ├── EducationScreen.tsx
-│       ├── QuizScreen.tsx
-│       ├── MessagesScreen.tsx
-│       ├── EmergencyScreen.tsx
-│       ├── SettingsScreen.tsx
-│       ├── RegimenSettingsScreen.tsx
-│       ├── ClinicianPatientListScreen.tsx
-│       └── ClinicianPatientDetailScreen.tsx
+src/
+├── components/         # Reusable UI (BSDatePicker)
+├── context/            # AuthContext, LanguageContext
+├── data/               # Static data (nepaliFoods.ts — 22 items)
+├── i18n/               # translations.ts (Nepali + English)
+├── lib/                # supabase.ts (client init)
+├── navigation/         # types.ts (route params)
+├── rules/              # sickDayRules.ts (ISPAD 2022 thresholds)
+├── screens/            # 17 screens
+├── types/              # TypeScript interfaces
+├── utils/              # dosingCalc, offlineQueue, useNetworkSync, visionAPI, visionEstimator
+└── theme.ts            # Shared design tokens
 ```
 
-## Screens Built (13 screens)
+### Key Screens
 
-| Screen | Purpose | Key Features |
-|--------|---------|--------------|
-| Login | Auth | Email, Google, Guest sign-in |
-| Home | Patient list | Pull-to-refresh, empty state, FAB |
-| AddPatient | Profile onboarding | Chip selectors, comorbid checklist |
-| PatientDashboard | Main hub | Glucose card, hypo alert, sick day banner, 6 quick actions |
-| LogGlucose | Glucose entry | mg/dL / mmol/L toggle, ISF/carb calculation, hypo branch + 20-min notification |
-| SickDayWizard | 3-step sick day | Symptoms → Ketones → ISPAD guidance with emergency escalation |
-| Education | Video library | Topic list with audience tags, quiz access |
-| Quiz | Pre/post assessment | 5 sample questions, score display |
-| Messages | Chat | Real-time Supabase subscriptions |
-| Emergency | Hospital info | One-tap call, DKA signs checklist |
-| Settings | App config | Language (en/ne), units info, logout |
-| RegimenSettings | Insulin config | ISF, carb ratio, TDD, correction target |
-| ClinicianPatientList | Doctor view | Assigned patients via care_team RLS |
-| ClinicianPatientDetail | Patient detail | Glucose/ketone/sick day history with alerts |
+| Screen | Location | Purpose |
+|--------|----------|---------|
+| LoginScreen | `screens/LoginScreen.tsx` | Email + Google auth |
+| HomeScreen | `screens/HomeScreen.tsx` | Patient list + FAB |
+| PatientDashboard | `screens/PatientDashboard.tsx` | Stats hub with 9 action cards |
+| LogGlucoseScreen | `screens/LogGlucoseScreen.tsx` | Glucose entry with unit toggle |
+| FoodEstimatorScreen | `screens/FoodEstimatorScreen.tsx` | Photo → vision → carb → dose |
+| SickDayWizardScreen | `screens/SickDayWizardScreen.tsx` | ISPAD 3-step sick-day guide |
+| HealthCentersScreen | `screens/HealthCentersScreen.tsx` | Map + hospital list |
+| HelplineScreen | `screens/HelplineScreen.tsx` | One-tap emergency call |
+| SettingsScreen | `screens/SettingsScreen.tsx` | Unit toggle, regimen settings |
+| ClinicianPatientListScreen | `screens/ClinicianPatientListScreen.tsx` | Clinician patient roster |
+| ClinicianPatientDetailScreen | `screens/ClinicianPatientDetailScreen.tsx` | Clinician deep-dive |
+| EmergencyScreen | `screens/EmergencyScreen.tsx` | Red-alert protocol cards |
 
-## Clinical Safety
+---
 
-- All sick day thresholds from **ISPAD 2022 guideline** (Phelan et al., Pediatric Diabetes)
-- Hypoglycemia: < 70 mg/dL triggers immediate treatment protocol + 20-minute recheck notification
-- DKA escalation: Ketones ≥ 3.0 mmol/L or any red-flag triggers emergency screen
-- Rules engine is **data-driven** — thresholds configurable via `sickDayRules.ts` without app changes
-- Disclaimer on all clinically-used screens
-- Clinician review required before production release
+## Setup Instructions
 
-## Customization Guide
+### Prerequisites
 
-- **Change brand/colors**: Edit `#1a73e8` (primary blue) and `#ea4335` (emergency red) across all screen files
-- **Add languages**: Add entries to `src/i18n/translations.ts`, register key in LanguageContext
-- **Modify clinical thresholds**: Edit `src/rules/sickDayRules.ts`
-- **Change units default**: Default is mg/dL — modify unit toggle defaults in LogGlucoseScreen and SettingsScreen
-- **Update Supabase URL**: Set `EXPO_PUBLIC_SUPABASE_URL` and `EXPO_PUBLIC_SUPABASE_ANON_KEY` in `.env`
-- **Deploy**: Use `eas build --profile preview` for APK, `eas submit` for stores
+- Node.js 22+
+- npm
+- Expo CLI (`npm install -g expo-cli`)
+- EAS CLI (`npm install -g eas-cli`)
 
-## Quality Coverage
+### Quick Start
 
-- ✅ Desktop + mobile responsive via flexbox layouts
-- ✅ Empty states for all lists (no patients, no logs, no messages)
-- ✅ Loading indicators on all async screens
-- ✅ Error handling with Alert dialogs
-- ✅ Touch targets ≥ 44px throughout
-- ✅ Chip/toggle selectors with active states
-- ✅ Hypo emergency (red) visual treatment
-- ✅ Step indicators in wizard flows
-- ✅ Nepali language support (partial — clinical content prioritized)
-- ✅ Pull-to-refresh on list screens
+```bash
+# Clone
+git clone <repo-url>
+cd T1D-Saathi
 
-## Next Steps (post scaffolding)
+# Install
+npm install
 
-1. Wire up `expo-notifications` for hypo recheck and sick-day monitoring reminders
-2. Implement offline-first buffer (SQLite/AsyncStorage queue → Supabase sync)
-3. Add BS/AD date picker with `nepali-date-converter`
-4. Complete Nepali translations (current: all UI labels + hypo content)
-5. Deploy to Supabase, test auth + RLS flows
-6. Add unit tests for clinical rules engine
-7. Firebase Analytics/Crashlytics integration
+# Configure environment
+cp .env.example .env
+# Edit .env with your Supabase + Firebase keys
+
+# Run
+npx expo start
+```
+
+### Required Environment Variables
+
+Create a `.env` file with these variables (see `.env.example` for template):
+
+| Variable | Description |
+|----------|-------------|
+| `EXPO_PUBLIC_SUPABASE_URL` | Supabase project URL |
+| `EXPO_PUBLIC_SUPABASE_ANON_KEY` | Supabase anon/publishable key |
+| `EXPO_PUBLIC_SUPABASE_PROJECT_REF` | Supabase project reference ID |
+| `EXPO_PUBLIC_FIREBASE_API_KEY` | Firebase web API key |
+| `EXPO_PUBLIC_FIREBASE_PROJECT_ID` | Firebase project ID |
+| `EXPO_PUBLIC_FIREBASE_APP_ID` | Firebase app ID |
+| `EXPO_PUBLIC_FIREBASE_SENDER_ID` | Firebase sender ID |
+| `EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN` | Firebase auth domain |
+| `EXPO_PUBLIC_LOGMEAL_API_KEY` | LogMeal vision API key (optional) |
+| `EXPO_PUBLIC_FATSECRET_CLIENT_ID` | FatSecret OAuth client ID (optional) |
+| `EXPO_PUBLIC_FATSECRET_CLIENT_SECRET` | FatSecret OAuth client secret (optional) |
+
+### Database
+
+The Supabase database schema is in `supabase_schema.sql` and migration files in `supabase/migrations/`. Apply with:
+
+```bash
+supabase link --project-ref <your-ref>
+supabase db push
+```
+
+### Building APK
+
+```bash
+eas build --platform android --profile preview
+```
+
+---
+
+## Known Limitations
+
+- 🍽️ **Food Estimator**: Photo recognition uses a hybrid pipeline (LogMeal → FatSecret → local Nepali DB fallback). Accuracy depends on API availability. Vision model is not yet tuned specifically for Nepali cuisine.
+- 📅 **Bikram Sambat**: BS date picker is available but some date fields still use Gregorian internally.
+- 📡 **Offline Queue**: Glucose and meal logs queue locally when offline, but sync validation for conflict resolution is basic.
+- 🔐 **Google Auth**: Requires manual configuration in Google Cloud Console (OAuth consent screen + redirect URIs).
+- 📱 **iOS Build**: Not yet tested on iOS. Camera permissions and HealthKit integration pending.
+
+---
+
+## ⚠️ Clinical Safety Note
+
+**This app is a companion tool, not a medical device.** All dosing constants (ICR via 500 Rule, ISF via 1800 Rule, correction factors) and sick-day thresholds follow ISPAD 2022 Clinical Practice Consensus Guidelines but **require clinician review and sign-off before use in actual patient care**. Dosing recommendations should always be verified by a qualified healthcare provider.
+
+---
+
+## Design System
+
+T1D Saathi's visual design is aligned with the Kapoori Ka design language:
+- **Palette**: Warm parchment backgrounds (`#F7F1EB`), clinical blue primary (`#1a73e8`), warm shadows (`#C4956A`)
+- **Cards**: 16px border radius, warm shadow, off-white surface
+- **Inputs**: 12px border radius, 1.5px warm border, 14px padding
+- **Buttons**: 28px pill radius, blue primary, warm border outlines
+- **Typography**: `#1A1A2E` near-black text, `#7A6E65` muted warm gray
+- **Components**: Shared FAB, avatar, section header, pill badge patterns
+
+See `src/theme.ts` for the full design token catalog.
+
+---
+
+## License
+
+All rights reserved. Contact the maintainer for licensing information.

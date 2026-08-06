@@ -1,13 +1,17 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, ScrollView, RefreshControl } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLanguage } from '../context/LanguageContext';
 import { supabase } from '../lib/supabase';
 import { HYPO_THRESHOLD } from '../rules/sickDayRules';
+import { T, card, section, avatar } from '../theme';
 import type { PatientProfile, GlucoseLog, SickDayEpisode } from '../types';
 
 export default function PatientDashboard({ route, navigation }: any) {
   const { patient }: { patient: PatientProfile } = route.params;
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
+  const isNe = language === 'ne';
   const [latestGlucose, setLatestGlucose] = useState<GlucoseLog | null>(null);
   const [activeSickDay, setActiveSickDay] = useState<SickDayEpisode | null>(null);
   const [refreshing, setRefreshing] = useState(false);
@@ -26,135 +30,158 @@ export default function PatientDashboard({ route, navigation }: any) {
 
   const isHypo = latestGlucose && latestGlucose.value < HYPO_THRESHOLD;
 
+  const actions = [
+    { icon: '🩸', label: isNe ? 'ग्लुकोज' : 'Log Glucose', route: 'LogGlucose', border: T.border },
+    { icon: '🍽️', label: isNe ? 'खाना र डोज' : 'Food & Dose', route: 'FoodEstimator', border: T.teal },
+    { icon: '🤒', label: isNe ? 'बिमारी दिन' : 'Sick Day', route: 'SickDayWizard', border: T.orange },
+    { icon: '💉', label: isNe ? 'इन्सुलिन' : 'Regimen', route: 'RegimenSettings', border: T.border },
+    { icon: '📚', label: isNe ? 'शिक्षा' : 'Education', route: 'Education', border: T.border },
+    { icon: '🏥', label: isNe ? 'स्वास्थ्य केन्द्र' : 'Nearby Care', route: 'HealthCenters', border: T.border },
+    { icon: '📞', label: isNe ? 'हेल्पलाइन' : 'Helpline', route: 'Helpline', border: T.red },
+    { icon: '💬', label: isNe ? 'सन्देश' : 'Messages', route: 'Messages', border: T.border },
+    { icon: '🚨', label: isNe ? 'आपतकाल' : 'Emergency', route: 'Emergency', border: T.red },
+  ];
+
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}>
-      <Text style={styles.name}>{patient.name}</Text>
-      <Text style={styles.subtitle}>{patient.insulin_type} · {patient.sex}</Text>
-
-      {/* Glucose Card */}
-      <View style={[styles.glucoseCard, isHypo && styles.hypoCard]}>
-        <Text style={styles.cardLabel}>{t('currentGlucose')}</Text>
-        {latestGlucose ? (
-          <View>
-            <Text style={[styles.glucoseValue, isHypo && styles.hypoText]}>
-              {latestGlucose.value}
-              <Text style={styles.unit}> mg/dL</Text>
+    <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
+      <ScrollView
+        contentContainerStyle={styles.content}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={T.blue} />}
+      >
+        {/* Avatar header — Kapoori Ka ChildDashboard pattern */}
+        <View style={styles.profileHeader}>
+          <View style={styles.profileAv}>
+            <Text style={styles.profileAvText}>
+              {patient.name[0]?.toUpperCase()}
             </Text>
-            <Text style={styles.timestamp}>{new Date(latestGlucose.timestamp).toLocaleString()}</Text>
           </View>
-        ) : (
-          <Text style={styles.noData}>{t('noLogsYet')}</Text>
+          <View style={styles.profileInfo}>
+            <Text style={styles.name}>{patient.name}</Text>
+            <Text style={styles.subtitle}>
+              {patient.insulin_type || (isNe ? 'इन्सुलिन' : 'Insulin')} · {patient.sex}
+            </Text>
+          </View>
+        </View>
+
+        {/* Glucose stat card */}
+        <View style={[styles.glucoseCard, isHypo && styles.hypoCard]}>
+          <Text style={styles.cardLabel}>{isNe ? 'पछिल्लो ग्लुकोज' : 'Latest Glucose'}</Text>
+          {latestGlucose ? (
+            <View>
+              <Text style={[styles.glucoseValue, isHypo && styles.hypoText]}>
+                {latestGlucose.value}
+                <Text style={styles.unit}> mg/dL</Text>
+              </Text>
+              <Text style={styles.timestamp}>{new Date(latestGlucose.timestamp).toLocaleString()}</Text>
+            </View>
+          ) : (
+            <Text style={styles.noData}>{isNe ? 'कुनै लग छैन' : t('noLogsYet')}</Text>
+          )}
+        </View>
+
+        {/* Hypo alert */}
+        {isHypo && (
+          <View style={styles.hypoAlert}>
+            <Text style={styles.hypoAlertTitle}>⚠️ {isNe ? 'हाइपोग्लाइसेमिया' : 'Hypoglycemia Alert'}</Text>
+            <Text style={styles.hypoStep}>1. {isNe ? '१५ ग्राम चिनी वा ग्लुकोज खानुहोस्' : 'Take 15g fast-acting glucose'}</Text>
+            <Text style={styles.hypoStep}>2. {isNe ? '१५ मिनेट पर्खनुहोस्' : 'Wait 15 minutes'}</Text>
+            <Text style={styles.hypoStep}>3. {isNe ? 'पुन: जाँच गर्नुहोस्' : 'Recheck glucose'}</Text>
+            <Text style={styles.hypoStep}>4. {isNe ? 'आवश्यक परे ९८५१३५०८८३ मा फोन गर्नुहोस्' : 'Call 9851350883 if needed'}</Text>
+          </View>
         )}
-      </View>
 
-      {isHypo && (
-        <View style={styles.hypoAlert}>
-          <Text style={styles.hypoAlertTitle}>{t('hypoglycemia')}</Text>
-          <Text style={styles.hypoAlertText}>{t('hypoWarning')}</Text>
-          <Text style={styles.hypoStep}>{t('hypoStep1')}</Text>
-          <Text style={styles.hypoStep}>{t('hypoStep2')}</Text>
-          <Text style={styles.hypoStep}>{t('hypoStep3')}</Text>
-          <Text style={styles.hypoStep}>{t('hypoStep4')}</Text>
+        {/* Sick day banner */}
+        {activeSickDay && (
+          <TouchableOpacity style={styles.sickBanner} onPress={() => navigation.navigate('SickDayWizard', { patientId: patient.id })}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+              <Text style={{ fontSize: 20 }}>🤒</Text>
+              <View>
+                <Text style={styles.sickBannerTitle}>{isNe ? 'सक्रिय बिमारी दिन' : 'Active Sick Day'}</Text>
+                <Text style={styles.sickBannerSub}>{isNe ? 'निगरानी जारी छ · थिच्नुहोस्' : 'Monitoring in progress · Tap to continue'} ›</Text>
+              </View>
+            </View>
+          </TouchableOpacity>
+        )}
+
+        {/* Action grid — Kapoori Ka pattern */}
+        <Text style={styles.sectionLabel}>
+          {isNe ? 'द्रुत कार्यहरू' : t('quickLog')}
+        </Text>
+        <View style={styles.actionGrid}>
+          {actions.map((a, i) => (
+            <TouchableOpacity
+              key={i}
+              style={[styles.actionCard, { borderColor: a.border, borderWidth: a.border !== T.border ? 2 : 1 }]}
+              onPress={() => navigation.navigate(a.route, { patientId: patient.id })}
+              activeOpacity={0.7}
+            >
+              <Text style={styles.actionIcon}>{a.icon}</Text>
+              <Text style={styles.actionText}>{a.label}</Text>
+            </TouchableOpacity>
+          ))}
         </View>
-      )}
 
-      {/* Sick Day Banner */}
-      {activeSickDay && (
-        <TouchableOpacity style={styles.sickBanner} onPress={() => navigation.navigate('SickDayWizard', { patientId: patient.id })}>
-          <Text style={styles.sickBannerTitle}>🤒 {t('activeSickDay')}</Text>
-          <Text style={styles.sickBannerSub}>{t('sickDay')} ›</Text>
-        </TouchableOpacity>
-      )}
-
-      {/* Quick Actions */}
-      <Text style={styles.sectionTitle}>{t('quickLog')}</Text>
-      <View style={styles.actionGrid}>
-        <TouchableOpacity style={styles.actionCard} onPress={() => navigation.navigate('LogGlucose', { patientId: patient.id })}>
-          <Text style={styles.actionIcon}>🩸</Text>
-          <Text style={styles.actionText}>{t('logGlucose')}</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={[styles.actionCard, styles.foodAction]} onPress={() => navigation.navigate('FoodEstimator', { patientId: patient.id })}>
-          <Text style={styles.actionIcon}>🍽️</Text>
-          <Text style={styles.actionText}>Food & Dose</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={[styles.actionCard, styles.sickAction]} onPress={() => navigation.navigate('SickDayWizard', { patientId: patient.id })}>
-          <Text style={styles.actionIcon}>🤒</Text>
-          <Text style={styles.actionText}>{t('sickDay')}</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.actionCard} onPress={() => navigation.navigate('RegimenSettings', { patientId: patient.id })}>
-          <Text style={styles.actionIcon}>💉</Text>
-          <Text style={styles.actionText}>{t('insulinRegimen')}</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.actionCard} onPress={() => navigation.navigate('Education', { patientId: patient.id })}>
-          <Text style={styles.actionIcon}>📚</Text>
-          <Text style={styles.actionText}>{t('education')}</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.actionCard} onPress={() => navigation.navigate('HealthCenters', { patientId: patient.id })}>
-          <Text style={styles.actionIcon}>🏥</Text>
-          <Text style={styles.actionText}>Nearby Care</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={[styles.actionCard, styles.helplineAction]} onPress={() => navigation.navigate('Helpline')}>
-          <Text style={styles.actionIcon}>📞</Text>
-          <Text style={styles.actionText}>Helpline</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.actionCard} onPress={() => navigation.navigate('Messages', { patientId: patient.id })}>
-          <Text style={styles.actionIcon}>💬</Text>
-          <Text style={styles.actionText}>{t('messages')}</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={[styles.actionCard, styles.emergencyAction]} onPress={() => navigation.navigate('Emergency', { patientId: patient.id })}>
-          <Text style={styles.actionIcon}>🚨</Text>
-          <Text style={styles.actionText}>{t('emergency')}</Text>
-        </TouchableOpacity>
-      </View>
-
-      {/* Recent Logs */}
-      <Text style={styles.sectionTitle}>{t('recentLogs')}</Text>
-      {latestGlucose ? (
-        <View style={styles.logItem}>
-          <Text style={styles.logValue}>{latestGlucose.value} mg/dL</Text>
-          <Text style={styles.logTime}>{new Date(latestGlucose.timestamp).toLocaleString()}</Text>
-          <Text style={styles.logContext}>{latestGlucose.context === 'sick_day' ? `🤒 ${t('sickDay')}` : '📋 Routine'}</Text>
-        </View>
-      ) : (
-        <Text style={styles.noData}>{t('noLogsYet')}</Text>
-      )}
-
-      <View style={{ height: 80 }} />
-    </ScrollView>
+        <View style={{ height: 60 }} />
+      </ScrollView>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#F0F7FF' },
-  content: { padding: 20, paddingTop: 60 },
-  name: { fontSize: 28, fontWeight: '800', color: '#202124' },
-  subtitle: { fontSize: 15, color: '#5f6368', marginBottom: 20 },
-  glucoseCard: { backgroundColor: '#fff', borderRadius: 16, padding: 20, marginBottom: 16, borderWidth: 1, borderColor: '#e8eaed' },
-  hypoCard: { backgroundColor: '#fce8e6', borderColor: '#ea4335' },
-  cardLabel: { fontSize: 14, color: '#5f6368', marginBottom: 8 },
-  glucoseValue: { fontSize: 42, fontWeight: '700', color: '#202124' },
-  unit: { fontSize: 18, fontWeight: '400', color: '#5f6368' },
-  hypoText: { color: '#ea4335' },
-  timestamp: { fontSize: 12, color: '#5f6368', marginTop: 4 },
-  noData: { fontSize: 15, color: '#80868b', fontStyle: 'italic' },
-  hypoAlert: { backgroundColor: '#fce8e6', borderRadius: 12, padding: 16, marginBottom: 16, borderWidth: 2, borderColor: '#ea4335' },
-  hypoAlertTitle: { fontSize: 18, fontWeight: '700', color: '#ea4335', marginBottom: 8 },
-  hypoAlertText: { fontSize: 14, color: '#202124', marginBottom: 8 },
-  hypoStep: { fontSize: 14, color: '#202124', paddingVertical: 2, paddingLeft: 4 },
-  sickBanner: { backgroundColor: '#fef7e0', borderRadius: 12, padding: 16, marginBottom: 16, borderWidth: 1, borderColor: '#f9ab00' },
-  sickBannerTitle: { fontSize: 16, fontWeight: '600', color: '#e37400', marginBottom: 4 },
-  sickBannerSub: { fontSize: 14, color: '#5f6368' },
-  sectionTitle: { fontSize: 18, fontWeight: '700', color: '#202124', marginTop: 20, marginBottom: 12 },
+  container: { flex: 1, backgroundColor: T.bg },
+  content: { padding: 16, paddingTop: 10 },
+
+  // Profile header — Kapoori Ka pattern
+  profileHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 20 },
+  profileAv: {
+    ...avatar,
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: T.blueLight,
+  },
+  profileAvText: { fontSize: 26, fontWeight: '700', color: T.blue },
+  profileInfo: { flex: 1 },
+  name: { fontSize: 22, fontWeight: '800', color: T.text },
+  subtitle: { fontSize: 14, color: T.muted, marginTop: 2 },
+
+  // Glucose card
+  glucoseCard: { ...card },
+  hypoCard: { backgroundColor: T.redLight, borderWidth: 2, borderColor: T.red },
+  cardLabel: { ...section, marginTop: 0, marginBottom: 6 },
+  glucoseValue: { fontSize: 42, fontWeight: '700', color: T.text },
+  unit: { fontSize: 18, fontWeight: '400', color: T.muted },
+  hypoText: { color: T.red },
+  timestamp: { fontSize: 12, color: T.muted, marginTop: 4 },
+  noData: { fontSize: 15, color: T.muted, fontStyle: 'italic' },
+
+  // Hypo alert
+  hypoAlert: { backgroundColor: T.redLight, borderRadius: 12, padding: 16, marginBottom: 16, borderWidth: 2, borderColor: T.red },
+  hypoAlertTitle: { fontSize: 16, fontWeight: '700', color: T.redDark, marginBottom: 8 },
+  hypoStep: { fontSize: 13, color: T.text, paddingVertical: 2, paddingLeft: 4, lineHeight: 20 },
+
+  // Sick banner
+  sickBanner: { ...card, borderWidth: 1, borderColor: T.orange },
+  sickBannerTitle: { fontSize: 15, fontWeight: '700', color: T.amberDark },
+  sickBannerSub: { fontSize: 13, color: T.muted, marginTop: 2 },
+
+  // Action grid
+  sectionLabel: { ...section, paddingHorizontal: 4 },
   actionGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
-  actionCard: { width: '30%', backgroundColor: '#fff', borderRadius: 12, padding: 14, alignItems: 'center', borderWidth: 1, borderColor: '#e8eaed', marginBottom: 4 },
-  sickAction: { borderColor: '#f9ab00', borderWidth: 2 },
-  emergencyAction: { borderColor: '#ea4335', borderWidth: 2 },
-  foodAction: { borderColor: '#34a853', borderWidth: 2 },
-  helplineAction: { borderColor: '#ea4335', borderWidth: 2, backgroundColor: '#FFF5F5' },
+  actionCard: {
+    width: '30%',
+    backgroundColor: T.surface,
+    borderRadius: 12,
+    padding: 14,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: T.border,
+    shadowColor: T.shadow,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 6,
+    elevation: 1,
+  },
   actionIcon: { fontSize: 28, marginBottom: 6 },
-  actionText: { fontSize: 12, fontWeight: '600', color: '#202124', textAlign: 'center' },
-  logItem: { backgroundColor: '#fff', borderRadius: 10, padding: 14, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', borderWidth: 1, borderColor: '#e8eaed', marginBottom: 8 },
-  logValue: { fontSize: 17, fontWeight: '600', color: '#202124' },
-  logTime: { fontSize: 12, color: '#5f6368' },
-  logContext: { fontSize: 12, color: '#5f6368' },
+  actionText: { fontSize: 11, fontWeight: '600', color: T.text, textAlign: 'center' },
 });

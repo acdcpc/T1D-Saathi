@@ -5,10 +5,12 @@ import {
 } from 'react-native';
 import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
+import { T, primBtn, input } from '../theme';
 
 export default function LoginScreen({ navigation }: any) {
   const { signIn, signUp, signInWithGoogle, signInAsGuest } = useAuth();
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
+  const isNe = language === 'ne';
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isSignup, setIsSignup] = useState(false);
@@ -16,7 +18,7 @@ export default function LoginScreen({ navigation }: any) {
 
   const handleSubmit = async () => {
     if (!email.trim() || !password.trim()) {
-      Alert.alert(t('error'), 'Please fill in all fields');
+      Alert.alert(isNe ? 'त्रुटि' : 'Error', isNe ? 'सबै फिल्ड भर्नुहोस्' : 'Please fill in all fields');
       return;
     }
     setLoading(true);
@@ -24,7 +26,7 @@ export default function LoginScreen({ navigation }: any) {
       ? await signUp(email.trim(), password)
       : await signIn(email.trim(), password);
     setLoading(false);
-    if (error) Alert.alert(t('error'), error.message);
+    if (error) Alert.alert(isNe ? 'त्रुटि' : 'Error', error.message);
   };
 
   const handleGuest = async () => {
@@ -37,39 +39,44 @@ export default function LoginScreen({ navigation }: any) {
     <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
       <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
         <View style={styles.header}>
-          <Text style={styles.appName}>{t('appName')}</Text>
-          <Text style={styles.tagline}>{t('tagline')}</Text>
+          <Text style={styles.appTitle}>T1D साथी</Text>
+          <Text style={styles.appSubtitle}>T1D Saathi</Text>
+          <Text style={styles.tagline}>{isNe ? 'तपाईंको मधुमेह सहयात्री' : 'Your Diabetes Companion'}</Text>
         </View>
         <View style={styles.form}>
           <TextInput
-            style={styles.input}
-            placeholder={t('email')}
+            style={styles.field}
+            placeholder={isNe ? 'इमेल' : 'Email'}
             value={email}
             onChangeText={setEmail}
             keyboardType="email-address"
             autoCapitalize="none"
+            placeholderTextColor={T.muted}
           />
           <TextInput
-            style={styles.input}
-            placeholder={t('password')}
+            style={styles.field}
+            placeholder={isNe ? 'पासवर्ड' : 'Password'}
             value={password}
             onChangeText={setPassword}
             secureTextEntry
+            placeholderTextColor={T.muted}
           />
           <TouchableOpacity
-            style={[styles.button, styles.primaryButton]}
+            style={[primBtn, loading && { opacity: 0.7 }]}
             onPress={handleSubmit}
             disabled={loading}
           >
             {loading ? (
               <ActivityIndicator color="#fff" />
             ) : (
-              <Text style={styles.buttonText}>{isSignup ? t('signup') : t('login')}</Text>
+              <Text style={styles.btnText}>{isSignup ? (isNe ? 'खाता बनाउनुहोस्' : 'Create Account') : (isNe ? 'लग इन' : 'Log In')}</Text>
             )}
           </TouchableOpacity>
           <TouchableOpacity onPress={() => setIsSignup(!isSignup)}>
             <Text style={styles.switchText}>
-              {isSignup ? 'Already have an account? Log in' : 'Don\'t have an account? Sign up'}
+              {isSignup
+                ? (isNe ? 'पहिले नै खाता छ? लग इन गर्नुहोस्' : 'Already have an account? Log in')
+                : (isNe ? 'खाता छैन? साइन अप गर्नुहोस्' : "Don't have an account? Sign up")}
             </Text>
           </TouchableOpacity>
           <View style={styles.divider}>
@@ -77,42 +84,47 @@ export default function LoginScreen({ navigation }: any) {
             <Text style={styles.orText}>OR</Text>
             <View style={styles.line} />
           </View>
-          <TouchableOpacity style={[styles.button, styles.googleButton]} onPress={signInWithGoogle}>
-            <Text style={styles.googleText}>{t('googleLogin')}</Text>
+          <TouchableOpacity style={styles.outlineBtn} onPress={signInWithGoogle}>
+            <Text style={styles.outlineBtnText}>G  {isNe ? 'गुगलबाट लग इन' : 'Continue with Google'}</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={[styles.button, styles.guestButton]} onPress={handleGuest} disabled={loading}>
-            <Text style={styles.guestText}>{t('guestLogin')}</Text>
+          <TouchableOpacity style={styles.guestBtn} onPress={handleGuest} disabled={loading}>
+            <Text style={styles.guestBtnText}>{isNe ? 'पाहुनाको रूपमा जारी राख्नुहोस्' : 'Continue as Guest'}</Text>
           </TouchableOpacity>
         </View>
-        <Text style={styles.disclaimer}>{t('disclaimer')}</Text>
+        <Text style={styles.disclaimer}>{isNe ? 'यो एप चिकित्सकीय उपकरण होइन। प्रयोग गर्नुभन्दा पहिले चिकित्सकको सल्लाह लिनुहोस्।' : 'This app is not a medical device. Consult your clinician before use.'}</Text>
       </ScrollView>
     </KeyboardAvoidingView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#F0F7FF' },
+  container: { flex: 1, backgroundColor: T.bg },
   scroll: { flexGrow: 1, justifyContent: 'center', padding: 24 },
-  header: { alignItems: 'center', marginBottom: 40 },
-  appName: { fontSize: 36, fontWeight: '800', color: '#1a73e8', marginBottom: 8 },
-  tagline: { fontSize: 16, color: '#5f6368' },
+  header: { alignItems: 'center', marginBottom: 36 },
+  appTitle: { fontWeight: '800', fontSize: 26, color: T.text },
+  appSubtitle: { fontSize: 14, color: T.muted, marginTop: 2 },
+  tagline: { fontSize: 14, color: T.blue, marginTop: 10, fontWeight: '600' },
+
   form: { gap: 14 },
-  input: {
-    backgroundColor: '#fff', borderRadius: 12, padding: 16, fontSize: 16,
-    borderWidth: 1, borderColor: '#dadce0',
+  field: { ...input },
+  btnText: { color: '#fff', fontSize: 16, fontWeight: '600' },
+
+  switchText: { color: T.blue, textAlign: 'center', fontSize: 14, paddingVertical: 8 },
+
+  divider: { flexDirection: 'row', alignItems: 'center', marginVertical: 8 },
+  line: { flex: 1, height: 1, backgroundColor: T.border },
+  orText: { marginHorizontal: 12, color: T.muted, fontSize: 13 },
+
+  outlineBtn: {
+    borderWidth: 1.5, borderColor: T.border, borderRadius: 28,
+    paddingVertical: 13, alignItems: 'center', backgroundColor: T.surface,
   },
-  button: {
-    borderRadius: 12, padding: 16, alignItems: 'center', justifyContent: 'center', minHeight: 52,
+  outlineBtnText: { color: T.text, fontSize: 16, fontWeight: '600' },
+
+  guestBtn: {
+    borderRadius: 28, paddingVertical: 13, alignItems: 'center', backgroundColor: T.blueLight,
   },
-  primaryButton: { backgroundColor: '#1a73e8' },
-  buttonText: { color: '#fff', fontSize: 17, fontWeight: '600' },
-  switchText: { color: '#1a73e8', textAlign: 'center', fontSize: 14, paddingVertical: 8 },
-  divider: { flexDirection: 'row', alignItems: 'center', marginVertical: 12 },
-  line: { flex: 1, height: 1, backgroundColor: '#dadce0' },
-  orText: { marginHorizontal: 12, color: '#5f6368', fontSize: 14 },
-  googleButton: { backgroundColor: '#fff', borderWidth: 1, borderColor: '#dadce0' },
-  googleText: { color: '#3c4043', fontSize: 17, fontWeight: '600' },
-  guestButton: { backgroundColor: '#e8eaed' },
-  guestText: { color: '#3c4043', fontSize: 17, fontWeight: '600' },
-  disclaimer: { textAlign: 'center', color: '#5f6368', fontSize: 11, marginTop: 32, paddingHorizontal: 20 },
+  guestBtnText: { color: T.blue, fontSize: 16, fontWeight: '600' },
+
+  disclaimer: { textAlign: 'center', color: T.muted, fontSize: 11, marginTop: 28, paddingHorizontal: 20, lineHeight: 16 },
 });
