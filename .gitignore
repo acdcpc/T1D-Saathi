@@ -42,6 +42,3 @@ yarn-error.*
 .env
 T1D-Saathi-v1.0.0.apk
 *.keystore
-assets/models/food_v1.tflite
-assets/models/food_v1_labels.csv
-# Model files are large (21MB) — excluded from git, bundled by EAS via metro
