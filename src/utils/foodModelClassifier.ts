@@ -106,32 +106,35 @@ export async function classifyFoodPhoto(imageUri: string): Promise<ModelResult> 
     const resized = await ImageManipulator.manipulateAsync(
       imageUri,
       [{ resize: { width: 192, height: 192 } }],
-      { format: ImageManipulator.SaveFormat.PNG, base64: true }
+      { format: ImageManipulator.SaveFormat.JPEG, base64: true, compress: 0.9 }
     );
 
     if (!resized.base64) {
       return { suggestions: [], topLabels: [], inferenceTimeMs: Date.now() - startTime };
     }
 
-    // Step 2: Decode base64 → RGB uint8 array
+    // Step 2: Decode JPEG base64 → RGB uint8 array (192×192×3)
     const binary = atob(resized.base64);
     const bytes = new Uint8Array(binary.length);
     for (let i = 0; i < binary.length; i++) {
       bytes[i] = binary.charCodeAt(i);
     }
 
-    // Parse PNG to get RGB pixels (skip PNG header, extract pixel data)
-    // pngjs handles this properly. For now, use pngjs for decoding.
-    const { PNG } = require('pngjs');
-    const png = PNG.sync.read(bytes as any);
+    // jpeg-js: pure JS, no Node deps, works in React Native
+    const jpeg = require('jpeg-js');
+    const { data, width, height } = jpeg.decode(bytes, { useTArray: true });
 
-    // Extract RGB pixels (drop alpha channel)
+    // JPEG is already RGB (no alpha), just copy into flat tensor
     const inputTensor = new Uint8Array(192 * 192 * 3);
-    for (let i = 0; i < png.data.length; i += 4) {
-      const pixelIdx = (i / 4) * 3;
-      inputTensor[pixelIdx] = png.data[i];       // R
-      inputTensor[pixelIdx + 1] = png.data[i + 1]; // G
-      inputTensor[pixelIdx + 2] = png.data[i + 2]; // B
+    // jpeg-js returns RGBA, but JPEGs have alpha=255 for all pixels
+    // So we copy RGB directly (every 4th byte is alpha)
+    const pixelCount = width * height;
+    for (let i = 0; i < pixelCount; i++) {
+      const src = i * 4;
+      const dst = i * 3;
+      inputTensor[dst] = data[src];       // R
+      inputTensor[dst + 1] = data[src + 1]; // G
+      inputTensor[dst + 2] = data[src + 2]; // B
     }
 
     // Step 3: Load model and run inference
