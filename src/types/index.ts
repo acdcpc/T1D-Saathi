@@ -16,6 +16,7 @@ export interface InsulinRegimen {
   frequency: string; delivery_method: 'pen' | 'syringe' | 'pump';
   effective_date: string; isf?: number; carb_ratio?: number; tdd?: number;
   correction_target?: number;
+  approved_by_clinician?: boolean;
 }
 export interface GlucoseLog {
   id: string; patient_id: string; user_id: string; value: number;

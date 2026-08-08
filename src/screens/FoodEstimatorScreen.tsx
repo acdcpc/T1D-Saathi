@@ -7,15 +7,16 @@ import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
 import { supabase } from '../lib/supabase';
 import { safeInsert } from '../utils/offlineQueue';
-import { searchNepaliFoods } from '../data/nepaliFoods';
+import { searchNepaliFoods, NEPALI_FOODS } from '../data/nepaliFoods';
+import { classifyFoodPhoto, type ModelSuggestion, type ModelResult } from '../utils/foodModelClassifier';
 import { calculateDosing, checkMealCoverage } from '../utils/dosingCalc';
 import {
-  estimateMealFromPhoto, adjustItemPortion, recalculateTotals,
+  adjustItemPortion, recalculateTotals,
   validateCalories, type FoodItem, type MealEstimateResult,
 } from '../utils/visionEstimator';
 import type { InsulinRegimen } from '../types';
 
-type Step = 'photo' | 'analyzing' | 'review' | 'dosing';
+type Step = 'photo' | 'identify' | 'dosing';
 
 const PORTIONS = [0.25, 0.5, 0.75, 1, 1.25, 1.5, 2];
 
@@ -43,6 +44,9 @@ export default function FoodEstimatorScreen({ route }: any) {
   // Dosing state
   const [dosingResult, setDosingResult] = useState<any>(null);
   const [coverageCheck, setCoverageCheck] = useState<any>(null);
+  const [modelSuggestions, setModelSuggestions] = useState<ModelSuggestion[]>([]);
+  const [modelLoading, setModelLoading] = useState(false);
+  const [modelError, setModelError] = useState<string | null>(null);
 
   useEffect(() => {
     (async () => {
@@ -67,33 +71,33 @@ export default function FoodEstimatorScreen({ route }: any) {
   };
 
   // ─── Vision pipeline ───
-  const analyzePhoto = async () => {
+  const goToIdentify = async () => {
     if (!imageUri) return;
-    setStep('analyzing');
-    setLoading(true);
+    setItems([]);
+    setTotals({ total_carbs_g: 0, total_protein_g: 0, total_fat_g: 0, total_calories: 0 });
+    setModelSuggestions([]);
+    setModelError(null);
+    setStep('identify');
+
+    // Run on-device TFLite food classifier
+    setModelLoading(true);
     try {
-      const result = await estimateMealFromPhoto(imageUri);
-      setEstimate(result);
-      setItems(result.items);
-      setTotals({
-        total_carbs_g: result.total_carbs_g,
-        total_protein_g: result.total_protein_g,
-        total_fat_g: result.total_fat_g,
-        total_calories: result.total_calories,
-      });
-      setLoading(false);
-      setStep('review');
+      const result = await classifyFoodPhoto(imageUri);
+      setModelSuggestions(result.suggestions);
+      if (result.suggestions.length === 0 && result.topLabels.length === 0) {
+        setModelError('No food recognized — try searching below');
+      }
     } catch (err) {
-      setLoading(false);
-      Alert.alert('Photo analysis failed', 'Unable to analyze the photo. Please try manual search.');
-      setStep('photo');
+      setModelError('Classifier unavailable — use search below');
     }
+    setModelLoading(false);
   };
 
   const skipPhoto = () => {
+    setImageUri(null);
     setItems([]);
     setTotals({ total_carbs_g: 0, total_protein_g: 0, total_fat_g: 0, total_calories: 0 });
-    setStep('review');
+    setStep('identify');
   };
 
   // ─── Item editing ───
@@ -148,6 +152,16 @@ export default function FoodEstimatorScreen({ route }: any) {
     const gVal = parseFloat(currentGlucose);
     const tddVal = regimen?.tdd || 40;
     const target = regimen?.correction_target || 120;
+
+    // Clinician gate — block calculation if regimen not reviewed
+    if (!regimen?.approved_by_clinician) {
+      Alert.alert(
+        'Clinician Review Required',
+        'ICR and ISF dosing values have not been reviewed by a clinician. Dose calculation is not available until a clinician approves the regimen settings.\n\nPlease contact your healthcare provider.',
+        [{ text: 'OK' }]
+      );
+      return;
+    }
 
     const dosing = calculateDosing(isNaN(gVal) ? target : gVal, totals.total_carbs_g, {
       tdd: tddVal,
@@ -221,8 +235,8 @@ export default function FoodEstimatorScreen({ route }: any) {
         </View>
 
         {imageUri && (
-          <TouchableOpacity style={[s.primaryBtn, s.analyzeBtn]} onPress={analyzePhoto} disabled={loading}>
-            <Text style={s.primaryText}>🔍 Analyze Photo</Text>
+          <TouchableOpacity style={[s.primaryBtn, s.identifyBtn]} onPress={goToIdentify} disabled={loading}>
+            <Text style={s.primaryText}>📝 Identify Foods</Text>
           </TouchableOpacity>
         )}
 
@@ -234,22 +248,13 @@ export default function FoodEstimatorScreen({ route }: any) {
     );
   }
 
-  // ═══ RENDER: Analyzing ═══
-  if (step === 'analyzing') {
-    return (
-      <View style={[s.container, s.centered]}>
-        <ActivityIndicator size="large" color="#1a73e8" />
-        <Text style={[s.title, { marginTop: 20, textAlign: 'center' }]}>Analyzing photo...</Text>
-        <Text style={[s.hint, { textAlign: 'center' }]}>Identifying foods & estimating portions</Text>
-      </View>
-    );
-  }
 
-  // ═══ RENDER: Step 2 — Review & Confirm ═══
-  if (step === 'review') {
+
+  // ═══ RENDER: Step 2 — Identify foods from photo ═══
+  if (step === 'identify') {
     return (
       <ScrollView style={s.container} contentContainerStyle={s.content}>
-        <Text style={s.title}>📊 Review & Confirm</Text>
+        <Text style={s.title}>🍽️ What foods are on this plate?</Text>
 
         {/* Per-item cards */}
         {items.map((item, idx) => (
@@ -403,7 +408,6 @@ const s = StyleSheet.create({
   primaryText: { color: '#fff', fontSize: 16, fontWeight: '600' },
   secondaryBtn: { backgroundColor: '#e8eaed' },
   secondaryText: { color: '#3c4043', fontSize: 16, fontWeight: '600' },
-  analyzeBtn: { backgroundColor: '#34a853', marginBottom: 12 },
   skipBtn: { paddingVertical: 14, alignItems: 'center' },
   skipText: { color: '#1a73e8', fontSize: 14 },
   disclaimer: { fontSize: 11, color: '#5f6368', textAlign: 'center', marginTop: 10 },
@@ -476,4 +480,23 @@ const s = StyleSheet.create({
   noteText: { fontSize: 12, color: '#3c4043', lineHeight: 16 },
   doneBtn: { backgroundColor: '#34a853', borderRadius: 12, padding: 16, alignItems: 'center', marginTop: 10 },
   doneBtnText: { color: '#fff', fontSize: 17, fontWeight: '600' },
+  identifyBtn: { backgroundColor: '#1a73e8', marginBottom: 12 },
+  modelLoadingRow: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 10, marginBottom: 8 },
+  modelLoadingText: { fontSize: 13, color: '#5f6368', fontStyle: 'italic' },
+  modelErrorRow: { backgroundColor: '#fef7e0', borderRadius: 8, padding: 10, marginBottom: 10, borderWidth: 1, borderColor: '#f9ab00' },
+  modelErrorText: { fontSize: 12, color: '#e37400' },
+  modelSuggestionsCard: { backgroundColor: '#f0f7ff', borderRadius: 12, padding: 14, marginBottom: 16, borderWidth: 1, borderColor: '#d2e3fc' },
+  modelSuggestionsTitle: { fontSize: 14, fontWeight: '700', color: '#1a73e8', marginBottom: 2 },
+  modelSuggestionsSubtitle: { fontSize: 11, color: '#5f6368', marginBottom: 10, fontStyle: 'italic', lineHeight: 15 },
+  modelChips: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
+  modelChip: { borderRadius: 20, paddingHorizontal: 12, paddingVertical: 8, borderWidth: 1, flexDirection: 'row', alignItems: 'center', gap: 8 },
+  modelChipHigh: { backgroundColor: '#e8f0fe', borderColor: '#a8c8fa' },
+  modelChipMed: { backgroundColor: '#f1f3f4', borderColor: '#dadce0' },
+  modelChipText: { fontSize: 13, fontWeight: '600', color: '#202124' },
+  modelChipMeta: { fontSize: 11, color: '#5f6368' },
+  photoRefCard: { backgroundColor: '#e8f0fe', borderRadius: 12, padding: 12, marginBottom: 14, borderWidth: 1, borderColor: '#d2e3fc', alignItems: 'center' },
+  photoRefImg: { width: '100%', height: 160, borderRadius: 8, marginBottom: 8, backgroundColor: '#e8eaed' },
+  photoRefLabel: { fontSize: 12, color: '#1a73e8', fontWeight: '600' },
+suggestionsTitle: { fontSize: 14, fontWeight: '700', color: '#5f6368', marginBottom: 8 },
+colorSwatch: { width: 20, height: 20, borderRadius: 10, borderWidth: 1, borderColor: '#c4c4c4' },
 });

@@ -5,6 +5,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
 import { supabase } from '../lib/supabase';
+import { getQueueLength, getConflictedEntries } from '../utils/offlineQueue';
 import { T, card, section, fab, avatar } from '../theme';
 import type { PatientProfile } from '../types';
 
@@ -15,6 +16,8 @@ export default function HomeScreen({ navigation }: any) {
   const [patients, setPatients] = useState<PatientProfile[]>([]);
   const [refreshing, setRefreshing] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [pendingSync, setPendingSync] = useState(0);
+  const [conflictedCount, setConflictedCount] = useState(0);
 
   const fetchPatients = useCallback(async () => {
     if (!user) return;
@@ -30,6 +33,19 @@ export default function HomeScreen({ navigation }: any) {
   }, [user]);
 
   useEffect(() => { fetchPatients(); }, [fetchPatients]);
+
+  // Check offline sync queue on mount and periodically
+  useEffect(() => {
+    const checkQueue = async () => {
+      const len = await getQueueLength();
+      const conflicted = await getConflictedEntries();
+      setPendingSync(len);
+      setConflictedCount(conflicted.length);
+    };
+    checkQueue();
+    const timer = setInterval(checkQueue, 30000); // check every 30s
+    return () => clearInterval(timer);
+  }, []);
   const onRefresh = async () => { setRefreshing(true); await fetchPatients(); setRefreshing(false); };
 
   const renderPatient = ({ item }: { item: PatientProfile }) => (
@@ -63,9 +79,19 @@ export default function HomeScreen({ navigation }: any) {
           <Text style={styles.headerTitle}>T1D साथी</Text>
           <Text style={styles.headerSubtitle}>T1D Saathi</Text>
         </View>
-        <TouchableOpacity style={styles.settingsBtn} onPress={() => navigation.navigate('Settings')}>
-          <Ionicons name="settings-outline" size={22} color={T.muted} />
-        </TouchableOpacity>
+        <View style={styles.headerRight}>
+          {(pendingSync > 0 || conflictedCount > 0) && (
+            <TouchableOpacity style={styles.syncBadge} onPress={() => {}}>
+              <Ionicons name={conflictedCount > 0 ? "warning-outline" : "cloud-upload-outline"} size={16} color={conflictedCount > 0 ? T.red : T.orange} />
+              <Text style={[styles.syncBadgeText, { color: conflictedCount > 0 ? T.red : T.orange }]}>
+                {conflictedCount > 0 ? `${conflictedCount}⚠` : pendingSync}
+              </Text>
+            </TouchableOpacity>
+          )}
+          <TouchableOpacity style={styles.settingsBtn} onPress={() => navigation.navigate('Settings')}>
+            <Ionicons name="settings-outline" size={22} color={T.muted} />
+          </TouchableOpacity>
+        </View>
       </View>
 
       {loading ? (
@@ -148,7 +174,15 @@ const styles = StyleSheet.create({
   headerLeft: { flex: 1 },
   headerTitle: { fontWeight: '800', fontSize: 22, color: T.text },
   headerSubtitle: { fontSize: 13, color: T.muted, marginTop: 1 },
+  headerRight: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   settingsBtn: { padding: 4 },
+  syncBadge: {
+    flexDirection: 'row', alignItems: 'center', gap: 4,
+    backgroundColor: T.surface, borderRadius: 12,
+    paddingHorizontal: 8, paddingVertical: 4,
+    borderWidth: 1, borderColor: T.border,
+  },
+  syncBadgeText: { fontSize: 12, fontWeight: '700' },
 
   loader: { flex: 1 },
 

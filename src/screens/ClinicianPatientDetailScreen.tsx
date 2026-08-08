@@ -3,6 +3,7 @@ import { View, Text, ScrollView, StyleSheet, ActivityIndicator } from 'react-nat
 import { useLanguage } from '../context/LanguageContext';
 import { supabase } from '../lib/supabase';
 import type { GlucoseLog, KetoneLog, SickDayEpisode } from '../types';
+import { toBSDateTimeDisplay, toBSDisplay } from '../utils/bsDateDisplay';
 
 export default function ClinicianPatientDetailScreen({ route }: any) {
   const { patientId, patientName } = route.params;
@@ -44,7 +45,7 @@ export default function ClinicianPatientDetailScreen({ route }: any) {
       {logs.slice(0, 10).map(l => (
         <View key={l.id} style={styles.logItem}>
           <Text style={[styles.logValue, { color: getGlucoseColor(l.value) }]}>{l.value} mg/dL</Text>
-          <Text style={styles.logTime}>{new Date(l.timestamp).toLocaleString()}</Text>
+          <Text style={styles.logTime}>{toBSDateTimeDisplay(l.timestamp)}</Text>
           <Text style={styles.logContext}>{l.context === 'sick_day' ? '🤒 Sick' : '📋 Routine'}</Text>
         </View>
       ))}
@@ -56,7 +57,7 @@ export default function ClinicianPatientDetailScreen({ route }: any) {
           <Text style={[styles.logValue, { color: getKetoneColor(k.value) }]}>
             {k.value ?? 'N/A'} mmol/L ({k.method})
           </Text>
-          <Text style={styles.logTime}>{new Date(k.timestamp).toLocaleString()}</Text>
+          <Text style={styles.logTime}>{toBSDateTimeDisplay(k.timestamp)}</Text>
         </View>
       ))}
       {ketones.length === 0 && <Text style={styles.noData}>No ketone logs</Text>}
@@ -64,7 +65,7 @@ export default function ClinicianPatientDetailScreen({ route }: any) {
       <Text style={styles.section}>🤒 {t('sickDay')} ({sickDays.length})</Text>
       {sickDays.slice(0, 10).map(s => (
         <View key={s.id} style={[styles.logItem, s.escalated && styles.escalated]}>
-          <Text style={styles.logValue}>{new Date(s.start_date).toLocaleDateString()}</Text>
+          <Text style={styles.logValue}>{toBSDisplay(s.start_date)}</Text>
           <Text style={styles.logContext}>{s.escalated ? '🚨 Escalated' : '⚡ Active'}</Text>
           {s.symptoms && (
             <Text style={styles.logDetail}>

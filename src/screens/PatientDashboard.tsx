@@ -5,6 +5,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLanguage } from '../context/LanguageContext';
 import { supabase } from '../lib/supabase';
 import { HYPO_THRESHOLD } from '../rules/sickDayRules';
+import { toBSDateTimeDisplay } from '../utils/bsDateDisplay';
 import { T, card, section, avatar } from '../theme';
 import type { PatientProfile, GlucoseLog, SickDayEpisode } from '../types';
 
@@ -72,7 +73,7 @@ export default function PatientDashboard({ route, navigation }: any) {
                 {latestGlucose.value}
                 <Text style={styles.unit}> mg/dL</Text>
               </Text>
-              <Text style={styles.timestamp}>{new Date(latestGlucose.timestamp).toLocaleString()}</Text>
+              <Text style={styles.timestamp}>{toBSDateTimeDisplay(latestGlucose.timestamp)}</Text>
             </View>
           ) : (
             <Text style={styles.noData}>{isNe ? 'कुनै लग छैन' : t('noLogsYet')}</Text>

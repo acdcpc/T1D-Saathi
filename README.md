@@ -9,7 +9,7 @@
 | Module | Description |
 |--------|-------------|
 | 📊 **Glucose Logging** | Log blood glucose in mg/dL or mmol/L with ISPAD-coded color badges |
-| 📸 **Food Photo Estimator** | Take a photo of a Nepali meal → AI estimates items/portions → carb count → insulin dose calculator |
+| 📸 **Food Photo Estimator** | Take a photo → on-device AI classifies the food → matched to local Nepali DB for accurate macros → carb count → insulin dose calculator |
 | 🏥 **Sick-Day Wizard** | ISPAD 2022–based step-by-step guide: glucose monitoring, ketone checks, DKA red screen |
 | 🗺️ **Health Centers** | Curated map of diabetes-ready hospitals in Nepal with tap-to-call and directions |
 | 📞 **Helpline** | One-tap call to Dr. Archana's diabetes helpline (9851350883) |
@@ -26,7 +26,7 @@
 - **Frontend**: React Native + Expo SDK 57 + TypeScript
 - **Backend**: Supabase (PostgreSQL + Auth + RLS)
 - **Analytics**: Firebase (Analytics, Crashlytics, Cloud Messaging)
-- **Vision**: LogMeal API / FatSecret API (food photo recognition)
+- **Vision**: Google AIY Food V1 TFLite model (2000+ classes, Apache 2.0) → Local Nepali food DB match → USDA FoodData Central (free) → Open Food Facts (free)
 - **Calendar**: `nepali-date-converter` (Bikram Sambat date picker)
 
 ---
@@ -56,7 +56,7 @@ src/
 | HomeScreen | `screens/HomeScreen.tsx` | Patient list + FAB |
 | PatientDashboard | `screens/PatientDashboard.tsx` | Stats hub with 9 action cards |
 | LogGlucoseScreen | `screens/LogGlucoseScreen.tsx` | Glucose entry with unit toggle |
-| FoodEstimatorScreen | `screens/FoodEstimatorScreen.tsx` | Photo → vision → carb → dose |
+| FoodEstimatorScreen | `screens/FoodEstimatorScreen.tsx` | Photo → on-device AI classification → Nepali DB match → carb → dose |
 | SickDayWizardScreen | `screens/SickDayWizardScreen.tsx` | ISPAD 3-step sick-day guide |
 | HealthCentersScreen | `screens/HealthCentersScreen.tsx` | Map + hospital list |
 | HelplineScreen | `screens/HelplineScreen.tsx` | One-tap emergency call |
@@ -108,6 +108,7 @@ Create a `.env` file with these variables (see `.env.example` for template):
 | `EXPO_PUBLIC_FIREBASE_APP_ID` | Firebase app ID |
 | `EXPO_PUBLIC_FIREBASE_SENDER_ID` | Firebase sender ID |
 | `EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN` | Firebase auth domain |
+| `EXPO_PUBLIC_USDA_API_KEY` | USDA FoodData Central key (free from api.data.gov) |
 | `EXPO_PUBLIC_LOGMEAL_API_KEY` | LogMeal vision API key (optional) |
 | `EXPO_PUBLIC_FATSECRET_CLIENT_ID` | FatSecret OAuth client ID (optional) |
 | `EXPO_PUBLIC_FATSECRET_CLIENT_SECRET` | FatSecret OAuth client secret (optional) |
@@ -131,7 +132,7 @@ eas build --platform android --profile preview
 
 ## Known Limitations
 
-- 🍽️ **Food Estimator**: Photo recognition uses a hybrid pipeline (LogMeal → FatSecret → local Nepali DB fallback). Accuracy depends on API availability. Vision model is not yet tuned specifically for Nepali cuisine.
+- 🍽️ **Food Estimator**: Uses Google AIY Food V1 on-device TFLite model for initial classification, then maps predictions to the curated local Nepali food database (22 items) for accurate macros. The model is trained on global cuisine and will not recognize specific Nepali dish names — it provides coarse categories (e.g. "rice", "curry") that are matched to local dishes. User must verify suggestions before dosing. External APIs (USDA, Open Food Facts) provide fallback nutrition data. Model requires EAS dev-client build (not Expo Go). On web, falls back to manual search.
 - 📅 **Bikram Sambat**: BS date picker is available but some date fields still use Gregorian internally.
 - 📡 **Offline Queue**: Glucose and meal logs queue locally when offline, but sync validation for conflict resolution is basic.
 - 🔐 **Google Auth**: Requires manual configuration in Google Cloud Console (OAuth consent screen + redirect URIs).
