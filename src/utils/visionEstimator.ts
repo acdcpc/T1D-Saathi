@@ -198,12 +198,23 @@ export async function estimateMealFromPhoto(imageUri: string): Promise<MealEstim
   };
 }
 
-// Apply portion adjustments
+// Apply portion adjustments — scales macros from the base (typical) portion.
+// Works for manual, on-device, and external items alike.
 export function adjustItemPortion(item: FoodItem, newPortionGrams: number): FoodItem {
-  if (!item.matched_local_item || item.source === 'manual') {
-    return { ...item, portion_grams: newPortionGrams };
+  const base = item.matched_local_item;
+  if (base && base.typical_portion_g > 0) {
+    const scale = newPortionGrams / base.typical_portion_g;
+    return {
+      ...item,
+      portion_grams: newPortionGrams,
+      carbs_g: Math.round(base.carbs_g * scale * 10) / 10,
+      protein_g: Math.round(base.protein_g * scale * 10) / 10,
+      fat_g: Math.round(base.fat_g * scale * 10) / 10,
+      calories: Math.round(base.calories * scale),
+    };
   }
-  const scale = newPortionGrams / item.portion_grams;
+  // No local match — scale relative to current grams
+  const scale = item.portion_grams > 0 ? newPortionGrams / item.portion_grams : 1;
   return {
     ...item,
     portion_grams: newPortionGrams,

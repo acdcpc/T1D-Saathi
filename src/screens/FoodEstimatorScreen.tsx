@@ -20,6 +20,9 @@ import type { InsulinRegimen } from '../types';
 type Step = 'photo' | 'identify' | 'dosing';
 
 const PORTIONS = [0.25, 0.5, 0.75, 1, 1.25, 1.5, 2];
+const PORTION_LABELS: Record<number, string> = {
+  0.25: '¼', 0.5: '½', 0.75: '¾', 1: '1', 1.25: '1¼', 1.5: '1½', 2: '2',
+};
 
 export default function FoodEstimatorScreen({ route }: any) {
   const { patientId } = route.params;
@@ -112,11 +115,12 @@ export default function FoodEstimatorScreen({ route }: any) {
 
   // ─── Item editing ───
   const updateItemPortion = (index: number, portionMult: number) => {
-    if (!estimate) return;
     const newItems = [...items];
-    const originalItem = estimate.items[index];
-    const newGrams = Math.round(originalItem.portion_grams * portionMult);
-    newItems[index] = adjustItemPortion(originalItem, newGrams);
+    const item = newItems[index];
+    if (!item) return;
+    const baseGrams = item.matched_local_item?.typical_portion_g || item.portion_grams;
+    const newGrams = Math.round(baseGrams * portionMult);
+    newItems[index] = adjustItemPortion(item, newGrams);
     setItems(newItems);
     setTotals(recalculateTotals(newItems));
   };
@@ -155,6 +159,26 @@ export default function FoodEstimatorScreen({ route }: any) {
     setTotals(recalculateTotals(newItems));
     setSearchQuery('');
     setSearchResults([]);
+  };
+
+  // ─── Add a model suggestion as a real food item ───
+  const addModelSuggestion = (suggestion: ModelSuggestion) => {
+    const food = suggestion.item;
+    const newItem: FoodItem = {
+      food_name: food.name,
+      matched_local_item: food,
+      portion_desc: `${food.typical_portion_g}g`,
+      portion_grams: food.typical_portion_g,
+      carbs_g: food.carbs_g,
+      protein_g: food.protein_g,
+      fat_g: food.fat_g,
+      calories: food.calories,
+      confidence: suggestion.confidence > 0.7 ? 'high' : suggestion.confidence > 0.4 ? 'medium' : 'low',
+      source: 'on_device',
+    };
+    const newItems = [...items, newItem];
+    setItems(newItems);
+    setTotals(recalculateTotals(newItems));
   };
 
   // ─── Confirm & dose ───
@@ -273,6 +297,34 @@ export default function FoodEstimatorScreen({ route }: any) {
       <ScrollView style={s.container} contentContainerStyle={[s.content, { paddingTop: insets.top + 16, paddingBottom: insets.bottom + 40 }]}>
         <Text style={s.title}>🍽️ What foods are on this plate?</Text>
 
+        {modelLoading && (
+          <View style={s.modelLoadingRow}>
+            <ActivityIndicator size="small" color="#1a73e8" />
+            <Text style={s.modelLoadingText}>Analyzing photo…</Text>
+          </View>
+        )}
+        {modelError && (
+          <View style={s.modelErrorRow}><Text style={s.modelErrorText}>{modelError}</Text></View>
+        )}
+        {modelSuggestions.length > 0 && (
+          <View style={s.modelSuggestionsCard}>
+            <Text style={s.modelSuggestionsTitle}>Suggested foods from your photo</Text>
+            <Text style={s.modelSuggestionsSubtitle}>Tap a food to add it to the meal. Estimates are approximate — adjust the portion below.</Text>
+            <View style={s.modelChips}>
+              {modelSuggestions.map((sug, i) => (
+                <TouchableOpacity
+                  key={i}
+                  style={[s.modelChip, sug.confidence > 0.6 ? s.modelChipHigh : s.modelChipMed]}
+                  onPress={() => addModelSuggestion(sug)}
+                >
+                  <Text style={s.modelChipText}>{sug.foodName}</Text>
+                  <Text style={s.modelChipMeta}>{Math.round(sug.confidence * 100)}%</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </View>
+        )}
+
         {/* Per-item cards */}
         {items.map((item, idx) => (
           <View key={idx} style={[s.itemCard, item.confidence === 'low' && s.lowConfCard]}>
@@ -291,19 +343,25 @@ export default function FoodEstimatorScreen({ route }: any) {
             )}
 
             {/* Portion stepper */}
-            <Text style={s.portionLabel}>Portion: {item.portion_grams}g ({item.portion_desc})</Text>
+            <Text style={s.portionLabel}>Portion: {item.portion_grams}g</Text>
+            <Text style={s.portionHint}>¼ = quarter serving · 1 = full serving · 2 = double</Text>
             <View style={s.portionRow}>
-              {PORTIONS.map(p => (
-                <TouchableOpacity
-                  key={p}
-                  style={[s.portionChip, Math.abs(item.portion_grams / (item.portion_grams / 1) - p) < 0.01 ? s.portionActive : null]}
-                  onPress={() => updateItemPortion(idx, p)}
-                >
-                  <Text style={[s.portionChipText, Math.abs(item.portion_grams / (item.portion_grams / 1) - p) < 0.01 ? s.portionChipActiveText : null]}>
-                    {p === 1 ? '1×' : `${p}×`}
-                  </Text>
-                </TouchableOpacity>
-              ))}
+              {PORTIONS.map(p => {
+                const baseGrams = item.matched_local_item?.typical_portion_g || item.portion_grams;
+                const currentMult = baseGrams > 0 ? item.portion_grams / baseGrams : 1;
+                const active = Math.abs(currentMult - p) < 0.05;
+                return (
+                  <TouchableOpacity
+                    key={p}
+                    style={[s.portionChip, active ? s.portionActive : null]}
+                    onPress={() => updateItemPortion(idx, p)}
+                  >
+                    <Text style={[s.portionChipText, active ? s.portionChipActiveText : null]}>
+                      {PORTION_LABELS[p]}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
             </View>
 
             {/* Item macros */}
@@ -450,7 +508,8 @@ const s = StyleSheet.create({
   itemSource: { fontSize: 11, color: '#80868b', marginBottom: 8 },
   lowConfNote: { backgroundColor: '#fef7e0', borderRadius: 4, padding: 4, marginBottom: 6 },
   lowConfText: { fontSize: 10, color: '#e37400', fontWeight: '600' },
-  portionLabel: { fontSize: 12, fontWeight: '600', color: '#202124', marginBottom: 6 },
+  portionLabel: { fontSize: 12, fontWeight: '600', color: '#202124', marginBottom: 2 },
+  portionHint: { fontSize: 10, color: '#5f6368', marginBottom: 6, fontStyle: 'italic' },
   portionRow: { flexDirection: 'row', gap: 6, marginBottom: 10 },
   portionChip: { backgroundColor: '#e8eaed', borderRadius: 8, paddingHorizontal: 10, paddingVertical: 5 },
   portionActive: { backgroundColor: '#1a73e8' },
