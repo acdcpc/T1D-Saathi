@@ -4,6 +4,7 @@ import {
 } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { useAuth } from '../context/AuthContext';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useLanguage } from '../context/LanguageContext';
 import { supabase } from '../lib/supabase';
 import { safeInsert } from '../utils/offlineQueue';
@@ -24,11 +25,14 @@ export default function FoodEstimatorScreen({ route }: any) {
   const { patientId } = route.params;
   const { user } = useAuth();
   const { t } = useLanguage();
+  const insets = useSafeAreaInsets();
 
   const [step, setStep] = useState<Step>('photo');
   const [imageUri, setImageUri] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [regimen, setRegimen] = useState<InsulinRegimen | null>(null);
+  const [dosingSettings, setDosingSettings] = useState<any>(null);
+  const [notApproved, setNotApproved] = useState(false);
   const [currentGlucose, setCurrentGlucose] = useState('');
   const [plannedInsulin, setPlannedInsulin] = useState('');
 
@@ -50,10 +54,16 @@ export default function FoodEstimatorScreen({ route }: any) {
 
   useEffect(() => {
     (async () => {
-      const { data } = await supabase
-        .from('insulin_regimens').select('*')
-        .eq('patient_id', patientId).order('effective_date', { ascending: false }).limit(1).single();
-      setRegimen(data);
+      const [{ data: reg }, { data: ds }] = await Promise.all([
+        supabase
+          .from('insulin_regimens').select('*')
+          .eq('patient_id', patientId).order('effective_date', { ascending: false }).limit(1).single(),
+        supabase
+          .from('dosing_settings').select('*')
+          .eq('patient_id', patientId).maybeSingle(),
+      ]);
+      setRegimen(reg);
+      setDosingSettings(ds);
     })();
   }, [patientId]);
 
@@ -148,20 +158,10 @@ export default function FoodEstimatorScreen({ route }: any) {
   };
 
   // ─── Confirm & dose ───
-  const confirmAndCalculate = async () => {
+  const runCalculation = async (approved: boolean) => {
     const gVal = parseFloat(currentGlucose);
     const tddVal = regimen?.tdd || 40;
     const target = regimen?.correction_target || 120;
-
-    // Clinician gate — block calculation if regimen not reviewed
-    if (!regimen?.approved_by_clinician) {
-      Alert.alert(
-        'Clinician Review Required',
-        'ICR and ISF dosing values have not been reviewed by a clinician. Dose calculation is not available until a clinician approves the regimen settings.\n\nPlease contact your healthcare provider.',
-        [{ text: 'OK' }]
-      );
-      return;
-    }
 
     const dosing = calculateDosing(isNaN(gVal) ? target : gVal, totals.total_carbs_g, {
       tdd: tddVal,
@@ -213,13 +213,30 @@ export default function FoodEstimatorScreen({ route }: any) {
     const { online, error } = await safeInsert('meal_logs', confirmedData);
     if (error) console.error('save error:', error);
 
+    setNotApproved(!approved);
     setStep('dosing');
+  };
+
+  const confirmAndCalculate = () => {
+    const approved = dosingSettings?.approved_by_clinician === true;
+    if (!approved) {
+      Alert.alert(
+        'Starting dose — not clinician-approved',
+        'These doses are auto-calculated from Total Daily Dose using standard ISPAD rules (500/1800). They have not been reviewed by a clinician.\n\nContinue with the estimated dose?',
+        [
+          { text: 'Cancel', style: 'cancel' },
+          { text: 'Continue', onPress: () => runCalculation(false) },
+        ]
+      );
+      return;
+    }
+    runCalculation(true);
   };
 
   // ═══ RENDER: Step 1 — Photo ═══
   if (step === 'photo') {
     return (
-      <ScrollView style={s.container} contentContainerStyle={s.content}>
+      <ScrollView style={s.container} contentContainerStyle={[s.content, { paddingTop: insets.top + 16, paddingBottom: insets.bottom + 40 }]}>
         <Text style={s.title}>🍽️ Food Photo Estimator</Text>
         <Text style={s.hint}>Take a clear photo of the meal. For best results, center the plate and include the plate edge.</Text>
 
@@ -253,7 +270,7 @@ export default function FoodEstimatorScreen({ route }: any) {
   // ═══ RENDER: Step 2 — Identify foods from photo ═══
   if (step === 'identify') {
     return (
-      <ScrollView style={s.container} contentContainerStyle={s.content}>
+      <ScrollView style={s.container} contentContainerStyle={[s.content, { paddingTop: insets.top + 16, paddingBottom: insets.bottom + 40 }]}>
         <Text style={s.title}>🍽️ What foods are on this plate?</Text>
 
         {/* Per-item cards */}
@@ -346,7 +363,7 @@ export default function FoodEstimatorScreen({ route }: any) {
   // ═══ RENDER: Step 3 — Dosing Results ═══
   if (step === 'dosing' && dosingResult) {
     return (
-      <ScrollView style={s.container} contentContainerStyle={s.content}>
+      <ScrollView style={s.container} contentContainerStyle={[s.content, { paddingTop: insets.top + 16, paddingBottom: insets.bottom + 40 }]}>
         <Text style={s.title}>💉 Dosing Results</Text>
 
         <View style={s.resultCard}>
@@ -363,6 +380,13 @@ export default function FoodEstimatorScreen({ route }: any) {
           <View style={s.divider} />
           <View style={s.resultRow}><Text style={s.rLabelBold}>Total Suggested</Text><Text style={s.rTotal}>{dosingResult.totalDose} units</Text></View>
         </View>
+
+        {notApproved && (
+          <View style={s.warningCard}>
+            <Text style={s.warningTitle}>⚠️ Not clinician-approved</Text>
+            <Text style={s.warningText}>This dose is an auto-calculated starting estimate from TDD. Confirm with your clinician before relying on it.</Text>
+          </View>
+        )}
 
         {coverageCheck?.message && (
           <View style={s.warningCard}>

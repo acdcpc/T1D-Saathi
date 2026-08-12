@@ -4,6 +4,7 @@ import {
   ScrollView, Alert, ActivityIndicator,
 } from 'react-native';
 import { useAuth } from '../context/AuthContext';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Notifications from 'expo-notifications';
 import { useLanguage } from '../context/LanguageContext';
 import { supabase } from '../lib/supabase';
@@ -17,6 +18,7 @@ export default function SickDayWizardScreen({ route, navigation }: any) {
   const { patientId } = route.params;
   const { user } = useAuth();
   const { t } = useLanguage();
+  const insets = useSafeAreaInsets();
 
   const [step, setStep] = useState<WizardStep>('symptoms');
   const [glucose, setGlucose] = useState('');
@@ -156,7 +158,7 @@ export default function SickDayWizardScreen({ route, navigation }: any) {
   // Step 1: Symptoms
   if (step === 'symptoms') {
     return (
-      <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+      <ScrollView style={styles.container} contentContainerStyle={[styles.content, { paddingTop: insets.top + 16, paddingBottom: insets.bottom + 40 }]}>
         <View style={styles.stepIndicator}>
           <View style={styles.stepActive}><Text style={styles.stepNum}>1</Text></View>
           <View style={styles.stepLine} />
@@ -203,7 +205,7 @@ export default function SickDayWizardScreen({ route, navigation }: any) {
   // Step 2: Ketone Check
   if (step === 'ketone') {
     return (
-      <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+      <ScrollView style={styles.container} contentContainerStyle={[styles.content, { paddingTop: insets.top + 16, paddingBottom: insets.bottom + 40 }]}>
         <View style={styles.stepIndicator}>
           <View style={styles.stepDone}><Text style={styles.stepNum}>✓</Text></View>
           <View style={styles.stepLine} />
@@ -253,7 +255,7 @@ export default function SickDayWizardScreen({ route, navigation }: any) {
     : 0;
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+    <ScrollView style={styles.container} contentContainerStyle={[styles.content, { paddingTop: insets.top + 16, paddingBottom: insets.bottom + 40 }]}>
       <View style={styles.stepIndicator}>
         <View style={styles.stepDone}><Text style={styles.stepNum}>✓</Text></View>
         <View style={styles.stepLine} />
@@ -277,10 +279,16 @@ export default function SickDayWizardScreen({ route, navigation }: any) {
         <View style={styles.guidanceCard}>
           <Text style={styles.guidanceTitle}>{t('guidance')}</Text>
 
-          {/* Insulin Guidance */}
+          {/* Insulin Guidance — hypoglycemia always overrides any insulin increase */}
           <View style={styles.guidanceSection}>
             <Text style={styles.guidanceLabel}>💉 {t('supplementalInsulin')}</Text>
-            {matchedRule.supplemental_insulin_percent ? (
+            {glucoseVal < HYPO_THRESHOLD ? (
+              <View style={styles.hypoBox}>
+                <Text style={styles.hypoBoxTitle}>🛑 {t('hypoWarning')}</Text>
+                <Text style={styles.guidanceText}>{t('doNotIncreaseInsulin')}</Text>
+                <Text style={styles.guidanceText}>{t('treatHypoFirst')}</Text>
+              </View>
+            ) : matchedRule.supplemental_insulin_percent ? (
               <>
                 <Text style={styles.guidanceText}>{matchedRule.supplemental_insulin_percent > 0 ? 'Increase' : 'Reduce'} TDD by {Math.abs(matchedRule.supplemental_insulin_percent)}%</Text>
                 <Text style={styles.doseText}>
@@ -288,9 +296,7 @@ export default function SickDayWizardScreen({ route, navigation }: any) {
                 </Text>
               </>
             ) : (
-              <Text style={styles.guidanceText}>
-                {glucoseVal < HYPO_THRESHOLD ? t('hypoWarning') : t('noExtraInsulin')}
-              </Text>
+              <Text style={styles.guidanceText}>{t('noExtraInsulin')}</Text>
             )}
           </View>
 
@@ -393,6 +399,8 @@ const styles = StyleSheet.create({
   redFlagBox: { backgroundColor: '#fef7e0', borderRadius: 10, padding: 14, marginBottom: 14, borderWidth: 1, borderColor: '#f9ab00' },
   redFlagTitle: { fontSize: 15, fontWeight: '700', color: '#e37400', marginBottom: 6 },
   redFlagText: { fontSize: 13, color: '#5f6368', paddingVertical: 1 },
+  hypoBox: { backgroundColor: '#FEE2E2', borderRadius: 8, padding: 12, borderWidth: 1, borderColor: '#C0392B' },
+  hypoBoxTitle: { fontSize: 15, fontWeight: '800', color: '#C0392B', marginBottom: 4 },
   glucagonCard: { backgroundColor: '#fff', borderRadius: 10, padding: 14, marginBottom: 14, borderWidth: 1, borderColor: '#c6a9ff' },
   glucagonRow: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 6, borderBottomWidth: 1, borderBottomColor: '#e8eaed' },
   glucagonAge: { fontSize: 14, color: '#202124' },

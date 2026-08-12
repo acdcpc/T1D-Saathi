@@ -157,7 +157,7 @@ export default function LogGlucoseScreen({ route, navigation }: any) {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#F0F7FF' },
-  content: { padding: 20, paddingTop: 60 },
+  content: { padding: 20, paddingTop: 90, paddingBottom: 60 },
   centered: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   title: { fontSize: 24, fontWeight: '800', color: '#202124', marginBottom: 20 },
   label: { fontSize: 14, fontWeight: '600', color: '#202124', marginBottom: 6, marginTop: 14 },

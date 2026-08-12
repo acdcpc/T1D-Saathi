@@ -70,7 +70,7 @@ export default function MessagesScreen({ route }: any) {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#F0F7FF' },
-  title: { fontSize: 24, fontWeight: '800', color: '#202124', padding: 20, paddingTop: 60 },
+  title: { fontSize: 24, fontWeight: '800', color: '#202124', padding: 20, paddingTop: 90 },
   list: { padding: 16, flexGrow: 1 },
   empty: { textAlign: 'center', color: '#5f6368', fontSize: 14, marginTop: 40 },
   bubble: { maxWidth: '80%', borderRadius: 16, padding: 12, marginBottom: 8 },

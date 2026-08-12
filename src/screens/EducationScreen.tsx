@@ -42,7 +42,7 @@ export default function EducationScreen({ route, navigation }: any) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#F0F7FF', padding: 20, paddingTop: 60 },
+  container: { flex: 1, backgroundColor: '#F0F7FF', padding: 20, paddingTop: 90 },
   title: { fontSize: 24, fontWeight: '800', color: '#202124', marginBottom: 4 },
   subtitle: { fontSize: 14, color: '#5f6368', marginBottom: 20 },
   list: { paddingBottom: 20 },

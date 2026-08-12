@@ -99,7 +99,7 @@ export default function HealthCentersScreen({ route }: any) {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#F0F7FF' },
   centered: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  title: { fontSize: 24, fontWeight: '800', color: '#202124', padding: 20, paddingTop: 60 },
+  title: { fontSize: 24, fontWeight: '800', color: '#202124', padding: 20, paddingTop: 90 },
   viewToggle: { flexDirection: 'row', marginHorizontal: 20, marginBottom: 16 },
   toggleBtn: { flex: 1, padding: 10, alignItems: 'center', borderRadius: 8, backgroundColor: '#e8eaed' },
   toggleActive: { backgroundColor: '#1a73e8' },

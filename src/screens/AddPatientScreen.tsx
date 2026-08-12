@@ -4,6 +4,7 @@ import {
   Alert, ActivityIndicator, Modal, FlatList,
 } from 'react-native';
 import { useAuth } from '../context/AuthContext';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useLanguage } from '../context/LanguageContext';
 import { supabase } from '../lib/supabase';
 import BSDatePicker from '../components/BSDatePicker';
@@ -65,6 +66,7 @@ function Dropdown({ label, options, value, onChange, placeholder }: {
 export default function AddPatientScreen({ navigation }: any) {
   const { user } = useAuth();
   const { t } = useLanguage();
+  const insets = useSafeAreaInsets();
   const [loading, setLoading] = useState(false);
 
   const [name, setName] = useState('');
@@ -146,7 +148,7 @@ export default function AddPatientScreen({ navigation }: any) {
   };
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+    <ScrollView style={styles.container} contentContainerStyle={[styles.content, { paddingTop: insets.top + 16, paddingBottom: insets.bottom + 40 }]}>
       <Text style={styles.section}>{t('profileSetup')}</Text>
       <Text style={styles.label}>{t('childName')} *</Text>
       <TextInput style={styles.input} value={name} onChangeText={setName} placeholder="Full name" />

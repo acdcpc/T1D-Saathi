@@ -74,7 +74,7 @@ export default function HelplineScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#FFF5F5', padding: 20, paddingTop: 60 },
+  container: { flex: 1, backgroundColor: '#FFF5F5', padding: 20, paddingTop: 90 },
   centered: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   title: { fontSize: 28, fontWeight: '800', color: '#ea4335', marginBottom: 4 },
   subtitle: { fontSize: 15, color: '#5f6368', marginBottom: 24 },

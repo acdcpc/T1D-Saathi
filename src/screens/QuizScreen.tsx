@@ -69,7 +69,7 @@ export default function QuizScreen({ route, navigation }: any) {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#F0F7FF' },
-  content: { padding: 20, paddingTop: 60 },
+  content: { padding: 20, paddingTop: 90, paddingBottom: 60 },
   title: { fontSize: 24, fontWeight: '800', color: '#202124', marginBottom: 8 },
   progress: { fontSize: 14, color: '#5f6368', marginBottom: 20 },
   questionCard: { backgroundColor: '#fff', borderRadius: 12, padding: 18, borderWidth: 1, borderColor: '#e8eaed' },
