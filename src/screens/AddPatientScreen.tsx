@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView,
-  Alert, ActivityIndicator, Platform,
+  Alert, ActivityIndicator, Modal, FlatList,
 } from 'react-native';
 import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
@@ -12,6 +12,55 @@ import { T, input, section, primBtn } from '../theme';
 const COMORBID_OPTIONS = ['celiac', 'thyroid', 'downSyndrome'];
 const SEX_OPTIONS = ['male', 'female', 'other'] as const;
 const DELIVERY_OPTIONS = ['pen', 'syringe', 'pump'] as const;
+const INSULIN_TYPE_OPTIONS = [
+  'Rapid-acting', 'Short-acting', 'Intermediate-acting', 'Long-acting', 'Premixed',
+];
+const FREQUENCY_OPTIONS = [
+  'Once daily', 'Twice daily', 'Three times daily', 'Before each meal', 'Before meals + bedtime', 'Sliding scale',
+];
+
+// ISPAD dosing rule constants (rapid-acting insulin)
+const ISF_CONSTANT = 1800; // mg/dL per unit — "1800 rule"
+const ICR_CONSTANT = 500;  // grams carb per unit — "500 rule"
+
+/** Simple modal dropdown picker (matches the app's existing chip/picker style). */
+function Dropdown({ label, options, value, onChange, placeholder }: {
+  label: string; options: string[]; value: string; onChange: (v: string) => void; placeholder: string;
+}) {
+  const [open, setOpen] = useState(false);
+  return (
+    <View>
+      <Text style={styles.label}>{label}</Text>
+      <TouchableOpacity style={styles.dropdown} onPress={() => setOpen(true)}>
+        <Text style={value ? styles.dropdownText : styles.dropdownPlaceholder}>
+          {value || placeholder}
+        </Text>
+        <Text style={styles.dropdownIcon}>▾</Text>
+      </TouchableOpacity>
+      <Modal visible={open} transparent animationType="fade" onRequestClose={() => setOpen(false)}>
+        <TouchableOpacity style={styles.modalOverlay} activeOpacity={1} onPress={() => setOpen(false)}>
+          <View style={styles.dropdownModal}>
+            <Text style={styles.dropdownTitle}>{label}</Text>
+            <FlatList
+              data={options}
+              keyExtractor={(item) => item}
+              renderItem={({ item }) => (
+                <TouchableOpacity
+                  style={[styles.dropdownOption, value === item && styles.dropdownOptionActive]}
+                  onPress={() => { onChange(item); setOpen(false); }}
+                >
+                  <Text style={[styles.dropdownOptionText, value === item && styles.dropdownOptionActiveText]}>
+                    {item}
+                  </Text>
+                </TouchableOpacity>
+              )}
+            />
+          </View>
+        </TouchableOpacity>
+      </Modal>
+    </View>
+  );
+}
 
 export default function AddPatientScreen({ navigation }: any) {
   const { user } = useAuth();
@@ -30,8 +79,12 @@ export default function AddPatientScreen({ navigation }: any) {
   const [diagnosisDate, setDiagnosisDate] = useState('');
   const [dkaDesc, setDkaDesc] = useState('');
   const [tdd, setTdd] = useState('');
-  const [isf, setIsf] = useState('');
-  const [carbRatio, setCarbRatio] = useState('');
+
+  // ── Auto-calculated dosing (ISPAD rules) ──
+  const tddNum = parseFloat(tdd);
+  const tddValid = !Number.isNaN(tddNum) && tddNum > 0;
+  const autoIsf = tddValid ? Math.round((ISF_CONSTANT / tddNum) * 10) / 10 : null;
+  const autoIcr = tddValid ? Math.round((ICR_CONSTANT / tddNum) * 10) / 10 : null;
 
   const toggleComorbid = (c: string) => {
     setComorbid(prev => prev.includes(c) ? prev.filter(x => x !== c) : [...prev, c]);
@@ -41,6 +94,7 @@ export default function AddPatientScreen({ navigation }: any) {
     if (!user) return Alert.alert(t('error'), 'Not logged in');
     if (!name.trim()) return Alert.alert(t('error'), 'Name is required');
     if (!insulinType.trim()) return Alert.alert(t('error'), 'Insulin type is required');
+    if (!tddValid) return Alert.alert(t('error'), 'Please enter a valid Total Daily Dose (TDD)');
 
     setLoading(true);
     const patientData = {
@@ -52,38 +106,43 @@ export default function AddPatientScreen({ navigation }: any) {
       medications: medications.trim() || null,
       insulin_type: insulinType.trim(),
       insulin_dose: parseFloat(insulinDose) || 0,
-      insulin_frequency: insulinFreq.trim() || null,
+      insulin_frequency: insulinFreq || null,
       insulin_delivery: delivery,
       diagnosis_date: diagnosisDate || null,
       dka_history: dkaDesc.trim() ? [{ date: new Date().toISOString(), description: dkaDesc.trim() }] : null,
     };
 
     const { error } = await supabase.from('patients').insert(patientData);
-    setLoading(false);
-
     if (error) {
-      Alert.alert(t('error'), error.message);
-    } else {
-      // Also create insulin regimen entry
-      const { data: newPatient } = await supabase.from('patients')
-        .select('id').eq('user_id', user.id).order('created_at', { ascending: false }).limit(1).single();
-      if (newPatient) {
-        await supabase.from('insulin_regimens').insert({
-          patient_id: newPatient.id,
-          insulin_type: insulinType.trim(),
-          dose: parseFloat(insulinDose) || 0,
-          frequency: insulinFreq.trim() || 'daily',
-          delivery_method: delivery,
-          tdd: parseFloat(tdd) || null,
-          isf: parseFloat(isf) || null,
-          carb_ratio: parseFloat(carbRatio) || null,
-          effective_date: new Date().toISOString(),
-        });
-      }
-      Alert.alert(t('success'), 'Patient added', [
-        { text: 'OK', onPress: () => navigation.goBack() },
-      ]);
+      setLoading(false);
+      return Alert.alert(t('error'), error.message);
     }
+
+    // Fetch the just-created patient id and create the regimen with auto-calculated values
+    const { data: newPatient, error: fetchErr } = await supabase.from('patients')
+      .select('id').eq('user_id', user.id).order('created_at', { ascending: false }).limit(1).maybeSingle();
+
+    if (newPatient) {
+      const { error: regErr } = await supabase.from('insulin_regimens').insert({
+        patient_id: newPatient.id,
+        insulin_type: insulinType.trim(),
+        dose: parseFloat(insulinDose) || 0,
+        frequency: insulinFreq || 'daily',
+        delivery_method: delivery,
+        tdd: tddNum,
+        isf: autoIsf,          // auto-calculated: 1800 ÷ TDD
+        carb_ratio: autoIcr,   // auto-calculated: 500 ÷ TDD
+        effective_date: new Date().toISOString(),
+      });
+      if (regErr) console.warn('[AddPatient] regimen insert error:', regErr.message);
+    } else if (fetchErr) {
+      console.warn('[AddPatient] patient fetch error:', fetchErr.message);
+    }
+
+    setLoading(false);
+    Alert.alert(t('success'), 'Patient added', [
+      { text: 'OK', onPress: () => navigation.goBack() },
+    ]);
   };
 
   return (
@@ -114,14 +173,25 @@ export default function AddPatientScreen({ navigation }: any) {
       />
 
       <Text style={styles.section}>{t('insulinRegimen')}</Text>
-      <Text style={styles.label}>{t('insulinType')} *</Text>
-      <TextInput style={styles.input} value={insulinType} onChangeText={setInsulinType} placeholder="e.g. Rapid-acting + basal" />
+
+      <Dropdown
+        label={`${t('insulinType')} *`}
+        options={INSULIN_TYPE_OPTIONS}
+        value={insulinType}
+        onChange={setInsulinType}
+        placeholder="Select insulin type"
+      />
 
       <Text style={styles.label}>{t('insulinType')} {t('dose')}</Text>
       <TextInput style={styles.input} value={insulinDose} onChangeText={setInsulinDose} placeholder="Units" keyboardType="numeric" />
 
-      <Text style={styles.label}>{t('frequency')}</Text>
-      <TextInput style={styles.input} value={insulinFreq} onChangeText={setInsulinFreq} placeholder="e.g. Before meals + bedtime" />
+      <Dropdown
+        label={t('frequency')}
+        options={FREQUENCY_OPTIONS}
+        value={insulinFreq}
+        onChange={setInsulinFreq}
+        placeholder="Select frequency"
+      />
 
       <Text style={styles.label}>{t('deliveryMethod')}</Text>
       <View style={styles.chipRow}>
@@ -132,14 +202,32 @@ export default function AddPatientScreen({ navigation }: any) {
         ))}
       </View>
 
-      <Text style={styles.label}>{t('tdd')}</Text>
-      <TextInput style={styles.input} value={tdd} onChangeText={setTdd} placeholder="Total Daily Dose in units" keyboardType="numeric" />
+      <Text style={styles.label}>{t('tdd')} *</Text>
+      <TextInput
+        style={styles.input}
+        value={tdd}
+        onChangeText={setTdd}
+        placeholder="Total Daily Dose in units"
+        keyboardType="numeric"
+      />
 
-      <Text style={styles.label}>{t('isf')}</Text>
-      <TextInput style={styles.input} value={isf} onChangeText={setIsf} placeholder="e.g. 50 (mg/dL per unit)" keyboardType="numeric" />
-
-      <Text style={styles.label}>{t('carbRatio')}</Text>
-      <TextInput style={styles.input} value={carbRatio} onChangeText={setCarbRatio} placeholder="e.g. 10 (g carbs per unit)" keyboardType="numeric" />
+      {/* Auto-calculated dosing — read-only, derived from TDD */}
+      <View style={styles.autoCard}>
+        <Text style={styles.autoCardTitle}>Auto-calculated dosing (from TDD)</Text>
+        <View style={styles.autoRow}>
+          <View style={styles.autoField}>
+            <Text style={styles.autoLabel}>{t('isf')} — insulin sensitivity factor</Text>
+            <Text style={styles.autoValue}>{autoIsf != null ? `${autoIsf} mg/dL/unit` : '—'}</Text>
+            <Text style={styles.autoFormula}>1800 ÷ TDD</Text>
+          </View>
+          <View style={styles.autoField}>
+            <Text style={styles.autoLabel}>{t('carbRatio')} — insulin-to-carb ratio</Text>
+            <Text style={styles.autoValue}>{autoIcr != null ? `1 : ${autoIcr} g` : '—'}</Text>
+            <Text style={styles.autoFormula}>500 ÷ TDD</Text>
+          </View>
+        </View>
+        <Text style={styles.autoNote}>These are starting estimates. Your clinician should review and approve them.</Text>
+      </View>
 
       <Text style={styles.section}>{t('comorbidConditions')}</Text>
       <View style={styles.chipRow}>
@@ -179,6 +267,30 @@ const styles = StyleSheet.create({
   chipText: { fontSize: 14, color: T.muted },
   chipTextActive: { color: '#fff' },
   chipTextWarn: { color: '#fff' },
+
+  // Dropdown
+  dropdown: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', backgroundColor: T.surface, borderRadius: 10, padding: 14, borderWidth: 1, borderColor: T.border },
+  dropdownText: { fontSize: 15, color: T.text },
+  dropdownPlaceholder: { fontSize: 15, color: T.muted },
+  dropdownIcon: { fontSize: 16, color: T.muted },
+  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'flex-end' },
+  dropdownModal: { backgroundColor: '#fff', borderTopLeftRadius: 20, borderTopRightRadius: 20, padding: 20, maxHeight: '70%' },
+  dropdownTitle: { fontSize: 16, fontWeight: '700', color: T.text, textAlign: 'center', marginBottom: 12 },
+  dropdownOption: { padding: 14, borderRadius: 8, marginVertical: 2 },
+  dropdownOptionActive: { backgroundColor: T.blueLight },
+  dropdownOptionText: { fontSize: 15, color: T.text },
+  dropdownOptionActiveText: { color: T.blue, fontWeight: '700' },
+
+  // Auto-calculated dosing card
+  autoCard: { backgroundColor: T.blueLight, borderRadius: 12, padding: 14, marginTop: 12, borderWidth: 1, borderColor: '#BBD7F0' },
+  autoCardTitle: { fontSize: 13, fontWeight: '700', color: T.blueDark, marginBottom: 10 },
+  autoRow: { flexDirection: 'row', gap: 12 },
+  autoField: { flex: 1, backgroundColor: '#fff', borderRadius: 8, padding: 10 },
+  autoLabel: { fontSize: 11, color: T.muted, marginBottom: 4 },
+  autoValue: { fontSize: 17, fontWeight: '800', color: T.text },
+  autoFormula: { fontSize: 11, color: T.blue, marginTop: 3 },
+  autoNote: { fontSize: 11, color: T.muted, marginTop: 10, fontStyle: 'italic' },
+
   saveBtn: { ...primBtn, marginTop: 30 },
   saveText: { color: '#fff', fontSize: 16, fontWeight: '600' },
 });
