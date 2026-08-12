@@ -18,6 +18,7 @@ export default function HomeScreen({ navigation }: any) {
   const [loading, setLoading] = useState(true);
   const [pendingSync, setPendingSync] = useState(0);
   const [conflictedCount, setConflictedCount] = useState(0);
+  const [lastSynced, setLastSynced] = useState<Date | null>(null);
 
   const fetchPatients = useCallback(async () => {
     if (!user) return;
@@ -28,7 +29,7 @@ export default function HomeScreen({ navigation }: any) {
       .eq('user_id', user.id)
       .order('created_at', { ascending: false });
     if (error) console.error('fetch error:', error);
-    else setPatients(data || []);
+    else { setPatients(data || []); setLastSynced(new Date()); }
     setLoading(false);
   }, [user]);
 
@@ -47,6 +48,13 @@ export default function HomeScreen({ navigation }: any) {
     return () => clearInterval(timer);
   }, []);
   const onRefresh = async () => { setRefreshing(true); await fetchPatients(); setRefreshing(false); };
+
+  const hour = new Date().getHours();
+  const greeting = hour < 12
+    ? (isNe ? 'शुभ प्रभात' : 'Good morning')
+    : hour < 17
+      ? (isNe ? 'शुभ दिन' : 'Good afternoon')
+      : (isNe ? 'शुभ साँझ' : 'Good evening');
 
   const renderPatient = ({ item }: { item: PatientProfile }) => (
     <TouchableOpacity
@@ -77,7 +85,9 @@ export default function HomeScreen({ navigation }: any) {
       <View style={styles.headerRow}>
         <View style={styles.headerLeft}>
           <Text style={styles.headerTitle}>T1D साथी</Text>
-          <Text style={styles.headerSubtitle}>T1D Saathi</Text>
+          <Text style={styles.headerSubtitle}>
+            {greeting} · T1D Saathi
+          </Text>
         </View>
         <View style={styles.headerRight}>
           {(pendingSync > 0 || conflictedCount > 0) && (
@@ -93,6 +103,12 @@ export default function HomeScreen({ navigation }: any) {
           </TouchableOpacity>
         </View>
       </View>
+
+      <Text style={styles.lastSync}>
+        {lastSynced
+          ? (isNe ? 'अन्तिम सिंक: ' : 'Last synced: ') + lastSynced.toLocaleTimeString()
+          : (isNe ? 'सिंक हुँदै…' : 'Syncing…')}
+      </Text>
 
       {loading ? (
         <ActivityIndicator size="large" color={T.blue} style={styles.loader} />
@@ -183,6 +199,7 @@ const styles = StyleSheet.create({
     borderWidth: 1, borderColor: T.border,
   },
   syncBadgeText: { fontSize: 12, fontWeight: '700' },
+  lastSync: { fontSize: 11, color: T.muted, paddingHorizontal: 20, marginTop: 2, fontStyle: 'italic' },
 
   loader: { flex: 1 },
 

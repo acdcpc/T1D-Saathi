@@ -6,6 +6,8 @@ import {
 import { useAuth } from '../context/AuthContext';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Notifications from 'expo-notifications';
+import * as Haptics from 'expo-haptics';
+import ISPADBadge from '../components/ISPADBadge';
 import { useLanguage } from '../context/LanguageContext';
 import { supabase } from '../lib/supabase';
 import { safeInsert } from '../utils/offlineQueue';
@@ -167,6 +169,7 @@ export default function SickDayWizardScreen({ route, navigation }: any) {
           <View style={styles.stepInactive}><Text style={styles.stepNumInactive}>3</Text></View>
         </View>
         <Text style={styles.title}>{t('symptomCheck')}</Text>
+        <ISPADBadge />
 
         {vomiting && (
           <View style={styles.nauseaWarning}>

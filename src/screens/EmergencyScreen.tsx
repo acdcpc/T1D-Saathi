@@ -1,6 +1,8 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Linking } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import * as Haptics from 'expo-haptics';
+import ISPADBadge from '../components/ISPADBadge';
 import { useLanguage } from '../context/LanguageContext';
 import { T, card, section } from '../theme';
 
@@ -10,7 +12,10 @@ export default function EmergencyScreen({ navigation }: any) {
   const { language } = useLanguage();
   const isNe = language === 'ne';
 
-  const callHelpline = () => Linking.openURL(`tel:${HELPLINE}`);
+  const callHelpline = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
+    Linking.openURL(`tel:${HELPLINE}`);
+  };
 
   const protocols = [
     {
@@ -68,6 +73,7 @@ export default function EmergencyScreen({ navigation }: any) {
           <Text style={styles.callSub}>{isNe ? 'डा. अर्चना — २४/७ हेल्पलाइन' : 'Dr. Archana — 24/7 Helpline'}</Text>
         </View>
 
+        <ISPADBadge />
         <Text style={styles.sectionLabel}>{isNe ? 'आपतकालीन प्रोटोकलहरू' : 'Emergency Protocols'}</Text>
 
         {protocols.map((p, i) => (

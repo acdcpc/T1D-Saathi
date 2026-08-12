@@ -69,8 +69,18 @@ export default function SettingsScreen({ navigation }: any) {
           <Text style={styles.logoutText}>{isNe ? 'लग आउट' : 'Log Out'}</Text>
         </TouchableOpacity>
 
+        <View style={styles.disclaimerCard}>
+          <Text style={styles.disclaimerTitle}>⚠️ {isNe ? 'महत्वपूर्ण' : 'Important'}</Text>
+          <Text style={styles.disclaimerText}>
+            {isNe
+              ? 'T1D साथी चिकित्सकीय उपकरण होइन। सबै डोज सिफारिसहरू परामर्शमात्र हुन् र चिकित्सकले पुष्टि गर्नुपर्छ।'
+              : 'T1D Saathi is not a medical device. All dosing recommendations are advisory and require clinician verification.'}
+          </Text>
+        </View>
+
         <Text style={styles.version}>v1.0.0 · T1D Saathi</Text>
         <Text style={styles.credit}>© 2026 · {isNe ? 'नेपाली परिवारहरूको लागि ♥ सहित' : 'Built with ♥ for Nepali families'}</Text>
+        <Text style={styles.madeIn}>🇳🇵 {isNe ? 'नेपालमा निर्मित' : 'Made in Nepal'}</Text>
       </ScrollView>
     </SafeAreaView>
   );
@@ -109,4 +119,11 @@ const styles = StyleSheet.create({
 
   version: { textAlign: 'center', color: T.muted, fontSize: 12, marginTop: 32 },
   credit: { textAlign: 'center', color: T.muted, fontSize: 12, marginTop: 4 },
+  madeIn: { textAlign: 'center', color: T.muted, fontSize: 12, marginTop: 4, fontWeight: '600' },
+  disclaimerCard: {
+    backgroundColor: T.amberLight, borderRadius: 12, padding: 14,
+    borderWidth: 1, borderColor: T.orange, marginTop: 24,
+  },
+  disclaimerTitle: { fontSize: 14, fontWeight: '700', color: T.amberDark, marginBottom: 4 },
+  disclaimerText: { fontSize: 13, color: T.text, lineHeight: 18 },
 });

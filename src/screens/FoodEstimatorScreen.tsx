@@ -3,6 +3,8 @@ import {
   View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Alert, ActivityIndicator, Image,
 } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
+import * as Haptics from 'expo-haptics';
+import ISPADBadge from '../components/ISPADBadge';
 import { useAuth } from '../context/AuthContext';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useLanguage } from '../context/LanguageContext';
@@ -239,11 +241,13 @@ export default function FoodEstimatorScreen({ route }: any) {
 
     setNotApproved(!approved);
     setStep('dosing');
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
   };
 
   const confirmAndCalculate = () => {
     const approved = dosingSettings?.approved_by_clinician === true;
     if (!approved) {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
       Alert.alert(
         'Starting dose — not clinician-approved',
         'These doses are auto-calculated from Total Daily Dose using standard ISPAD rules (500/1800). They have not been reviewed by a clinician.\n\nContinue with the estimated dose?',
@@ -296,6 +300,7 @@ export default function FoodEstimatorScreen({ route }: any) {
     return (
       <ScrollView style={s.container} contentContainerStyle={[s.content, { paddingTop: insets.top + 16, paddingBottom: insets.bottom + 40 }]}>
         <Text style={s.title}>🍽️ What foods are on this plate?</Text>
+        <ISPADBadge />
 
         {modelLoading && (
           <View style={s.modelLoadingRow}>
@@ -423,6 +428,7 @@ export default function FoodEstimatorScreen({ route }: any) {
     return (
       <ScrollView style={s.container} contentContainerStyle={[s.content, { paddingTop: insets.top + 16, paddingBottom: insets.bottom + 40 }]}>
         <Text style={s.title}>💉 Dosing Results</Text>
+        <ISPADBadge />
 
         <View style={s.resultCard}>
           <Text style={s.resultSection}>Your Settings</Text>

@@ -4,6 +4,18 @@
 
 module.exports = ({ config }) => ({
   ...config,
+  plugins: [
+    ...(config.plugins || []),
+    'expo-font',
+    [
+      'expo-splash-screen',
+      {
+        backgroundColor: '#F7F1EB',
+        image: './assets/splash-icon.png',
+        imageWidth: 200,
+      },
+    ],
+  ],
   extra: {
     ...config.extra,
     supabaseUrl: process.env.EXPO_PUBLIC_SUPABASE_URL || '',

@@ -6,6 +6,9 @@ import { useLanguage } from '../context/LanguageContext';
 import { supabase } from '../lib/supabase';
 import { HYPO_THRESHOLD } from '../rules/sickDayRules';
 import { toBSDateTimeDisplay } from '../utils/bsDateDisplay';
+import { computeGlucoseStats } from '../utils/glucoseStats';
+import ISPADBadge from '../components/ISPADBadge';
+import GlucoseTrendChart from '../components/GlucoseTrendChart';
 import { T, card, section, avatar } from '../theme';
 import type { PatientProfile, GlucoseLog, SickDayEpisode } from '../types';
 
@@ -14,15 +17,19 @@ export default function PatientDashboard({ route, navigation }: any) {
   const { t, language } = useLanguage();
   const isNe = language === 'ne';
   const [latestGlucose, setLatestGlucose] = useState<GlucoseLog | null>(null);
+  const [history, setHistory] = useState<GlucoseLog[]>([]);
   const [activeSickDay, setActiveSickDay] = useState<SickDayEpisode | null>(null);
   const [refreshing, setRefreshing] = useState(false);
 
   const fetchData = useCallback(async () => {
-    const [{ data: glucose }, { data: sickDay }] = await Promise.all([
+    const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
+    const [{ data: latest }, { data: logs }, { data: sickDay }] = await Promise.all([
       supabase.from('glucose_logs').select('*').eq('patient_id', patient.id).order('timestamp', { ascending: false }).limit(1),
+      supabase.from('glucose_logs').select('*').eq('patient_id', patient.id).gte('timestamp', thirtyDaysAgo).order('timestamp', { ascending: true }),
       supabase.from('sick_day_episodes').select('*').eq('patient_id', patient.id).is('end_date', null).order('start_date', { ascending: false }).limit(1),
     ]);
-    setLatestGlucose(glucose?.[0] || null);
+    setLatestGlucose(latest?.[0] || null);
+    setHistory(logs || []);
     setActiveSickDay(sickDay?.[0] || null);
   }, [patient.id]);
 
@@ -30,6 +37,7 @@ export default function PatientDashboard({ route, navigation }: any) {
   const onRefresh = async () => { setRefreshing(true); await fetchData(); setRefreshing(false); };
 
   const isHypo = latestGlucose && latestGlucose.value < HYPO_THRESHOLD;
+  const stats = computeGlucoseStats(history);
 
   const actions = [
     { icon: '🩸', label: isNe ? 'ग्लुकोज' : 'Log Glucose', route: 'LogGlucose', border: T.border },
@@ -49,12 +57,10 @@ export default function PatientDashboard({ route, navigation }: any) {
         contentContainerStyle={styles.content}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={T.blue} />}
       >
-        {/* Avatar header — Kapoori Ka ChildDashboard pattern */}
+        {/* Avatar header */}
         <View style={styles.profileHeader}>
           <View style={styles.profileAv}>
-            <Text style={styles.profileAvText}>
-              {patient.name[0]?.toUpperCase()}
-            </Text>
+            <Text style={styles.profileAvText}>{patient.name[0]?.toUpperCase()}</Text>
           </View>
           <View style={styles.profileInfo}>
             <Text style={styles.name}>{patient.name}</Text>
@@ -104,10 +110,33 @@ export default function PatientDashboard({ route, navigation }: any) {
           </TouchableOpacity>
         )}
 
-        {/* Action grid — Kapoori Ka pattern */}
-        <Text style={styles.sectionLabel}>
-          {isNe ? 'द्रुत कार्यहरू' : t('quickLog')}
-        </Text>
+        {/* 30-day trends + HbA1c */}
+        {history.length >= 2 && (
+          <View style={styles.trendCard}>
+            <Text style={styles.cardLabel}>{isNe ? 'पछिल्लो ३० दिनको तथ्यांक' : 'Last 30 days'}</Text>
+            <View style={styles.statRow}>
+              <View style={styles.statTile}>
+                <Text style={styles.statValue}>{stats.timeInRangePct}%</Text>
+                <Text style={styles.statLabel}>{isNe ? 'समय दायरामा (TIR)' : 'Time in Range'}</Text>
+              </View>
+              <View style={styles.statTile}>
+                <Text style={styles.statValue}>{stats.meanMgdl}</Text>
+                <Text style={styles.statLabel}>{isNe ? 'औसत mg/dL' : 'Mean mg/dL'}</Text>
+              </View>
+              <View style={styles.statTile}>
+                <Text style={styles.statValue}>{stats.eA1c}%</Text>
+                <Text style={styles.statLabel}>{isNe ? 'अनुमानित HbA1c' : 'Est. HbA1c'}</Text>
+              </View>
+            </View>
+            <GlucoseTrendChart logs={history} />
+            <Text style={styles.provenance}>
+              {isNe ? 'गणना: ISPAD 2022 दिशानिर्देश अनुसार' : 'Calculated per ISPAD 2022 target range (70–180 mg/dL)'}
+            </Text>
+          </View>
+        )}
+
+        {/* Action grid */}
+        <Text style={styles.sectionLabel}>{isNe ? 'द्रुत कार्यहरू' : t('quickLog')}</Text>
         <View style={styles.actionGrid}>
           {actions.map((a, i) => (
             <TouchableOpacity
@@ -122,6 +151,7 @@ export default function PatientDashboard({ route, navigation }: any) {
           ))}
         </View>
 
+        <ISPADBadge />
         <View style={{ height: 60 }} />
       </ScrollView>
     </SafeAreaView>
@@ -132,21 +162,13 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: T.bg },
   content: { padding: 16, paddingTop: 10 },
 
-  // Profile header — Kapoori Ka pattern
   profileHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 20 },
-  profileAv: {
-    ...avatar,
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    backgroundColor: T.blueLight,
-  },
+  profileAv: { ...avatar, width: 56, height: 56, borderRadius: 28, backgroundColor: T.blueLight },
   profileAvText: { fontSize: 26, fontWeight: '700', color: T.blue },
   profileInfo: { flex: 1 },
   name: { fontSize: 22, fontWeight: '800', color: T.text },
   subtitle: { fontSize: 14, color: T.muted, marginTop: 2 },
 
-  // Glucose card
   glucoseCard: { ...card },
   hypoCard: { backgroundColor: T.redLight, borderWidth: 2, borderColor: T.red },
   cardLabel: { ...section, marginTop: 0, marginBottom: 6 },
@@ -156,17 +178,21 @@ const styles = StyleSheet.create({
   timestamp: { fontSize: 12, color: T.muted, marginTop: 4 },
   noData: { fontSize: 15, color: T.muted, fontStyle: 'italic' },
 
-  // Hypo alert
   hypoAlert: { backgroundColor: T.redLight, borderRadius: 12, padding: 16, marginBottom: 16, borderWidth: 2, borderColor: T.red },
   hypoAlertTitle: { fontSize: 16, fontWeight: '700', color: T.redDark, marginBottom: 8 },
   hypoStep: { fontSize: 13, color: T.text, paddingVertical: 2, paddingLeft: 4, lineHeight: 20 },
 
-  // Sick banner
   sickBanner: { ...card, borderWidth: 1, borderColor: T.orange },
   sickBannerTitle: { fontSize: 15, fontWeight: '700', color: T.amberDark },
   sickBannerSub: { fontSize: 13, color: T.muted, marginTop: 2 },
 
-  // Action grid
+  trendCard: { ...card },
+  statRow: { flexDirection: 'row', gap: 8, marginBottom: 8 },
+  statTile: { flex: 1, backgroundColor: T.blueLight, borderRadius: 12, paddingVertical: 12, alignItems: 'center' },
+  statValue: { fontSize: 20, fontWeight: '800', color: T.blueDark },
+  statLabel: { fontSize: 10, color: T.blueDark, marginTop: 2, textAlign: 'center', fontWeight: '600' },
+  provenance: { fontSize: 10, color: T.muted, textAlign: 'center', marginTop: 2, fontStyle: 'italic' },
+
   sectionLabel: { ...section, paddingHorizontal: 4 },
   actionGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
   actionCard: {

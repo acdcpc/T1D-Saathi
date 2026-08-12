@@ -3,6 +3,8 @@ import {
   View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Alert, ActivityIndicator,
 } from 'react-native';
 import * as Notifications from 'expo-notifications';
+import * as Haptics from 'expo-haptics';
+import ISPADBadge from '../components/ISPADBadge';
 import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
 import { supabase } from '../lib/supabase';
@@ -74,6 +76,7 @@ export default function LogGlucoseScreen({ route, navigation }: any) {
       setIsHypo(true);
       setResult(null);
       scheduleHypoReminder();
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
     } else if (regimen) {
       const targetGlucose = regimen.correction_target || 120;
       const tddVal = regimen.tdd || 40;
@@ -85,7 +88,7 @@ export default function LogGlucoseScreen({ route, navigation }: any) {
       setIsHypo(false);
     }
 
-    const syncMsg = online ? '' : ' (saved offline)'; Alert.alert('✅', `Glucose logged: ${gVal} ${unit === 'mgdl' ? 'mg/dL' : 'mmol/L'}${syncMsg}`);
+    const syncMsg = online ? '' : ' (saved offline)'; Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success); Alert.alert('✅', `Glucose logged: ${gVal} ${unit === 'mgdl' ? 'mg/dL' : 'mmol/L'}${syncMsg}`);
   };
 
   if (loading) return <View style={styles.centered}><ActivityIndicator size="large" color="#1a73e8" /></View>;
@@ -93,6 +96,7 @@ export default function LogGlucoseScreen({ route, navigation }: any) {
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
       <Text style={styles.title}>{t('logGlucose')}</Text>
+      <ISPADBadge />
 
       <Text style={styles.label}>{t('currentGlucose')}</Text>
       <View style={styles.glucoseRow}>

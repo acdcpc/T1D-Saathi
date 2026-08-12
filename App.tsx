@@ -6,6 +6,7 @@ import { AuthProvider, useAuth } from './src/context/AuthContext';
 import { LanguageProvider } from './src/context/LanguageContext';
 import { useNetworkSync } from './src/utils/useNetworkSync';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { useAppFonts } from './src/lib/fonts';
 
 import LoginScreen from './src/screens/LoginScreen';
 import HomeScreen from './src/screens/HomeScreen';
@@ -20,6 +21,7 @@ import EducationScreen from './src/screens/EducationScreen';
 import QuizScreen from './src/screens/QuizScreen';
 import MessagesScreen from './src/screens/MessagesScreen';
 import EmergencyScreen from './src/screens/EmergencyScreen';
+import ErrorBoundary from './src/components/ErrorBoundary';
 import SettingsScreen from './src/screens/SettingsScreen';
 import RegimenSettingsScreen from './src/screens/RegimenSettingsScreen';
 import ClinicianPatientListScreen from './src/screens/ClinicianPatientListScreen';
@@ -82,16 +84,19 @@ function AppNavigator() {
 }
 
 export default function App() {
+  useAppFonts();
   return (
     <SafeAreaProvider>
       <LanguageProvider>
         <AuthProvider>
-          <View style={{ flex: 1 }}>
-            <NavigationContainer ref={navigationRef}>
-              <AppNavigator />
-            </NavigationContainer>
-            <EmergencyFab />
-          </View>
+          <ErrorBoundary>
+            <View style={{ flex: 1 }}>
+              <NavigationContainer ref={navigationRef}>
+                <AppNavigator />
+              </NavigationContainer>
+              <EmergencyFab />
+            </View>
+          </ErrorBoundary>
         </AuthProvider>
       </LanguageProvider>
     </SafeAreaProvider>

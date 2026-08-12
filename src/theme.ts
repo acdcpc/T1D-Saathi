@@ -53,9 +53,18 @@ export const pill = (bg: string, fg: string) => ({
   alignSelf: 'flex-start' as const,
 });
 
+export const FONT = {
+  regular: 'Mukta_400Regular',
+  medium: 'Mukta_500Medium',
+  semibold: 'Mukta_600SemiBold',
+  bold: 'Mukta_700Bold',
+  extrabold: 'Mukta_800ExtraBold',
+};
+
 export const section = {
   fontSize: 11,
   fontWeight: '700' as const,
+  fontFamily: FONT.bold,
   letterSpacing: 1.2,
   color: T.muted,
   textTransform: 'uppercase' as const,
