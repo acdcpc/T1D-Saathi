@@ -22,17 +22,58 @@ export default function LoginScreen({ navigation }: any) {
       return;
     }
     setLoading(true);
-    const { error } = isSignup
-      ? await signUp(email.trim(), password)
-      : await signIn(email.trim(), password);
-    setLoading(false);
-    if (error) Alert.alert(isNe ? 'त्रुटि' : 'Error', error.message);
+    try {
+      if (isSignup) {
+        const { data, error } = await signUp(email.trim(), password);
+        if (error) {
+          Alert.alert(isNe ? 'त्रुटि' : 'Error', error.message);
+        } else if (!data?.session) {
+          // Email confirmation is enabled → user must verify before signing in
+          Alert.alert(
+            isNe ? 'इमेल जाँच गर्नुहोस्' : 'Check your email',
+            isNe
+              ? 'तपाईंको इमेलमा पुष्टि लिङ्क पठाइएको छ। पुष्टि गरेपछि लग इन गर्नुहोस्।'
+              : 'A confirmation link has been sent to your email. Please verify, then log in.',
+          );
+        }
+        // If data.session exists → AuthContext already set the user → auto-navigation
+      } else {
+        const { error } = await signIn(email.trim(), password);
+        if (error) {
+          const msg = error.message || '';
+          const friendly = msg.includes('Invalid login credentials')
+            ? (isNe ? 'इमेल वा पासवर्ड गलत छ।' : 'Incorrect email or password.')
+            : msg;
+          Alert.alert(isNe ? 'त्रुटि' : 'Error', friendly);
+        }
+      }
+    } catch (e: any) {
+      Alert.alert(isNe ? 'त्रुटि' : 'Error', e?.message || 'Something went wrong');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleGuest = async () => {
     setLoading(true);
-    await signInAsGuest();
-    setLoading(false);
+    try {
+      await signInAsGuest();
+    } catch (e: any) {
+      Alert.alert(isNe ? 'त्रुटि' : 'Error', e?.message || 'Guest sign-in failed');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleGoogle = async () => {
+    setLoading(true);
+    try {
+      await signInWithGoogle();
+    } catch (e: any) {
+      Alert.alert(isNe ? 'त्रुटि' : 'Error', e?.message || 'Google sign-in failed');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -84,7 +125,7 @@ export default function LoginScreen({ navigation }: any) {
             <Text style={styles.orText}>OR</Text>
             <View style={styles.line} />
           </View>
-          <TouchableOpacity style={styles.outlineBtn} onPress={signInWithGoogle}>
+          <TouchableOpacity style={styles.outlineBtn} onPress={handleGoogle} disabled={loading}>
             <Text style={styles.outlineBtnText}>G  {isNe ? 'गुगलबाट लग इन' : 'Continue with Google'}</Text>
           </TouchableOpacity>
           <TouchableOpacity style={styles.guestBtn} onPress={handleGuest} disabled={loading}>
