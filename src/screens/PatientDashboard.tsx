@@ -89,7 +89,7 @@ export default function PatientDashboard({ route, navigation }: any) {
               </Text>
               <Text style={styles.timestamp}>{toBSDateTimeDisplay(latestGlucose.timestamp)}</Text>
               {iob > 0 && (
-                <Text style={styles.iobText}>💉 {isNe ? 'सक्रिय इन्सुलिन' : 'Active insulin'}: {iob} U</Text>
+                <Text style={styles.iobText}>{isNe ? 'सक्रिय इन्सुलिन' : 'Active insulin'}: {iob} U</Text>
               )}
             </View>
           ) : (
@@ -100,7 +100,7 @@ export default function PatientDashboard({ route, navigation }: any) {
         {/* Hypo alert */}
         {isHypo && (
           <View style={styles.hypoAlert}>
-            <Text style={styles.hypoAlertTitle}>⚠️ {isNe ? 'हाइपोग्लाइसेमिया' : 'Hypoglycemia Alert'}</Text>
+            <Text style={styles.hypoAlertTitle}>{isNe ? 'हाइपोग्लाइसेमिया' : 'Hypoglycemia Alert'}</Text>
             <Text style={styles.hypoStep}>1. {isNe ? '१५ ग्राम चिनी वा ग्लुकोज खानुहोस्' : 'Take 15g fast-acting glucose'}</Text>
             <Text style={styles.hypoStep}>2. {isNe ? '१५ मिनेट पर्खनुहोस्' : 'Wait 15 minutes'}</Text>
             <Text style={styles.hypoStep}>3. {isNe ? 'पुन: जाँच गर्नुहोस्' : 'Recheck glucose'}</Text>
@@ -112,7 +112,7 @@ export default function PatientDashboard({ route, navigation }: any) {
         {activeSickDay && (
           <TouchableOpacity style={styles.sickBanner} onPress={() => navigation.navigate('SickDayWizard', { patientId: patient.id })}>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-              <Text style={{ fontSize: 20, fontFamily: FONT.regular }}>🤒</Text>
+              <Ionicons name="thermometer-outline" size={20} color={T.red} />
               <View>
                 <Text style={styles.sickBannerTitle}>{isNe ? 'सक्रिय बिमारी दिन' : 'Active Sick Day'}</Text>
                 <Text style={styles.sickBannerSub}>{isNe ? 'निगरानी जारी छ · थिच्नुहोस्' : 'Monitoring in progress · Tap to continue'} ›</Text>

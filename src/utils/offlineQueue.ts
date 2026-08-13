@@ -17,7 +17,7 @@ const QUEUE_KEY = '@t1d_offline_queue';
 const LAST_SYNC_KEY = '@t1d_last_sync';
 const MAX_RETRIES = 5;
 
-interface QueuedEntry {
+export interface QueuedEntry {
   id: string;
   table: 'glucose_logs' | 'ketone_logs' | 'meal_logs' | 'sick_day_episodes';
   payload: Record<string, any>;
@@ -154,6 +154,23 @@ export async function syncOfflineQueue(): Promise<{ synced: number; failed: numb
 export async function getConflictedEntries(): Promise<QueuedEntry[]> {
   const queue = await getQueue();
   return queue.filter(e => e.conflicted);
+}
+
+/** Mark a conflicted entry for retry (resets retry counter and conflicted flag). */
+export async function retryConflictedEntry(id: string): Promise<void> {
+  const queue = await getQueue();
+  const idx = queue.findIndex((e) => e.id === id);
+  if (idx >= 0) {
+    queue[idx] = { ...queue[idx], conflicted: false, retries: 0, conflict_reason: undefined };
+    await AsyncStorage.setItem(QUEUE_KEY, JSON.stringify(queue));
+  }
+}
+
+/** Permanently remove a conflicted entry (explicit user action). */
+export async function discardConflictedEntry(id: string): Promise<void> {
+  const queue = await getQueue();
+  const next = queue.filter((e) => e.id !== id);
+  await AsyncStorage.setItem(QUEUE_KEY, JSON.stringify(next));
 }
 
 /**

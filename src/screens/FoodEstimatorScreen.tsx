@@ -276,7 +276,7 @@ export default function FoodEstimatorScreen({ route }: any) {
 
         <View style={s.row}>
           <TouchableOpacity style={s.primaryBtn} onPress={takePhoto}>
-            <Text style={s.primaryText}>📸 Take Photo</Text>
+            <Text style={s.primaryText}>Take Photo</Text>
           </TouchableOpacity>
           <TouchableOpacity style={[s.primaryBtn, s.secondaryBtn]} onPress={pickImage}>
             <Text style={s.secondaryText}>🖼️ Gallery</Text>
@@ -292,7 +292,7 @@ export default function FoodEstimatorScreen({ route }: any) {
         <TouchableOpacity style={s.skipBtn} onPress={skipPhoto}>
           <Text style={s.skipText}>Skip photo — enter food manually</Text>
         </TouchableOpacity>
-        <Text style={s.disclaimer}>⚠️ Photo estimates are approximate. Always review before using for insulin math.</Text>
+        <Text style={s.disclaimer}>Photo estimates are approximate. Always review before using for insulin math.</Text>
       </ScrollView>
     );
   }
@@ -348,7 +348,7 @@ export default function FoodEstimatorScreen({ route }: any) {
             </View>
             <Text style={s.itemSource}>{item.source === 'local_db' ? '📍 Matched to Nepali foods' : item.source === 'manual' ? '✏️ Manual entry' : '🔍 Vision estimate'}</Text>
             {item.confidence === 'low' && (
-              <View style={s.lowConfNote}><Text style={s.lowConfText}>⚠️ Low confidence — please verify portion & food type</Text></View>
+              <View style={s.lowConfNote}><Text style={s.lowConfText}>Low confidence — please verify portion & food type</Text></View>
             )}
 
             {/* Portion stepper */}
@@ -385,7 +385,7 @@ export default function FoodEstimatorScreen({ route }: any) {
             {(() => {
               const check = validateCalories(item);
               if (!check.valid) {
-                return <Text style={s.calWarning}>⚠️ Calorie mismatch: {item.calories} vs calculated {check.calculated}</Text>;
+                return <Text style={s.calWarning}>Calorie mismatch: {item.calories} vs calculated {check.calculated}</Text>;
               }
               return null;
             })()}
@@ -431,7 +431,7 @@ export default function FoodEstimatorScreen({ route }: any) {
   if (step === 'dosing' && dosingResult) {
     return (
       <ScrollView style={s.container} contentContainerStyle={[s.content, { paddingTop: insets.top + 16, paddingBottom: insets.bottom + 40 }]}>
-        <Text style={s.title}>💉 Dosing Results</Text>
+        <Text style={s.title}>Dosing Results</Text>
         <ISPADBadge />
 
         <View style={s.resultCard}>
@@ -451,14 +451,14 @@ export default function FoodEstimatorScreen({ route }: any) {
 
         {notApproved && (
           <View style={s.warningCard}>
-            <Text style={s.warningTitle}>⚠️ Not clinician-approved</Text>
+            <Text style={s.warningTitle}>Not clinician-approved</Text>
             <Text style={s.warningText}>This dose is an auto-calculated starting estimate from TDD. Confirm with your clinician before relying on it.</Text>
           </View>
         )}
 
         {coverageCheck?.message && (
           <View style={s.warningCard}>
-            <Text style={s.warningTitle}>⚠️ Coverage Warning</Text>
+            <Text style={s.warningTitle}>Coverage Warning</Text>
             <Text style={s.warningText}>{coverageCheck.message}</Text>
           </View>
         )}
@@ -473,7 +473,7 @@ export default function FoodEstimatorScreen({ route }: any) {
             {items.map((i, idx) => `${i.food_name} (${i.carbs_g}g)`).join(', ')}
           </Text>
           <Text style={[s.noteText, { fontSize: 11, fontFamily: FONT.regular, marginTop: 4, fontStyle: 'italic' }]}>
-            ⚠️ Dosing is based on user-confirmed, corrected macros — not the raw photo estimate. Estimates are starting suggestions; ratios should be clinician-approved.
+            Dosing is based on user-confirmed, corrected macros — not the raw photo estimate. Estimates are starting suggestions; ratios should be clinician-approved.
           </Text>
         </View>
 

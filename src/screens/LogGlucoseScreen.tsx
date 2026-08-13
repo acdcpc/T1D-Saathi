@@ -48,7 +48,7 @@ export default function LogGlucoseScreen({ route, navigation }: any) {
     if (status !== 'granted') return;
     await Notifications.scheduleNotificationAsync({
       content: {
-        title: '🩸 Check Glucose',
+        title: 'Check Glucose',
         body: '20 minutes have passed. Please recheck glucose now.',
       },
       trigger: { seconds: HYPO_RECHECK_MINUTES * 60, repeats: false } as any,

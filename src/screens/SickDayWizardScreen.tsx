@@ -125,7 +125,7 @@ export default function SickDayWizardScreen({ route, navigation }: any) {
     // Glucose recheck reminder
     await Notifications.scheduleNotificationAsync({
       content: {
-        title: `🩸 Check Glucose`,
+        title: `Check Glucose`,
         body: `Recheck glucose in ${rule.monitoring_glucose_minutes} min as per ISPAD sick day protocol.`,
       },
       trigger: { seconds: rule.monitoring_glucose_minutes * 60, repeats: false } as any,
@@ -271,7 +271,7 @@ export default function SickDayWizardScreen({ route, navigation }: any) {
       {/* Emergency Override */}
       {isEmergency && (
         <View style={styles.emergencyBox}>
-          <Text style={styles.emergencyTitle}>🚨 {t('emergencyNow')}</Text>
+          <Text style={styles.emergencyTitle}>{t('emergencyNow')}</Text>
           <Text style={styles.emergencyText}>{t('goToHospital')}</Text>
           <Text style={styles.emergencyText}>{t('callClinician')}</Text>
           {redFlags.map((f, i) => <Text key={i} style={styles.redFlagItem}>• {f}</Text>)}
@@ -285,7 +285,7 @@ export default function SickDayWizardScreen({ route, navigation }: any) {
 
           {/* Insulin Guidance — hypoglycemia always overrides any insulin increase */}
           <View style={styles.guidanceSection}>
-            <Text style={styles.guidanceLabel}>💉 {t('supplementalInsulin')}</Text>
+            <Text style={styles.guidanceLabel}>{t('supplementalInsulin')}</Text>
             {glucoseVal < HYPO_THRESHOLD ? (
               <View style={styles.hypoBox}>
                 <Text style={styles.hypoBoxTitle}>🛑 {t('hypoWarning')}</Text>
@@ -339,7 +339,7 @@ export default function SickDayWizardScreen({ route, navigation }: any) {
 
       {/* Mini-dose Glucagon */}
       <View style={styles.glucagonCard}>
-        <Text style={styles.guidanceLabel}>💊 {t('miniDoseGlucagon')}</Text>
+        <Text style={styles.guidanceLabel}>{t('miniDoseGlucagon')}</Text>
         <Text style={styles.disclaimerSmall}>{t('forClinicianUse')}</Text>
         {GLUCAGON_DOSE_TABLE.map((row, i) => (
           <View key={i} style={styles.glucagonRow}>

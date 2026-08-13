@@ -124,7 +124,7 @@ export default function SettingsScreen({ navigation }: any) {
         </TouchableOpacity>
 
         <View style={styles.disclaimerCard}>
-          <Text style={styles.disclaimerTitle}>⚠️ {isNe ? 'महत्वपूर्ण' : 'Important'}</Text>
+          <Text style={styles.disclaimerTitle}>{isNe ? 'महत्वपूर्ण' : 'Important'}</Text>
           <Text style={styles.disclaimerText}>
             {isNe
               ? 'T1D साथी चिकित्सकीय उपकरण होइन। सबै डोज सिफारिसहरू परामर्शमात्र हुन् र चिकित्सकले पुष्टि गर्नुपर्छ।'

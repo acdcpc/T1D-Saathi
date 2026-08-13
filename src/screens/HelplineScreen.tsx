@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Linking, ActivityIndicator } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { useLanguage } from '../context/LanguageContext';
 import { supabase } from '../lib/supabase';
 import { FONT } from '../theme';
@@ -34,7 +35,7 @@ export default function HelplineScreen() {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>📞 {language === 'ne' ? 'सहयोग लाइन' : 'Helpline'}</Text>
+      <Text style={styles.title}>{language === 'ne' ? 'सहयोग लाइन' : 'Helpline'}</Text>
       <Text style={styles.subtitle}>
         {language === 'ne'
           ? 'तुरुन्त चिकित्सकीय सल्लाहको लागि कल गर्नुहोस्'
@@ -49,7 +50,7 @@ export default function HelplineScreen() {
           </View>
           <Text style={styles.role}>{language === 'ne' && hl.role_ne ? hl.role_ne : hl.role_en}</Text>
           <TouchableOpacity style={styles.callButton} onPress={() => callNumber(hl.phone)}>
-            <Text style={styles.callIcon}>📞</Text>
+            <Ionicons name="call" size={28} color="#fff" />
             <Text style={styles.callNumber}>{hl.phone}</Text>
             <Text style={styles.tapHint}>{language === 'ne' ? 'कल गर्न थिच्नुहोस्' : 'Tap to Call'}</Text>
           </TouchableOpacity>

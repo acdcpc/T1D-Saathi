@@ -43,7 +43,7 @@ export default function HealthCentersScreen({ route }: any) {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>🏥 Find Care Near Me</Text>
+      <Text style={styles.title}>Find Care Near Me</Text>
 
       {patientId && (
         <View style={styles.viewToggle}>
@@ -78,7 +78,7 @@ export default function HealthCentersScreen({ route }: any) {
               <View style={styles.actionRow}>
                 {h.phone && (
                   <TouchableOpacity style={styles.callBtn} onPress={() => Linking.openURL(`tel:${h.phone}`)}>
-                    <Text style={styles.callText}>📞 Call</Text>
+                    <Text style={styles.callText}>Call</Text>
                   </TouchableOpacity>
                 )}
                 <TouchableOpacity style={styles.dirBtn} onPress={() => openDirections(h)}>

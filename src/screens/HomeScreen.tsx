@@ -129,7 +129,7 @@ export default function HomeScreen({ navigation }: any) {
         </View>
       ) : patients.length === 0 ? (
         <View style={styles.emptyState}>
-          <Text style={styles.emptyIcon}>💙</Text>
+          <View style={styles.emptyIconCircle}><Ionicons name="water" size={40} color={T.blue} /></View>
           <Text style={styles.emptyTitle}>{isNe ? 'कुनै बिरामी छैन' : t('noPatientsYet')}</Text>
           <Text style={styles.emptyHint}>
             {isNe
@@ -237,7 +237,7 @@ const styles = StyleSheet.create({
 
   // Empty state (Kapoori Ka pattern)
   emptyState: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 40, paddingBottom: 180 },
-  emptyIcon: { fontSize: 64, fontFamily: FONT.regular, marginBottom: 16 },
+  emptyIconCircle: { width: 88, height: 88, borderRadius: 44, backgroundColor: T.blueLight, alignItems: 'center', justifyContent: 'center', marginBottom: 16 },
   emptyTitle: { fontSize: 18, fontFamily: FONT.bold, fontWeight: '700', color: T.text, textAlign: 'center' },
   emptyHint: { fontSize: 13, fontFamily: FONT.regular, color: T.blue, textAlign: 'center', marginTop: 8, fontStyle: 'italic' },
   fabPointer: {

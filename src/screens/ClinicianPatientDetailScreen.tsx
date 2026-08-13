@@ -42,12 +42,12 @@ export default function ClinicianPatientDetailScreen({ route }: any) {
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
       <Text style={styles.title}>{patientName}</Text>
-      <Text style={styles.section}>🩸 {t('logGlucose')} ({logs.length})</Text>
+      <Text style={styles.section}>{t('logGlucose')} ({logs.length})</Text>
       {logs.slice(0, 10).map(l => (
         <View key={l.id} style={styles.logItem}>
           <Text style={[styles.logValue, { color: getGlucoseColor(l.value) }]}>{l.value} mg/dL</Text>
           <Text style={styles.logTime}>{toBSDateTimeDisplay(l.timestamp)}</Text>
-          <Text style={styles.logContext}>{l.context === 'sick_day' ? '🤒 Sick' : '📋 Routine'}</Text>
+          <Text style={styles.logContext}>{l.context === 'sick_day' ? 'Sick' : 'Routine'}</Text>
         </View>
       ))}
       {logs.length === 0 && <Text style={styles.noData}>No glucose logs</Text>}
@@ -63,11 +63,11 @@ export default function ClinicianPatientDetailScreen({ route }: any) {
       ))}
       {ketones.length === 0 && <Text style={styles.noData}>No ketone logs</Text>}
 
-      <Text style={styles.section}>🤒 {t('sickDay')} ({sickDays.length})</Text>
+      <Text style={styles.section}>{t('sickDay')} ({sickDays.length})</Text>
       {sickDays.slice(0, 10).map(s => (
         <View key={s.id} style={[styles.logItem, s.escalated && styles.escalated]}>
           <Text style={styles.logValue}>{toBSDisplay(s.start_date)}</Text>
-          <Text style={styles.logContext}>{s.escalated ? '🚨 Escalated' : '⚡ Active'}</Text>
+          <Text style={styles.logContext}>{s.escalated ? 'Escalated' : 'Active'}</Text>
           {s.symptoms && (
             <Text style={styles.logDetail}>
               F:{(s.symptoms as any).fever ? 'Y' : 'N'} V:{(s.symptoms as any).vomiting ? 'Y' : 'N'} D:{(s.symptoms as any).diarrhea ? 'Y' : 'N'}

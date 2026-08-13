@@ -4,6 +4,7 @@ import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { AuthProvider, useAuth } from './src/context/AuthContext';
 import { LanguageProvider } from './src/context/LanguageContext';
+import { PreferencesProvider } from './src/context/PreferencesContext';
 import { useNetworkSync } from './src/utils/useNetworkSync';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { useAppFonts } from './src/lib/fonts';
@@ -69,6 +70,7 @@ export default function App() {
   return (
     <SafeAreaProvider>
       <LanguageProvider>
+        <PreferencesProvider>
         <AuthProvider>
           <ErrorBoundary>
             <View style={{ flex: 1 }}>
@@ -78,6 +80,7 @@ export default function App() {
             </View>
           </ErrorBoundary>
         </AuthProvider>
+        </PreferencesProvider>
       </LanguageProvider>
     </SafeAreaProvider>
   );

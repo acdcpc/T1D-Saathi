@@ -36,9 +36,9 @@ export async function configureReminders(enabled: ReminderTimes): Promise<boolea
   if (!ok) return false;
 
   if (enabled.preMeal) {
-    await scheduleDaily(REMINDER_IDS.breakfast, '🩸 Check Glucose', 'Pre-meal check — before breakfast (7 AM).', 7, 0);
-    await scheduleDaily(REMINDER_IDS.lunch, '🩸 Check Glucose', 'Pre-meal check — before lunch (12 PM).', 12, 0);
-    await scheduleDaily(REMINDER_IDS.dinner, '🩸 Check Glucose', 'Pre-meal check — before dinner (7 PM).', 19, 0);
+    await scheduleDaily(REMINDER_IDS.breakfast, 'Check Glucose', 'Pre-meal check — before breakfast (7 AM).', 7, 0);
+    await scheduleDaily(REMINDER_IDS.lunch, 'Check Glucose', 'Pre-meal check — before lunch (12 PM).', 12, 0);
+    await scheduleDaily(REMINDER_IDS.dinner, 'Check Glucose', 'Pre-meal check — before dinner (7 PM).', 19, 0);
   } else {
     for (const id of [REMINDER_IDS.breakfast, REMINDER_IDS.lunch, REMINDER_IDS.dinner]) {
       await Notifications.cancelScheduledNotificationAsync(id);
