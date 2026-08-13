@@ -93,7 +93,7 @@ export default function App() {
         <PreferencesProvider>
           <AuthProvider>
             <ErrorBoundary>
-              <View style={{ flex: 1 }}>
+              <View style={{ flex: 1 }} testID="app-root">
                 <NavigationContainer ref={navigationRef}>
                   <AppNavigator />
                   <GlobalHandlers />

@@ -73,7 +73,7 @@ export function checkMealCoverage(
   let highCalorieNote: string | null = null;
 
   if (!covered && deficit > 0) {
-    message = `⚠️ This meal has more carbs than your planned dose covers. Without more insulin, blood sugar is likely to rise.\n\n` +
+    message = `This meal has more carbs than your planned dose covers. Without more insulin, blood sugar is likely to rise.\n\n` +
       `• Planned dose: ${plannedInsulinDose.toFixed(1)} units covers ~${Math.round(carbsCovered)}g carbs\n` +
       `• Meal carbs: ${mealCarbs}g\n` +
       `• Shortfall: ~${Math.round(deficit)}g carbs\n\n` +
@@ -81,7 +81,7 @@ export function checkMealCoverage(
   }
 
   if (isHighCalorie) {
-    highCalorieNote = `📝 High-fat meals can raise sugar later than usual — consider rechecking glucose 2–3 hours after eating.`;
+    highCalorieNote = `High-fat meals can raise sugar later than usual — consider rechecking glucose 2–3 hours after eating.`;
   }
 
   return { covered, message, deficit: Math.round(deficit), isHighCalorieMeal: isHighCalorie, highCalorieNote };

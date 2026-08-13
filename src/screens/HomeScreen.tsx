@@ -14,6 +14,7 @@ import DhakaDivider from '../components/DhakaDivider';
 import ConflictDialog from '../components/ConflictDialog';
 import AnimatedPressable from '../components/AnimatedPressable';
 import { usePreferences } from '../context/PreferencesContext';
+import { checkAppVersion } from '../utils/versionCheck';
 import type { PatientProfile } from '../types';
 
 export default function HomeScreen({ navigation }: any) {
@@ -28,6 +29,7 @@ export default function HomeScreen({ navigation }: any) {
   const [conflictedCount, setConflictedCount] = useState(0);
   const [conflictedEntries, setConflictedEntries] = useState<QueuedEntry[]>([]);
   const [showConflict, setShowConflict] = useState(false);
+  const [updateRequired, setUpdateRequired] = useState(false);
   const [lastSynced, setLastSynced] = useState<Date | null>(null);
 
   const fetchPatients = useCallback(async () => {
@@ -44,6 +46,14 @@ export default function HomeScreen({ navigation }: any) {
   }, [user]);
 
   useFocusEffect(useCallback(() => { fetchPatients(); }, [fetchPatients]));
+
+  // App version check (force-update gate)
+  useEffect(() => {
+    (async () => {
+      const status = await checkAppVersion();
+      setUpdateRequired(!!status?.updateRequired);
+    })();
+  }, []);
 
   // Check offline sync queue on mount and periodically
   useEffect(() => {
@@ -128,6 +138,15 @@ export default function HomeScreen({ navigation }: any) {
       </View>
 
       <DhakaDivider />
+
+      {updateRequired && (
+        <TouchableOpacity style={styles.updateBanner} onPress={() => navigation.navigate('Settings')}>
+          <Ionicons name="cloud-download-outline" size={18} color={T.amberDark} />
+          <Text style={styles.updateBannerText}>
+            {isNe ? 'एपको नयाँ संस्करण उपलब्ध छ — कृपया अपडेट गर्नुहोस्।' : 'A new app version is available — please update.'}
+          </Text>
+        </TouchableOpacity>
+      )}
 
       <Text style={styles.lastSync}>
         {lastSynced
@@ -244,6 +263,8 @@ const styles = StyleSheet.create({
     borderWidth: 1, borderColor: T.border,
   },
   syncBadgeText: { fontSize: 12, fontFamily: FONT.bold, fontWeight: '700' },
+  updateBanner: { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: T.amberLight, borderRadius: 12, marginHorizontal: 16, marginTop: 8, padding: 12, borderWidth: 1, borderColor: T.orange },
+  updateBannerText: { flex: 1, fontSize: 13, fontFamily: FONT.semibold, color: T.amberDark, fontWeight: '600' },
   lastSync: { fontSize: 11, fontFamily: FONT.regular, color: T.muted, paddingHorizontal: 20, marginTop: 2, fontStyle: 'italic' },
 
   loader: { flex: 1 },

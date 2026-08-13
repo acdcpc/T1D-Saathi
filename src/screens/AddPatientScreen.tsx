@@ -81,6 +81,9 @@ export default function AddPatientScreen({ navigation }: any) {
   const [diagnosisDate, setDiagnosisDate] = useState('');
   const [dkaDesc, setDkaDesc] = useState('');
   const [tdd, setTdd] = useState('');
+  const [nameError, setNameError] = useState<string | null>(null);
+  const [insulinError, setInsulinError] = useState<string | null>(null);
+  const [tddError, setTddError] = useState<string | null>(null);
 
   // ── Auto-calculated dosing (ISPAD rules) ──
   const tddNum = parseFloat(tdd);
@@ -94,9 +97,11 @@ export default function AddPatientScreen({ navigation }: any) {
 
   const handleSave = async () => {
     if (!user) return Alert.alert(t('error'), 'Not logged in');
-    if (!name.trim()) return Alert.alert(t('error'), 'Name is required');
-    if (!insulinType.trim()) return Alert.alert(t('error'), 'Insulin type is required');
-    if (!tddValid) return Alert.alert(t('error'), 'Please enter a valid Total Daily Dose (TDD)');
+    let ok = true;
+    if (!name.trim()) { setNameError('Name is required'); ok = false; } else setNameError(null);
+    if (!insulinType.trim()) { setInsulinError('Insulin type is required'); ok = false; } else setInsulinError(null);
+    if (!tddValid) { setTddError('Enter a valid Total Daily Dose (TDD)'); ok = false; } else setTddError(null);
+    if (!ok) return;
 
     setLoading(true);
     const patientData = {
@@ -152,7 +157,8 @@ export default function AddPatientScreen({ navigation }: any) {
     <ScrollView style={styles.container} contentContainerStyle={[styles.content, { paddingTop: insets.top + 16, paddingBottom: insets.bottom + 40 }]}>
       <Text style={styles.section}>{t('profileSetup')}</Text>
       <Text style={styles.label}>{t('childName')} *</Text>
-      <TextInput style={styles.input} value={name} onChangeText={setName} placeholder="Full name" />
+      <TextInput style={[styles.input, nameError && styles.inputError]} value={name} onChangeText={(v) => { setName(v); if (nameError) setNameError(null); }} placeholder="Full name" />
+      {nameError ? <Text style={styles.errorText}>{nameError}</Text> : null}
 
       <BSDatePicker
         label={t('dateOfBirth')}
@@ -181,9 +187,10 @@ export default function AddPatientScreen({ navigation }: any) {
         label={`${t('insulinType')} *`}
         options={INSULIN_TYPE_OPTIONS}
         value={insulinType}
-        onChange={setInsulinType}
+        onChange={(v) => { setInsulinType(v); if (insulinError) setInsulinError(null); }}
         placeholder="Select insulin type"
       />
+      {insulinError ? <Text style={styles.errorText}>{insulinError}</Text> : null}
 
       <Text style={styles.label}>{t('insulinType')} {t('dose')}</Text>
       <TextInput style={styles.input} value={insulinDose} onChangeText={setInsulinDose} placeholder="Units" keyboardType="numeric" />
@@ -207,12 +214,13 @@ export default function AddPatientScreen({ navigation }: any) {
 
       <Text style={styles.label}>{t('tdd')} *</Text>
       <TextInput
-        style={styles.input}
+        style={[styles.input, tddError && styles.inputError]}
         value={tdd}
-        onChangeText={setTdd}
+        onChangeText={(v) => { setTdd(v); if (tddError) setTddError(null); }}
         placeholder="Total Daily Dose in units"
         keyboardType="numeric"
       />
+      {tddError ? <Text style={styles.errorText}>{tddError}</Text> : null}
 
       {/* Auto-calculated dosing — read-only, derived from TDD */}
       <View style={styles.autoCard}>
@@ -262,6 +270,8 @@ const styles = StyleSheet.create({
   section: { ...section, color: T.blue, fontSize: 16, fontFamily: FONT.regular, marginTop: 24, marginBottom: 12 },
   label: { fontSize: 13, fontFamily: FONT.semibold, fontWeight: '600', color: T.text, marginBottom: 6, marginTop: 10 },
   input: { ...input },
+  inputError: { borderColor: T.red, borderWidth: 1.5 },
+  errorText: { color: T.red, fontSize: 12, fontFamily: FONT.regular, marginTop: 4 },
   multiline: { minHeight: 70, textAlignVertical: 'top' },
   chipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   chip: { borderRadius: 20, paddingHorizontal: 16, paddingVertical: 8, backgroundColor: T.surface, borderWidth: 1, borderColor: T.border },

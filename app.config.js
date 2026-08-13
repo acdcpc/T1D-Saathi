@@ -8,6 +8,13 @@ module.exports = ({ config }) => ({
     ...(config.plugins || []),
     'expo-font',
     [
+      'expo-camera',
+      {
+        cameraPermission: 'Allow T1D Saathi to access your camera to scan food barcodes.',
+        recordAudioAndroid: false,
+      },
+    ],
+    [
       'expo-splash-screen',
       {
         backgroundColor: '#F7F1EB',

@@ -5,6 +5,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useLanguage } from '../context/LanguageContext';
 import { usePatient } from '../context/PatientContext';
 import { FONT } from '../theme';
+import { toDisplayNumber } from '../utils/nepaliNumber';
 
 const TOPICS: { id: string; topic: string; topic_ne: string; icon: keyof typeof Ionicons.glyphMap; color: string; order: number; audience?: string }[] = [
   { id: '1', topic: 'Diagnosis & Pathophysiology', topic_ne: 'निदान र रोगविज्ञान', icon: 'flask-outline', color: '#1a73e8', order: 1 },
@@ -49,7 +50,7 @@ export default function EducationScreen({ route, navigation }: any) {
           <View style={[styles.progressFill, { width: `${pct}%` }]} />
         </View>
         <Text style={styles.progressText}>
-          {completed.length}/{TOPICS.length} · {pct}%
+          {toDisplayNumber(completed.length, isNe)}/{toDisplayNumber(TOPICS.length, isNe)} · {toDisplayNumber(pct, isNe)}%
         </Text>
       </View>
 

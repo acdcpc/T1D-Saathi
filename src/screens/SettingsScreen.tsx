@@ -168,7 +168,7 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: T.bg },
   content: { padding: 16, paddingTop: 10 },
   headerRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 },
-  backBtn: { padding: 4 },
+  backBtn: { padding: 8 },
   title: { fontSize: 22, fontFamily: FONT.extrabold, fontWeight: '800', color: T.text },
 
   sectionLabel: { ...section },

@@ -60,7 +60,10 @@ export default function OnboardingScreen({ navigation }: any) {
     <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
       <ScrollView contentContainerStyle={styles.content}>
         <View style={styles.topRow}>
-          <Text style={styles.brand}>T1D साथी</Text>
+          <View>
+            <Text style={styles.brand}>T1D साथी</Text>
+            <Text style={styles.brandTagline}>{isNe ? 'तपाईंको मधुमेह सहयात्री' : 'Your Diabetes Companion'}</Text>
+          </View>
           <TouchableOpacity onPress={finish}>
             <Text style={styles.skip}>{isNe ? 'छोड्नुहोस्' : 'Skip'}</Text>
           </TouchableOpacity>
@@ -95,6 +98,7 @@ const styles = StyleSheet.create({
   content: { flexGrow: 1, padding: 24, alignItems: 'center', justifyContent: 'center' },
   topRow: { position: 'absolute', top: 16, left: 24, right: 24, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   brand: { fontSize: 18, fontFamily: FONT.extrabold, fontWeight: '800', color: T.text },
+  brandTagline: { fontSize: 12, fontFamily: FONT.medium, color: T.blue, marginTop: 1 },
   skip: { fontSize: 14, fontFamily: FONT.semibold, color: T.muted },
   iconWrap: { width: 140, height: 140, borderRadius: 70, alignItems: 'center', justifyContent: 'center', marginBottom: 32 },
   title: { fontSize: 24, fontFamily: FONT.extrabold, fontWeight: '800', color: T.text, textAlign: 'center', marginBottom: 12 },
