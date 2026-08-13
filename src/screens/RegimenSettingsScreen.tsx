@@ -7,6 +7,7 @@ import { useLanguage } from '../context/LanguageContext';
 import { supabase } from '../lib/supabase';
 import Dropdown from '../components/Dropdown';
 import type { InsulinRegimen } from '../types';
+import { FONT } from '../theme';
 
 const INSULIN_TYPE_OPTIONS = [
   'Rapid-acting', 'Short-acting', 'Intermediate-acting', 'Long-acting', 'Premixed',
@@ -156,22 +157,22 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#F0F7FF' },
   content: { padding: 20 },
   centered: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  title: { fontSize: 24, fontWeight: '800', color: '#202124', marginBottom: 20 },
-  label: { fontSize: 14, fontWeight: '600', color: '#202124', marginBottom: 6, marginTop: 14 },
-  input: { backgroundColor: '#fff', borderRadius: 10, padding: 14, fontSize: 16, borderWidth: 1, borderColor: '#dadce0' },
+  title: { fontSize: 24, fontFamily: FONT.extrabold, fontWeight: '800', color: '#202124', marginBottom: 20 },
+  label: { fontSize: 14, fontFamily: FONT.semibold, fontWeight: '600', color: '#202124', marginBottom: 6, marginTop: 14 },
+  input: { backgroundColor: '#fff', borderRadius: 10, padding: 14, fontSize: 16, fontFamily: FONT.regular, borderWidth: 1, borderColor: '#dadce0' },
   row: { flexDirection: 'row', gap: 8 },
   chip: { borderRadius: 20, paddingHorizontal: 16, paddingVertical: 8, backgroundColor: '#e8eaed' },
   chipActive: { backgroundColor: '#1a73e8' },
-  chipText: { fontSize: 14, color: '#3c4043' },
+  chipText: { fontSize: 14, fontFamily: FONT.regular, color: '#3c4043' },
   chipTextActive: { color: '#fff' },
   autoCard: { backgroundColor: '#e8f0fe', borderRadius: 12, padding: 14, marginTop: 12, borderWidth: 1, borderColor: '#d2e3fc' },
-  autoCardTitle: { fontSize: 13, fontWeight: '700', color: '#1a73e8', marginBottom: 10 },
+  autoCardTitle: { fontSize: 13, fontFamily: FONT.bold, fontWeight: '700', color: '#1a73e8', marginBottom: 10 },
   autoRow: { flexDirection: 'row', gap: 12 },
   autoField: { flex: 1, backgroundColor: '#fff', borderRadius: 8, padding: 10 },
-  autoLabel: { fontSize: 11, color: '#5f6368', marginBottom: 4 },
-  autoValue: { fontSize: 17, fontWeight: '800', color: '#202124' },
-  autoFormula: { fontSize: 11, color: '#1a73e8', marginTop: 3 },
-  autoNote: { fontSize: 11, color: '#5f6368', marginTop: 10, fontStyle: 'italic' },
+  autoLabel: { fontSize: 11, fontFamily: FONT.regular, color: '#5f6368', marginBottom: 4 },
+  autoValue: { fontSize: 17, fontFamily: FONT.extrabold, fontWeight: '800', color: '#202124' },
+  autoFormula: { fontSize: 11, fontFamily: FONT.regular, color: '#1a73e8', marginTop: 3 },
+  autoNote: { fontSize: 11, fontFamily: FONT.regular, color: '#5f6368', marginTop: 10, fontStyle: 'italic' },
   saveBtn: { backgroundColor: '#1a73e8', borderRadius: 12, padding: 16, alignItems: 'center', marginTop: 24 },
-  saveText: { color: '#fff', fontSize: 17, fontWeight: '600' },
+  saveText: { color: '#fff', fontSize: 17, fontFamily: FONT.semibold, fontWeight: '600' },
 });

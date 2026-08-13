@@ -6,7 +6,8 @@ import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
 import { supabase } from '../lib/supabase';
 import { getQueueLength, getConflictedEntries } from '../utils/offlineQueue';
-import { T, card, section, fab, avatar } from '../theme';
+import { FONT, T, card, section, fab, avatar } from '../theme';
+import Skeleton from '../components/Skeleton';
 import type { PatientProfile } from '../types';
 
 export default function HomeScreen({ navigation }: any) {
@@ -59,7 +60,7 @@ export default function HomeScreen({ navigation }: any) {
   const renderPatient = ({ item }: { item: PatientProfile }) => (
     <TouchableOpacity
       style={styles.patientCard}
-      onPress={() => navigation.navigate('PatientDashboard', { patient: item })}
+      onPress={() => navigation.navigate('PatientTabs', { patient: item })}
       activeOpacity={0.7}
     >
       <View style={styles.cardContent}>
@@ -111,7 +112,17 @@ export default function HomeScreen({ navigation }: any) {
       </Text>
 
       {loading ? (
-        <ActivityIndicator size="large" color={T.blue} style={styles.loader} />
+        <View style={styles.skeletonWrap}>
+          {[0, 1, 2].map((i) => (
+            <View key={i} style={styles.skeletonCard}>
+              <Skeleton style={{ width: 44, height: 44, borderRadius: 22 }} />
+              <View style={{ flex: 1, gap: 8 }}>
+                <Skeleton style={{ width: '60%', height: 16 }} />
+                <Skeleton style={{ width: '40%', height: 12 }} />
+              </View>
+            </View>
+          ))}
+        </View>
       ) : patients.length === 0 ? (
         <View style={styles.emptyState}>
           <Text style={styles.emptyIcon}>💙</Text>
@@ -188,8 +199,8 @@ const styles = StyleSheet.create({
     paddingBottom: 6,
   },
   headerLeft: { flex: 1 },
-  headerTitle: { fontWeight: '800', fontSize: 22, color: T.text },
-  headerSubtitle: { fontSize: 13, color: T.muted, marginTop: 1 },
+  headerTitle: { fontWeight: '800', fontSize: 22, fontFamily: FONT.extrabold, color: T.text },
+  headerSubtitle: { fontSize: 13, fontFamily: FONT.regular, color: T.muted, marginTop: 1 },
   headerRight: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   settingsBtn: { padding: 4 },
   syncBadge: {
@@ -198,10 +209,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8, paddingVertical: 4,
     borderWidth: 1, borderColor: T.border,
   },
-  syncBadgeText: { fontSize: 12, fontWeight: '700' },
-  lastSync: { fontSize: 11, color: T.muted, paddingHorizontal: 20, marginTop: 2, fontStyle: 'italic' },
+  syncBadgeText: { fontSize: 12, fontFamily: FONT.bold, fontWeight: '700' },
+  lastSync: { fontSize: 11, fontFamily: FONT.regular, color: T.muted, paddingHorizontal: 20, marginTop: 2, fontStyle: 'italic' },
 
   loader: { flex: 1 },
+  skeletonWrap: { paddingHorizontal: 16, paddingTop: 16, gap: 10 },
+  skeletonCard: { ...card, flexDirection: 'row', alignItems: 'center', gap: 14, marginBottom: 0 },
 
   // Section label (Kapoori Ka pattern)
   sectionLabel: { ...section, paddingHorizontal: 20, paddingTop: 14, paddingBottom: 10 },
@@ -212,16 +225,16 @@ const styles = StyleSheet.create({
   cardContent: { flexDirection: 'row', alignItems: 'center' },
   avBox: { marginRight: 14 },
   av: { ...avatar, backgroundColor: T.blueLight },
-  avText: { fontSize: 22, fontWeight: '700', color: T.blue },
+  avText: { fontSize: 22, fontFamily: FONT.bold, fontWeight: '700', color: T.blue },
   cardInfo: { flex: 1 },
-  patientName: { fontSize: 16, fontWeight: '700', color: T.text },
-  patientMeta: { fontSize: 13, color: T.muted, marginTop: 2 },
+  patientName: { fontSize: 16, fontFamily: FONT.bold, fontWeight: '700', color: T.text },
+  patientMeta: { fontSize: 13, fontFamily: FONT.regular, color: T.muted, marginTop: 2 },
 
   // Empty state (Kapoori Ka pattern)
   emptyState: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 40, paddingBottom: 180 },
-  emptyIcon: { fontSize: 64, marginBottom: 16 },
-  emptyTitle: { fontSize: 18, fontWeight: '700', color: T.text, textAlign: 'center' },
-  emptyHint: { fontSize: 13, color: T.blue, textAlign: 'center', marginTop: 8, fontStyle: 'italic' },
+  emptyIcon: { fontSize: 64, fontFamily: FONT.regular, marginBottom: 16 },
+  emptyTitle: { fontSize: 18, fontFamily: FONT.bold, fontWeight: '700', color: T.text, textAlign: 'center' },
+  emptyHint: { fontSize: 13, fontFamily: FONT.regular, color: T.blue, textAlign: 'center', marginTop: 8, fontStyle: 'italic' },
   fabPointer: {
     backgroundColor: T.blueLight,
     borderRadius: 20,
@@ -230,8 +243,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginTop: 20,
   },
-  fabPointerText: { fontWeight: '700', fontSize: 13, color: T.blue, textAlign: 'center' },
-  fabPointerArrow: { fontSize: 20, color: T.blue, textAlign: 'center', marginTop: 2 },
+  fabPointerText: { fontWeight: '700', fontSize: 13, fontFamily: FONT.bold, color: T.blue, textAlign: 'center' },
+  fabPointerArrow: { fontSize: 20, fontFamily: FONT.regular, color: T.blue, textAlign: 'center', marginTop: 2 },
   featurePreview: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', marginTop: 24, gap: 10 },
   featureChip: {
     alignItems: 'center',
@@ -242,8 +255,8 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: T.border,
   },
-  featureChipIcon: { fontSize: 24, marginBottom: 4 },
-  featureChipLabel: { fontSize: 11, color: T.muted, fontWeight: '600', textAlign: 'center' },
+  featureChipIcon: { fontSize: 24, fontFamily: FONT.regular, marginBottom: 4 },
+  featureChipLabel: { fontSize: 11, fontFamily: FONT.semibold, color: T.muted, fontWeight: '600', textAlign: 'center' },
 
   // FAB
   fab: { ...fab },
@@ -262,5 +275,5 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: 8,
   },
-  clinicianBarText: { color: '#fff', fontSize: 15, fontWeight: '600' },
+  clinicianBarText: { color: '#fff', fontSize: 15, fontFamily: FONT.semibold, fontWeight: '600' },
 });

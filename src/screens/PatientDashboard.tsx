@@ -3,17 +3,19 @@ import { View, Text, TouchableOpacity, StyleSheet, ScrollView, RefreshControl } 
 import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLanguage } from '../context/LanguageContext';
+import { usePatient } from '../context/PatientContext';
 import { supabase } from '../lib/supabase';
 import { HYPO_THRESHOLD } from '../rules/sickDayRules';
 import { toBSDateTimeDisplay } from '../utils/bsDateDisplay';
 import { computeGlucoseStats } from '../utils/glucoseStats';
+import { generateGlucoseReport } from '../utils/pdfReport';
 import ISPADBadge from '../components/ISPADBadge';
 import GlucoseTrendChart from '../components/GlucoseTrendChart';
-import { T, card, section, avatar } from '../theme';
+import { FONT,  T, card, section, avatar } from '../theme';
 import type { PatientProfile, GlucoseLog, SickDayEpisode } from '../types';
 
 export default function PatientDashboard({ route, navigation }: any) {
-  const { patient }: { patient: PatientProfile } = route.params;
+  const patient: PatientProfile = usePatient() || (route.params as any)?.patient;
   const { t, language } = useLanguage();
   const isNe = language === 'ne';
   const [latestGlucose, setLatestGlucose] = useState<GlucoseLog | null>(null);
@@ -40,11 +42,11 @@ export default function PatientDashboard({ route, navigation }: any) {
   const stats = computeGlucoseStats(history);
 
   const actions = [
-    { icon: '🩸', label: isNe ? 'ग्लुकोज' : 'Log Glucose', route: 'LogGlucose', border: T.border },
-    { icon: '🍽️', label: isNe ? 'खाना र डोज' : 'Food & Dose', route: 'FoodEstimator', border: T.teal },
+    { icon: '🩸', label: isNe ? 'ग्लुकोज' : 'Log Glucose', route: 'Log', border: T.border },
+    { icon: '🍽️', label: isNe ? 'खाना र डोज' : 'Food & Dose', route: 'Food', border: T.teal },
     { icon: '🤒', label: isNe ? 'बिमारी दिन' : 'Sick Day', route: 'SickDayWizard', border: T.orange },
     { icon: '💉', label: isNe ? 'इन्सुलिन' : 'Regimen', route: 'RegimenSettings', border: T.border },
-    { icon: '📚', label: isNe ? 'शिक्षा' : 'Education', route: 'Education', border: T.border },
+    { icon: '📚', label: isNe ? 'शिक्षा' : 'Education', route: 'Learn', border: T.border },
     { icon: '🏥', label: isNe ? 'स्वास्थ्य केन्द्र' : 'Nearby Care', route: 'HealthCenters', border: T.border },
     { icon: '📞', label: isNe ? 'हेल्पलाइन' : 'Helpline', route: 'Helpline', border: T.red },
     { icon: '💬', label: isNe ? 'सन्देश' : 'Messages', route: 'Messages', border: T.border },
@@ -101,7 +103,7 @@ export default function PatientDashboard({ route, navigation }: any) {
         {activeSickDay && (
           <TouchableOpacity style={styles.sickBanner} onPress={() => navigation.navigate('SickDayWizard', { patientId: patient.id })}>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-              <Text style={{ fontSize: 20 }}>🤒</Text>
+              <Text style={{ fontSize: 20, fontFamily: FONT.regular }}>🤒</Text>
               <View>
                 <Text style={styles.sickBannerTitle}>{isNe ? 'सक्रिय बिमारी दिन' : 'Active Sick Day'}</Text>
                 <Text style={styles.sickBannerSub}>{isNe ? 'निगरानी जारी छ · थिच्नुहोस्' : 'Monitoring in progress · Tap to continue'} ›</Text>
@@ -132,6 +134,10 @@ export default function PatientDashboard({ route, navigation }: any) {
             <Text style={styles.provenance}>
               {isNe ? 'गणना: ISPAD 2022 दिशानिर्देश अनुसार' : 'Calculated per ISPAD 2022 target range (70–180 mg/dL)'}
             </Text>
+            <TouchableOpacity style={styles.pdfBtn} onPress={() => generateGlucoseReport(patient, history)} activeOpacity={0.8}>
+              <Ionicons name="document-text-outline" size={18} color="#fff" />
+              <Text style={styles.pdfBtnText}>{isNe ? 'PDF रिपोर्ट निकाल्नुहोस्' : 'Export PDF Report'}</Text>
+            </TouchableOpacity>
           </View>
         )}
 
@@ -164,34 +170,39 @@ const styles = StyleSheet.create({
 
   profileHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 20 },
   profileAv: { ...avatar, width: 56, height: 56, borderRadius: 28, backgroundColor: T.blueLight },
-  profileAvText: { fontSize: 26, fontWeight: '700', color: T.blue },
+  profileAvText: { fontSize: 26, fontFamily: FONT.bold, fontWeight: '700', color: T.blue },
   profileInfo: { flex: 1 },
-  name: { fontSize: 22, fontWeight: '800', color: T.text },
-  subtitle: { fontSize: 14, color: T.muted, marginTop: 2 },
+  name: { fontSize: 22, fontFamily: FONT.extrabold, fontWeight: '800', color: T.text },
+  subtitle: { fontSize: 14, fontFamily: FONT.regular, color: T.muted, marginTop: 2 },
 
   glucoseCard: { ...card },
   hypoCard: { backgroundColor: T.redLight, borderWidth: 2, borderColor: T.red },
   cardLabel: { ...section, marginTop: 0, marginBottom: 6 },
-  glucoseValue: { fontSize: 42, fontWeight: '700', color: T.text },
-  unit: { fontSize: 18, fontWeight: '400', color: T.muted },
+  glucoseValue: { fontSize: 42, fontFamily: FONT.bold, fontWeight: '700', color: T.text },
+  unit: { fontSize: 18, fontFamily: FONT.regular, fontWeight: '400', color: T.muted },
   hypoText: { color: T.red },
-  timestamp: { fontSize: 12, color: T.muted, marginTop: 4 },
-  noData: { fontSize: 15, color: T.muted, fontStyle: 'italic' },
+  timestamp: { fontSize: 12, fontFamily: FONT.regular, color: T.muted, marginTop: 4 },
+  noData: { fontSize: 15, fontFamily: FONT.regular, color: T.muted, fontStyle: 'italic' },
 
   hypoAlert: { backgroundColor: T.redLight, borderRadius: 12, padding: 16, marginBottom: 16, borderWidth: 2, borderColor: T.red },
-  hypoAlertTitle: { fontSize: 16, fontWeight: '700', color: T.redDark, marginBottom: 8 },
-  hypoStep: { fontSize: 13, color: T.text, paddingVertical: 2, paddingLeft: 4, lineHeight: 20 },
+  hypoAlertTitle: { fontSize: 16, fontFamily: FONT.bold, fontWeight: '700', color: T.redDark, marginBottom: 8 },
+  hypoStep: { fontSize: 13, fontFamily: FONT.regular, color: T.text, paddingVertical: 2, paddingLeft: 4, lineHeight: 20 },
 
   sickBanner: { ...card, borderWidth: 1, borderColor: T.orange },
-  sickBannerTitle: { fontSize: 15, fontWeight: '700', color: T.amberDark },
-  sickBannerSub: { fontSize: 13, color: T.muted, marginTop: 2 },
+  sickBannerTitle: { fontSize: 15, fontFamily: FONT.bold, fontWeight: '700', color: T.amberDark },
+  sickBannerSub: { fontSize: 13, fontFamily: FONT.regular, color: T.muted, marginTop: 2 },
 
   trendCard: { ...card },
   statRow: { flexDirection: 'row', gap: 8, marginBottom: 8 },
   statTile: { flex: 1, backgroundColor: T.blueLight, borderRadius: 12, paddingVertical: 12, alignItems: 'center' },
-  statValue: { fontSize: 20, fontWeight: '800', color: T.blueDark },
-  statLabel: { fontSize: 10, color: T.blueDark, marginTop: 2, textAlign: 'center', fontWeight: '600' },
-  provenance: { fontSize: 10, color: T.muted, textAlign: 'center', marginTop: 2, fontStyle: 'italic' },
+  statValue: { fontSize: 20, fontFamily: FONT.extrabold, fontWeight: '800', color: T.blueDark },
+  statLabel: { fontSize: 10, fontFamily: FONT.semibold, color: T.blueDark, marginTop: 2, textAlign: 'center', fontWeight: '600' },
+  provenance: { fontSize: 10, fontFamily: FONT.regular, color: T.muted, textAlign: 'center', marginTop: 2, fontStyle: 'italic' },
+  pdfBtn: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8,
+    backgroundColor: T.blue, borderRadius: 28, paddingVertical: 12, marginTop: 12,
+  },
+  pdfBtnText: { color: '#fff', fontSize: 15, fontFamily: FONT.bold, fontWeight: '700' },
 
   sectionLabel: { ...section, paddingHorizontal: 4 },
   actionGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
@@ -209,6 +220,6 @@ const styles = StyleSheet.create({
     shadowRadius: 6,
     elevation: 1,
   },
-  actionIcon: { fontSize: 28, marginBottom: 6 },
-  actionText: { fontSize: 11, fontWeight: '600', color: T.text, textAlign: 'center' },
+  actionIcon: { fontSize: 28, fontFamily: FONT.regular, marginBottom: 6 },
+  actionText: { fontSize: 11, fontFamily: FONT.semibold, fontWeight: '600', color: T.text, textAlign: 'center' },
 });

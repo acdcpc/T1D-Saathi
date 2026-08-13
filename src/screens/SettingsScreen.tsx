@@ -1,16 +1,32 @@
-import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Alert } from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Alert, Switch } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
-import { T, card, section, primBtn } from '../theme';
+import { FONT, T, card, section, primBtn } from '../theme';
+import { configureReminders } from '../utils/reminders';
 import type { Language } from '../types';
 
 export default function SettingsScreen({ navigation }: any) {
   const { signOut } = useAuth();
   const { language, setLanguage, t } = useLanguage();
   const isNe = language === 'ne';
+  const [preMeal, setPreMeal] = useState(false);
+  const [bedtime, setBedtime] = useState(false);
+
+  const handleReminderToggle = async (which: 'preMeal' | 'bedtime', val: boolean) => {
+    const next = { preMeal, bedtime, [which]: val };
+    if (which === 'preMeal') setPreMeal(val); else setBedtime(val);
+    const ok = await configureReminders(next);
+    if (!ok) {
+      Alert.alert(
+        isNe ? 'अनुमति आवश्यक' : 'Permission needed',
+        isNe ? 'सूचना अनुमति दिनुहोस्।' : 'Please allow notifications to set reminders.'
+      );
+      if (which === 'preMeal') setPreMeal(!val); else setBedtime(!val);
+    }
+  };
 
   const handleLogout = () => {
     Alert.alert(
@@ -62,6 +78,23 @@ export default function SettingsScreen({ navigation }: any) {
           </Text>
         </View>
 
+        {/* Reminders */}
+        <Text style={styles.sectionLabel}>{isNe ? 'सम्झाउने' : 'Reminders'}</Text>
+        <View style={styles.rowCard}>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.rowTitle}>{isNe ? 'खाना अघिको जाँच' : 'Pre-meal checks'}</Text>
+            <Text style={styles.rowSub}>{isNe ? 'बिहान ७, दिउँसो १२, बेलुका ७' : '7 AM · 12 PM · 7 PM'}</Text>
+          </View>
+          <Switch value={preMeal} onValueChange={(v) => handleReminderToggle('preMeal', v)} trackColor={{ true: T.blue }} />
+        </View>
+        <View style={styles.rowCard}>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.rowTitle}>{isNe ? 'रातको जाँच' : 'Bedtime check'}</Text>
+            <Text style={styles.rowSub}>{isNe ? 'रात ९ बजे' : '9 PM'}</Text>
+          </View>
+          <Switch value={bedtime} onValueChange={(v) => handleReminderToggle('bedtime', v)} trackColor={{ true: T.blue }} />
+        </View>
+
         {/* Account */}
         <Text style={styles.sectionLabel}>{isNe ? 'खाता' : 'Account'}</Text>
         <TouchableOpacity style={styles.logoutBtn} onPress={handleLogout} activeOpacity={0.8}>
@@ -91,7 +124,7 @@ const styles = StyleSheet.create({
   content: { padding: 16, paddingTop: 10 },
   headerRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 },
   backBtn: { padding: 4 },
-  title: { fontSize: 22, fontWeight: '800', color: T.text },
+  title: { fontSize: 22, fontFamily: FONT.extrabold, fontWeight: '800', color: T.text },
 
   sectionLabel: { ...section },
 
@@ -101,7 +134,7 @@ const styles = StyleSheet.create({
     backgroundColor: T.surface, borderWidth: 1, borderColor: T.border,
   },
   langActive: { backgroundColor: T.blue, borderColor: T.blue },
-  langText: { fontSize: 16, fontWeight: '600', color: T.text },
+  langText: { fontSize: 16, fontFamily: FONT.semibold, fontWeight: '600', color: T.text },
   langActiveText: { color: '#fff' },
 
   infoCard: {
@@ -109,21 +142,29 @@ const styles = StyleSheet.create({
     backgroundColor: T.surface, borderRadius: 12, padding: 14,
     borderWidth: 1, borderColor: T.border, marginBottom: 8,
   },
-  infoText: { flex: 1, fontSize: 13, color: T.muted, lineHeight: 18 },
+  infoText: { flex: 1, fontSize: 13, fontFamily: FONT.regular, color: T.muted, lineHeight: 18 },
+
+  rowCard: {
+    flexDirection: 'row', alignItems: 'center', gap: 12,
+    backgroundColor: T.surface, borderRadius: 12, padding: 14,
+    borderWidth: 1, borderColor: T.border, marginBottom: 8,
+  },
+  rowTitle: { fontSize: 15, fontFamily: FONT.semibold, fontWeight: '600', color: T.text },
+  rowSub: { fontSize: 12, fontFamily: FONT.regular, color: T.muted, marginTop: 2 },
 
   logoutBtn: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8,
     backgroundColor: T.red, borderRadius: 28, paddingVertical: 14,
   },
-  logoutText: { color: '#fff', fontSize: 16, fontWeight: '600' },
+  logoutText: { color: '#fff', fontSize: 16, fontFamily: FONT.semibold, fontWeight: '600' },
 
-  version: { textAlign: 'center', color: T.muted, fontSize: 12, marginTop: 32 },
-  credit: { textAlign: 'center', color: T.muted, fontSize: 12, marginTop: 4 },
-  madeIn: { textAlign: 'center', color: T.muted, fontSize: 12, marginTop: 4, fontWeight: '600' },
+  version: { textAlign: 'center', color: T.muted, fontSize: 12, fontFamily: FONT.regular, marginTop: 32 },
+  credit: { textAlign: 'center', color: T.muted, fontSize: 12, fontFamily: FONT.regular, marginTop: 4 },
+  madeIn: { textAlign: 'center', color: T.muted, fontSize: 12, fontFamily: FONT.semibold, marginTop: 4, fontWeight: '600' },
   disclaimerCard: {
     backgroundColor: T.amberLight, borderRadius: 12, padding: 14,
     borderWidth: 1, borderColor: T.orange, marginTop: 24,
   },
-  disclaimerTitle: { fontSize: 14, fontWeight: '700', color: T.amberDark, marginBottom: 4 },
-  disclaimerText: { fontSize: 13, color: T.text, lineHeight: 18 },
+  disclaimerTitle: { fontSize: 14, fontFamily: FONT.bold, fontWeight: '700', color: T.amberDark, marginBottom: 4 },
+  disclaimerText: { fontSize: 13, fontFamily: FONT.regular, color: T.text, lineHeight: 18 },
 });

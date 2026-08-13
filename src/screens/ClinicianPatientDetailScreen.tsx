@@ -4,6 +4,7 @@ import { useLanguage } from '../context/LanguageContext';
 import { supabase } from '../lib/supabase';
 import type { GlucoseLog, KetoneLog, SickDayEpisode } from '../types';
 import { toBSDateTimeDisplay, toBSDisplay } from '../utils/bsDateDisplay';
+import { FONT } from '../theme';
 
 export default function ClinicianPatientDetailScreen({ route }: any) {
   const { patientId, patientName } = route.params;
@@ -84,13 +85,13 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#F0F7FF' },
   content: { padding: 20, paddingTop: 90, paddingBottom: 60 },
   centered: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  title: { fontSize: 24, fontWeight: '800', color: '#202124', marginBottom: 20 },
-  section: { fontSize: 18, fontWeight: '700', color: '#202124', marginTop: 16, marginBottom: 10 },
+  title: { fontSize: 24, fontFamily: FONT.extrabold, fontWeight: '800', color: '#202124', marginBottom: 20 },
+  section: { fontSize: 18, fontFamily: FONT.bold, fontWeight: '700', color: '#202124', marginTop: 16, marginBottom: 10 },
   logItem: { backgroundColor: '#fff', borderRadius: 10, padding: 12, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', borderWidth: 1, borderColor: '#e8eaed', marginBottom: 6 },
   escalated: { borderColor: '#ea4335', borderWidth: 2, backgroundColor: '#fce8e6' },
-  logValue: { fontSize: 15, fontWeight: '600' },
-  logTime: { fontSize: 12, color: '#5f6368' },
-  logContext: { fontSize: 12, color: '#5f6368' },
-  logDetail: { fontSize: 11, color: '#5f6368' },
-  noData: { fontSize: 14, color: '#80868b', fontStyle: 'italic', marginBottom: 8 },
+  logValue: { fontSize: 15, fontFamily: FONT.semibold, fontWeight: '600' },
+  logTime: { fontSize: 12, fontFamily: FONT.regular, color: '#5f6368' },
+  logContext: { fontSize: 12, fontFamily: FONT.regular, color: '#5f6368' },
+  logDetail: { fontSize: 11, fontFamily: FONT.regular, color: '#5f6368' },
+  noData: { fontSize: 14, fontFamily: FONT.regular, color: '#80868b', fontStyle: 'italic', marginBottom: 8 },
 });

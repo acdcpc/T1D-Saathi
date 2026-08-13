@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
 import { supabase } from '../lib/supabase';
 import type { Message } from '../types';
+import { FONT } from '../theme';
 
 export default function MessagesScreen({ route }: any) {
   const { patientId } = route.params;
@@ -70,16 +71,16 @@ export default function MessagesScreen({ route }: any) {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#F0F7FF' },
-  title: { fontSize: 24, fontWeight: '800', color: '#202124', padding: 20, paddingTop: 90 },
+  title: { fontSize: 24, fontFamily: FONT.extrabold, fontWeight: '800', color: '#202124', padding: 20, paddingTop: 90 },
   list: { padding: 16, flexGrow: 1 },
-  empty: { textAlign: 'center', color: '#5f6368', fontSize: 14, marginTop: 40 },
+  empty: { textAlign: 'center', color: '#5f6368', fontSize: 14, fontFamily: FONT.regular, marginTop: 40 },
   bubble: { maxWidth: '80%', borderRadius: 16, padding: 12, marginBottom: 8 },
   myBubble: { alignSelf: 'flex-end', backgroundColor: '#1a73e8' },
   theirBubble: { alignSelf: 'flex-start', backgroundColor: '#fff', borderWidth: 1, borderColor: '#e8eaed' },
-  bubbleText: { fontSize: 15, color: '#202124' },
-  time: { fontSize: 10, color: '#5f6368', marginTop: 4, textAlign: 'right' },
+  bubbleText: { fontSize: 15, fontFamily: FONT.regular, color: '#202124' },
+  time: { fontSize: 10, fontFamily: FONT.regular, color: '#5f6368', marginTop: 4, textAlign: 'right' },
   inputRow: { flexDirection: 'row', padding: 12, borderTopWidth: 1, borderColor: '#dadce0', backgroundColor: '#fff', alignItems: 'flex-end' },
-  input: { flex: 1, backgroundColor: '#f1f3f4', borderRadius: 20, paddingHorizontal: 16, paddingVertical: 10, fontSize: 15, marginRight: 8 },
+  input: { flex: 1, backgroundColor: '#f1f3f4', borderRadius: 20, paddingHorizontal: 16, paddingVertical: 10, fontSize: 15, fontFamily: FONT.regular, marginRight: 8 },
   sendBtn: { backgroundColor: '#1a73e8', borderRadius: 20, paddingHorizontal: 20, paddingVertical: 10 },
   sendText: { color: '#fff', fontWeight: '600' },
 });

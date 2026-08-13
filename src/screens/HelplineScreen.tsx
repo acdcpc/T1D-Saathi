@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Linking, ActivityIndicator } from 'react-native';
 import { useLanguage } from '../context/LanguageContext';
 import { supabase } from '../lib/supabase';
+import { FONT } from '../theme';
 
 interface Helpline {
   id: string;
@@ -76,21 +77,21 @@ export default function HelplineScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#FFF5F5', padding: 20, paddingTop: 90 },
   centered: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  title: { fontSize: 28, fontWeight: '800', color: '#ea4335', marginBottom: 4 },
-  subtitle: { fontSize: 15, color: '#5f6368', marginBottom: 24 },
+  title: { fontSize: 28, fontFamily: FONT.extrabold, fontWeight: '800', color: '#ea4335', marginBottom: 4 },
+  subtitle: { fontSize: 15, fontFamily: FONT.regular, color: '#5f6368', marginBottom: 24 },
   card: { backgroundColor: '#fff', borderRadius: 16, padding: 20, marginBottom: 16, borderWidth: 2, borderColor: '#ea4335', shadowColor: '#ea4335', shadowOpacity: 0.1, shadowRadius: 8, elevation: 3 },
   cardHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 4, gap: 8 },
-  name: { fontSize: 22, fontWeight: '700', color: '#202124' },
+  name: { fontSize: 22, fontFamily: FONT.bold, fontWeight: '700', color: '#202124' },
   primaryBadge: { backgroundColor: '#ea4335', borderRadius: 6, paddingHorizontal: 8, paddingVertical: 2 },
-  primaryText: { fontSize: 10, fontWeight: '700', color: '#fff' },
-  role: { fontSize: 15, color: '#5f6368', marginBottom: 16 },
+  primaryText: { fontSize: 10, fontFamily: FONT.bold, fontWeight: '700', color: '#fff' },
+  role: { fontSize: 15, fontFamily: FONT.regular, color: '#5f6368', marginBottom: 16 },
   callButton: { backgroundColor: '#ea4335', borderRadius: 12, padding: 18, alignItems: 'center', flexDirection: 'row', justifyContent: 'center', gap: 10 },
-  callIcon: { fontSize: 24 },
-  callNumber: { fontSize: 24, fontWeight: '800', color: '#fff' },
-  tapHint: { fontSize: 12, color: 'rgba(255,255,255,0.8)', position: 'absolute', bottom: 6, right: 14 },
+  callIcon: { fontSize: 24, fontFamily: FONT.regular },
+  callNumber: { fontSize: 24, fontFamily: FONT.extrabold, fontWeight: '800', color: '#fff' },
+  tapHint: { fontSize: 12, fontFamily: FONT.regular, color: 'rgba(255,255,255,0.8)', position: 'absolute', bottom: 6, right: 14 },
   noHelpline: { padding: 20, alignItems: 'center' },
-  noHelplineText: { fontSize: 14, color: '#5f6368', textAlign: 'center' },
+  noHelplineText: { fontSize: 14, fontFamily: FONT.regular, color: '#5f6368', textAlign: 'center' },
   noteBox: { backgroundColor: '#fce8e6', borderRadius: 10, padding: 14, marginTop: 10, borderWidth: 1, borderColor: '#f5c6c0' },
-  noteTitle: { fontSize: 14, fontWeight: '700', color: '#ea4335', marginBottom: 4 },
-  noteText: { fontSize: 12, color: '#5f6368', lineHeight: 17 },
+  noteTitle: { fontSize: 14, fontFamily: FONT.bold, fontWeight: '700', color: '#ea4335', marginBottom: 4 },
+  noteText: { fontSize: 12, fontFamily: FONT.regular, color: '#5f6368', lineHeight: 17 },
 });

@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import { T } from '../theme';
+import { FONT,  T } from '../theme';
 import { useLanguage } from '../context/LanguageContext';
 
 /**
@@ -32,6 +32,6 @@ const styles = StyleSheet.create({
     alignSelf: 'flex-start',
     marginBottom: 12,
   },
-  dot: { color: T.blueDark, fontWeight: '800', fontSize: 12 },
-  text: { color: T.blueDark, fontSize: 12, fontWeight: '600' },
+  dot: { color: T.blueDark, fontWeight: '800', fontSize: 12, fontFamily: FONT.extrabold },
+  text: { color: T.blueDark, fontSize: 12, fontFamily: FONT.semibold, fontWeight: '600' },
 });

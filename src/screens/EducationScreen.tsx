@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, FlatList } from 'react-native';
 import { useLanguage } from '../context/LanguageContext';
+import { usePatient } from '../context/PatientContext';
+import { FONT } from '../theme';
 
 const TOPICS = [
   { id: '1', topic: 'Diagnosis & Pathophysiology', icon: '🔬', order: 1 },
@@ -12,7 +14,7 @@ const TOPICS = [
 ];
 
 export default function EducationScreen({ route, navigation }: any) {
-  const { patientId } = route.params;
+  const patientId = (route.params as any)?.patientId || usePatient()?.id || '';
   const { t, language } = useLanguage();
 
   return (
@@ -43,15 +45,15 @@ export default function EducationScreen({ route, navigation }: any) {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#F0F7FF', padding: 20, paddingTop: 90 },
-  title: { fontSize: 24, fontWeight: '800', color: '#202124', marginBottom: 4 },
-  subtitle: { fontSize: 14, color: '#5f6368', marginBottom: 20 },
+  title: { fontSize: 24, fontFamily: FONT.extrabold, fontWeight: '800', color: '#202124', marginBottom: 4 },
+  subtitle: { fontSize: 14, fontFamily: FONT.regular, color: '#5f6368', marginBottom: 20 },
   list: { paddingBottom: 20 },
   card: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#fff', borderRadius: 12, padding: 16, marginBottom: 10, borderWidth: 1, borderColor: '#e8eaed' },
-  icon: { fontSize: 32, marginRight: 14 },
+  icon: { fontSize: 32, fontFamily: FONT.regular, marginRight: 14 },
   cardText: { flex: 1 },
-  cardTitle: { fontSize: 16, fontWeight: '600', color: '#202124' },
-  audience: { fontSize: 12, color: '#5f6368', marginTop: 2 },
-  playBtn: { fontSize: 24 },
+  cardTitle: { fontSize: 16, fontFamily: FONT.semibold, fontWeight: '600', color: '#202124' },
+  audience: { fontSize: 12, fontFamily: FONT.regular, color: '#5f6368', marginTop: 2 },
+  playBtn: { fontSize: 24, fontFamily: FONT.regular },
   quizBtn: { backgroundColor: '#1a73e8', borderRadius: 12, padding: 16, alignItems: 'center', marginTop: 10 },
-  quizText: { color: '#fff', fontSize: 17, fontWeight: '600' },
+  quizText: { color: '#fff', fontSize: 17, fontFamily: FONT.semibold, fontWeight: '600' },
 });

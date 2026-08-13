@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Modal, ScrollView } from 'react-native';
 import NepaliDate from 'nepali-date-converter';
+import { FONT } from '../theme';
 
 interface BSDatePickerProps {
   value: string; // AD ISO string for storage
@@ -145,27 +146,27 @@ function formatBSDisplay(year: number, month: number, day: number): string {
 }
 
 const styles = StyleSheet.create({
-  label: { fontSize: 14, fontWeight: '600', color: '#202124', marginBottom: 6, marginTop: 10 },
+  label: { fontSize: 14, fontFamily: FONT.semibold, fontWeight: '600', color: '#202124', marginBottom: 6, marginTop: 10 },
   pickerBtn: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#fff', borderRadius: 10, padding: 14, borderWidth: 1, borderColor: '#dadce0' },
-  pickerText: { fontSize: 15, color: '#202124' },
-  pickerIcon: { fontSize: 18 },
+  pickerText: { fontSize: 15, fontFamily: FONT.regular, color: '#202124' },
+  pickerIcon: { fontSize: 18, fontFamily: FONT.regular },
   modalOverlay: { flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(0,0,0,0.5)' },
   modalContent: { backgroundColor: '#fff', borderTopLeftRadius: 20, borderTopRightRadius: 20, padding: 20, maxHeight: '80%' },
-  modalTitle: { fontSize: 18, fontWeight: '700', color: '#202124', textAlign: 'center' },
-  modalSubtitle: { fontSize: 13, color: '#5f6368', textAlign: 'center', marginBottom: 16 },
+  modalTitle: { fontSize: 18, fontFamily: FONT.bold, fontWeight: '700', color: '#202124', textAlign: 'center' },
+  modalSubtitle: { fontSize: 13, fontFamily: FONT.regular, color: '#5f6368', textAlign: 'center', marginBottom: 16 },
   pickers: { flexDirection: 'row', gap: 8 },
   column: { flex: 1 },
-  colTitle: { fontSize: 12, fontWeight: '700', color: '#5f6368', textAlign: 'center', marginBottom: 4 },
+  colTitle: { fontSize: 12, fontFamily: FONT.bold, fontWeight: '700', color: '#5f6368', textAlign: 'center', marginBottom: 4 },
   colScroll: { maxHeight: 200 },
   option: { padding: 10, alignItems: 'center', marginVertical: 1, borderRadius: 6 },
   selected: { backgroundColor: '#1a73e8' },
-  optionText: { fontSize: 14, color: '#202124' },
+  optionText: { fontSize: 14, fontFamily: FONT.regular, color: '#202124' },
   selectedText: { color: '#fff', fontWeight: '600' },
-  preview: { textAlign: 'center', fontSize: 14, fontWeight: '600', color: '#1a73e8', paddingVertical: 12 },
+  preview: { textAlign: 'center', fontSize: 14, fontFamily: FONT.semibold, fontWeight: '600', color: '#1a73e8', paddingVertical: 12 },
   btnRow: { flexDirection: 'row', gap: 12 },
   btn: { flex: 1, borderRadius: 10, padding: 14, alignItems: 'center' },
   cancelBtn: { backgroundColor: '#e8eaed' },
   confirmBtn: { backgroundColor: '#1a73e8' },
-  cancelText: { fontSize: 16, fontWeight: '600', color: '#3c4043' },
-  confirmText: { fontSize: 16, fontWeight: '600', color: '#fff' },
+  cancelText: { fontSize: 16, fontFamily: FONT.semibold, fontWeight: '600', color: '#3c4043' },
+  confirmText: { fontSize: 16, fontFamily: FONT.semibold, fontWeight: '600', color: '#fff' },
 });

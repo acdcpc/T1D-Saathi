@@ -8,7 +8,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useLanguage } from '../context/LanguageContext';
 import { supabase } from '../lib/supabase';
 import BSDatePicker from '../components/BSDatePicker';
-import { T, input, section, primBtn } from '../theme';
+import { FONT,  T, input, section, primBtn } from '../theme';
 
 const COMORBID_OPTIONS = ['celiac', 'thyroid', 'downSyndrome'];
 const SEX_OPTIONS = ['male', 'female', 'other'] as const;
@@ -258,41 +258,41 @@ export default function AddPatientScreen({ navigation }: any) {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: T.bg },
   content: { padding: 16 },
-  section: { ...section, color: T.blue, fontSize: 16, marginTop: 24, marginBottom: 12 },
-  label: { fontSize: 13, fontWeight: '600', color: T.text, marginBottom: 6, marginTop: 10 },
+  section: { ...section, color: T.blue, fontSize: 16, fontFamily: FONT.regular, marginTop: 24, marginBottom: 12 },
+  label: { fontSize: 13, fontFamily: FONT.semibold, fontWeight: '600', color: T.text, marginBottom: 6, marginTop: 10 },
   input: { ...input },
   multiline: { minHeight: 70, textAlignVertical: 'top' },
   chipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   chip: { borderRadius: 20, paddingHorizontal: 16, paddingVertical: 8, backgroundColor: T.surface, borderWidth: 1, borderColor: T.border },
   chipActive: { backgroundColor: T.blue, borderColor: T.blue },
   chipActiveWarn: { backgroundColor: T.red, borderColor: T.red },
-  chipText: { fontSize: 14, color: T.muted },
+  chipText: { fontSize: 14, fontFamily: FONT.regular, color: T.muted },
   chipTextActive: { color: '#fff' },
   chipTextWarn: { color: '#fff' },
 
   // Dropdown
   dropdown: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', backgroundColor: T.surface, borderRadius: 10, padding: 14, borderWidth: 1, borderColor: T.border },
-  dropdownText: { fontSize: 15, color: T.text },
-  dropdownPlaceholder: { fontSize: 15, color: T.muted },
-  dropdownIcon: { fontSize: 16, color: T.muted },
+  dropdownText: { fontSize: 15, fontFamily: FONT.regular, color: T.text },
+  dropdownPlaceholder: { fontSize: 15, fontFamily: FONT.regular, color: T.muted },
+  dropdownIcon: { fontSize: 16, fontFamily: FONT.regular, color: T.muted },
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'flex-end' },
   dropdownModal: { backgroundColor: '#fff', borderTopLeftRadius: 20, borderTopRightRadius: 20, padding: 20, maxHeight: '70%' },
-  dropdownTitle: { fontSize: 16, fontWeight: '700', color: T.text, textAlign: 'center', marginBottom: 12 },
+  dropdownTitle: { fontSize: 16, fontFamily: FONT.bold, fontWeight: '700', color: T.text, textAlign: 'center', marginBottom: 12 },
   dropdownOption: { padding: 14, borderRadius: 8, marginVertical: 2 },
   dropdownOptionActive: { backgroundColor: T.blueLight },
-  dropdownOptionText: { fontSize: 15, color: T.text },
+  dropdownOptionText: { fontSize: 15, fontFamily: FONT.regular, color: T.text },
   dropdownOptionActiveText: { color: T.blue, fontWeight: '700' },
 
   // Auto-calculated dosing card
   autoCard: { backgroundColor: T.blueLight, borderRadius: 12, padding: 14, marginTop: 12, borderWidth: 1, borderColor: '#BBD7F0' },
-  autoCardTitle: { fontSize: 13, fontWeight: '700', color: T.blueDark, marginBottom: 10 },
+  autoCardTitle: { fontSize: 13, fontFamily: FONT.bold, fontWeight: '700', color: T.blueDark, marginBottom: 10 },
   autoRow: { flexDirection: 'row', gap: 12 },
   autoField: { flex: 1, backgroundColor: '#fff', borderRadius: 8, padding: 10 },
-  autoLabel: { fontSize: 11, color: T.muted, marginBottom: 4 },
-  autoValue: { fontSize: 17, fontWeight: '800', color: T.text },
-  autoFormula: { fontSize: 11, color: T.blue, marginTop: 3 },
-  autoNote: { fontSize: 11, color: T.muted, marginTop: 10, fontStyle: 'italic' },
+  autoLabel: { fontSize: 11, fontFamily: FONT.regular, color: T.muted, marginBottom: 4 },
+  autoValue: { fontSize: 17, fontFamily: FONT.extrabold, fontWeight: '800', color: T.text },
+  autoFormula: { fontSize: 11, fontFamily: FONT.regular, color: T.blue, marginTop: 3 },
+  autoNote: { fontSize: 11, fontFamily: FONT.regular, color: T.muted, marginTop: 10, fontStyle: 'italic' },
 
   saveBtn: { ...primBtn, marginTop: 30 },
-  saveText: { color: '#fff', fontSize: 16, fontWeight: '600' },
+  saveText: { color: '#fff', fontSize: 16, fontFamily: FONT.semibold, fontWeight: '600' },
 });

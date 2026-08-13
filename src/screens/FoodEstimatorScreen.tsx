@@ -6,6 +6,7 @@ import * as ImagePicker from 'expo-image-picker';
 import * as Haptics from 'expo-haptics';
 import ISPADBadge from '../components/ISPADBadge';
 import { useAuth } from '../context/AuthContext';
+import { usePatient } from '../context/PatientContext';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useLanguage } from '../context/LanguageContext';
 import { supabase } from '../lib/supabase';
@@ -18,6 +19,7 @@ import {
   validateCalories, type FoodItem, type MealEstimateResult,
 } from '../utils/visionEstimator';
 import type { InsulinRegimen } from '../types';
+import { FONT } from '../theme';
 
 type Step = 'photo' | 'identify' | 'dosing';
 
@@ -27,7 +29,7 @@ const PORTION_LABELS: Record<number, string> = {
 };
 
 export default function FoodEstimatorScreen({ route }: any) {
-  const { patientId } = route.params;
+  const patientId = (route.params as any)?.patientId || usePatient()?.id || '';
   const { user } = useAuth();
   const { t } = useLanguage();
   const insets = useSafeAreaInsets();
@@ -468,7 +470,7 @@ export default function FoodEstimatorScreen({ route }: any) {
           <Text style={s.noteText}>
             {items.map((i, idx) => `${i.food_name} (${i.carbs_g}g)`).join(', ')}
           </Text>
-          <Text style={[s.noteText, { fontSize: 11, marginTop: 4, fontStyle: 'italic' }]}>
+          <Text style={[s.noteText, { fontSize: 11, fontFamily: FONT.regular, marginTop: 4, fontStyle: 'italic' }]}>
             ⚠️ Dosing is based on user-confirmed, corrected macros — not the raw photo estimate. Estimates are starting suggestions; ratios should be clinician-approved.
           </Text>
         </View>
@@ -488,104 +490,104 @@ const s = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#F0F7FF' },
   content: { padding: 20, paddingTop: 60 },
   centered: { justifyContent: 'center', alignItems: 'center' },
-  title: { fontSize: 24, fontWeight: '800', color: '#202124', marginBottom: 8 },
-  hint: { fontSize: 14, color: '#5f6368', marginBottom: 20, lineHeight: 20 },
+  title: { fontSize: 24, fontFamily: FONT.extrabold, fontWeight: '800', color: '#202124', marginBottom: 8 },
+  hint: { fontSize: 14, fontFamily: FONT.regular, color: '#5f6368', marginBottom: 20, lineHeight: 20 },
   preview: { width: '100%', height: 250, borderRadius: 12, marginBottom: 16, backgroundColor: '#e8eaed' },
   row: { flexDirection: 'row', gap: 12, marginBottom: 12 },
   primaryBtn: { flex: 1, backgroundColor: '#1a73e8', borderRadius: 12, padding: 16, alignItems: 'center' },
-  primaryText: { color: '#fff', fontSize: 16, fontWeight: '600' },
+  primaryText: { color: '#fff', fontSize: 16, fontFamily: FONT.semibold, fontWeight: '600' },
   secondaryBtn: { backgroundColor: '#e8eaed' },
-  secondaryText: { color: '#3c4043', fontSize: 16, fontWeight: '600' },
+  secondaryText: { color: '#3c4043', fontSize: 16, fontFamily: FONT.semibold, fontWeight: '600' },
   skipBtn: { paddingVertical: 14, alignItems: 'center' },
-  skipText: { color: '#1a73e8', fontSize: 14 },
-  disclaimer: { fontSize: 11, color: '#5f6368', textAlign: 'center', marginTop: 10 },
+  skipText: { color: '#1a73e8', fontSize: 14, fontFamily: FONT.regular },
+  disclaimer: { fontSize: 11, fontFamily: FONT.regular, color: '#5f6368', textAlign: 'center', marginTop: 10 },
 
   // Review step
   itemCard: { backgroundColor: '#fff', borderRadius: 12, padding: 14, marginBottom: 10, borderWidth: 1, borderColor: '#e8eaed' },
   lowConfCard: { borderColor: '#f9ab00', borderWidth: 2, backgroundColor: '#fef7e0' },
   itemHeader: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 4 },
-  itemName: { fontSize: 16, fontWeight: '600', color: '#202124', flex: 1 },
+  itemName: { fontSize: 16, fontFamily: FONT.semibold, fontWeight: '600', color: '#202124', flex: 1 },
   confBadge: { borderRadius: 4, paddingHorizontal: 6, paddingVertical: 2, backgroundColor: '#e8eaed' },
   confHigh: { backgroundColor: '#e6f4ea' },
   confMed: { backgroundColor: '#e8eaed' },
   confLow: { backgroundColor: '#fde7d0' },
-  confText: { fontSize: 9, fontWeight: '700', color: '#5f6368' },
-  removeBtn: { fontSize: 18, color: '#ea4335', paddingHorizontal: 4 },
-  itemSource: { fontSize: 11, color: '#80868b', marginBottom: 8 },
+  confText: { fontSize: 9, fontFamily: FONT.bold, fontWeight: '700', color: '#5f6368' },
+  removeBtn: { fontSize: 18, fontFamily: FONT.regular, color: '#ea4335', paddingHorizontal: 4 },
+  itemSource: { fontSize: 11, fontFamily: FONT.regular, color: '#80868b', marginBottom: 8 },
   lowConfNote: { backgroundColor: '#fef7e0', borderRadius: 4, padding: 4, marginBottom: 6 },
-  lowConfText: { fontSize: 10, color: '#e37400', fontWeight: '600' },
-  portionLabel: { fontSize: 12, fontWeight: '600', color: '#202124', marginBottom: 2 },
-  portionHint: { fontSize: 10, color: '#5f6368', marginBottom: 6, fontStyle: 'italic' },
+  lowConfText: { fontSize: 10, fontFamily: FONT.semibold, color: '#e37400', fontWeight: '600' },
+  portionLabel: { fontSize: 12, fontFamily: FONT.semibold, fontWeight: '600', color: '#202124', marginBottom: 2 },
+  portionHint: { fontSize: 10, fontFamily: FONT.regular, color: '#5f6368', marginBottom: 6, fontStyle: 'italic' },
   portionRow: { flexDirection: 'row', gap: 6, marginBottom: 10 },
   portionChip: { backgroundColor: '#e8eaed', borderRadius: 8, paddingHorizontal: 10, paddingVertical: 5 },
   portionActive: { backgroundColor: '#1a73e8' },
-  portionChipText: { fontSize: 12, color: '#3c4043', fontWeight: '600' },
+  portionChipText: { fontSize: 12, fontFamily: FONT.semibold, color: '#3c4043', fontWeight: '600' },
   portionChipActiveText: { color: '#fff' },
   itemMacros: { flexDirection: 'row', gap: 12 },
-  macroSmall: { fontSize: 12, color: '#5f6368' },
-  calWarning: { fontSize: 11, color: '#ea4335', marginTop: 4, fontStyle: 'italic' },
+  macroSmall: { fontSize: 12, fontFamily: FONT.regular, color: '#5f6368' },
+  calWarning: { fontSize: 11, fontFamily: FONT.regular, color: '#ea4335', marginTop: 4, fontStyle: 'italic' },
 
   // Totals
   totalsCard: { backgroundColor: '#e8f0fe', borderRadius: 12, padding: 16, marginVertical: 14, borderWidth: 1, borderColor: '#d2e3fc' },
-  totalsTitle: { fontSize: 16, fontWeight: '700', color: '#1a73e8', marginBottom: 8 },
+  totalsTitle: { fontSize: 16, fontFamily: FONT.bold, fontWeight: '700', color: '#1a73e8', marginBottom: 8 },
   macroGrid: { flexDirection: 'row', gap: 10 },
   macroBox: { flex: 1, backgroundColor: '#fff', borderRadius: 8, padding: 10, alignItems: 'center' },
-  macroValue: { fontSize: 20, fontWeight: '700', color: '#1a73e8' },
-  macroLabel: { fontSize: 10, color: '#5f6368', marginTop: 2 },
+  macroValue: { fontSize: 20, fontFamily: FONT.bold, fontWeight: '700', color: '#1a73e8' },
+  macroLabel: { fontSize: 10, fontFamily: FONT.regular, color: '#5f6368', marginTop: 2 },
 
   // Search
-  sectionTitle: { fontSize: 15, fontWeight: '700', color: '#202124', marginTop: 20, marginBottom: 8 },
-  searchInput: { backgroundColor: '#fff', borderRadius: 10, padding: 12, fontSize: 15, borderWidth: 1, borderColor: '#dadce0', marginBottom: 8 },
+  sectionTitle: { fontSize: 15, fontFamily: FONT.bold, fontWeight: '700', color: '#202124', marginTop: 20, marginBottom: 8 },
+  searchInput: { backgroundColor: '#fff', borderRadius: 10, padding: 12, fontSize: 15, fontFamily: FONT.regular, borderWidth: 1, borderColor: '#dadce0', marginBottom: 8 },
   searchItem: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#fff', borderRadius: 8, padding: 12, marginBottom: 6, borderWidth: 1, borderColor: '#e8eaed' },
-  searchName: { fontSize: 14, fontWeight: '600', color: '#202124' },
-  searchMeta: { fontSize: 11, color: '#5f6368' },
-  searchCarbs: { fontSize: 14, fontWeight: '600', color: '#1a73e8' },
-  plus: { color: '#80868b', fontSize: 14 },
+  searchName: { fontSize: 14, fontFamily: FONT.semibold, fontWeight: '600', color: '#202124' },
+  searchMeta: { fontSize: 11, fontFamily: FONT.regular, color: '#5f6368' },
+  searchCarbs: { fontSize: 14, fontFamily: FONT.semibold, fontWeight: '600', color: '#1a73e8' },
+  plus: { color: '#80868b', fontSize: 14, fontFamily: FONT.regular },
 
   // Dosing inputs
-  label: { fontSize: 14, fontWeight: '600', color: '#202124', marginTop: 16, marginBottom: 6 },
-  glucoseInput: { backgroundColor: '#fff', borderRadius: 10, padding: 12, fontSize: 22, fontWeight: '700', borderWidth: 1, borderColor: '#dadce0', textAlign: 'center' },
-  insulinInput: { backgroundColor: '#fff', borderRadius: 10, padding: 12, fontSize: 16, borderWidth: 1, borderColor: '#dadce0', textAlign: 'center' },
+  label: { fontSize: 14, fontFamily: FONT.semibold, fontWeight: '600', color: '#202124', marginTop: 16, marginBottom: 6 },
+  glucoseInput: { backgroundColor: '#fff', borderRadius: 10, padding: 12, fontSize: 22, fontFamily: FONT.bold, fontWeight: '700', borderWidth: 1, borderColor: '#dadce0', textAlign: 'center' },
+  insulinInput: { backgroundColor: '#fff', borderRadius: 10, padding: 12, fontSize: 16, fontFamily: FONT.regular, borderWidth: 1, borderColor: '#dadce0', textAlign: 'center' },
   confirmBtn: { backgroundColor: '#1a73e8', marginTop: 24, marginBottom: 8 },
-  smallNote: { fontSize: 11, color: '#5f6368', textAlign: 'center', marginTop: 8 },
+  smallNote: { fontSize: 11, fontFamily: FONT.regular, color: '#5f6368', textAlign: 'center', marginTop: 8 },
 
   // Results
   resultCard: { backgroundColor: '#fff', borderRadius: 12, padding: 16, marginBottom: 14, borderWidth: 1, borderColor: '#e8eaed' },
   doseCard: { borderColor: '#1a73e8', borderWidth: 2 },
-  resultSection: { fontSize: 15, fontWeight: '700', color: '#202124', marginBottom: 10 },
+  resultSection: { fontSize: 15, fontFamily: FONT.bold, fontWeight: '700', color: '#202124', marginBottom: 10 },
   resultRow: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 6 },
-  rLabel: { fontSize: 14, color: '#5f6368' },
-  rLabelBold: { fontSize: 16, fontWeight: '700', color: '#202124' },
-  rValue: { fontSize: 14, fontWeight: '600', color: '#202124' },
-  rValueBold: { fontSize: 16, fontWeight: '600', color: '#1a73e8' },
-  rTotal: { fontSize: 22, fontWeight: '800', color: '#1a73e8' },
-  doseMeal: { fontSize: 13, color: '#5f6368', marginBottom: 8 },
+  rLabel: { fontSize: 14, fontFamily: FONT.regular, color: '#5f6368' },
+  rLabelBold: { fontSize: 16, fontFamily: FONT.bold, fontWeight: '700', color: '#202124' },
+  rValue: { fontSize: 14, fontFamily: FONT.semibold, fontWeight: '600', color: '#202124' },
+  rValueBold: { fontSize: 16, fontFamily: FONT.semibold, fontWeight: '600', color: '#1a73e8' },
+  rTotal: { fontSize: 22, fontFamily: FONT.extrabold, fontWeight: '800', color: '#1a73e8' },
+  doseMeal: { fontSize: 13, fontFamily: FONT.regular, color: '#5f6368', marginBottom: 8 },
   divider: { height: 1, backgroundColor: '#e8eaed', marginVertical: 8 },
   warningCard: { backgroundColor: '#fef7e0', borderRadius: 12, padding: 16, marginBottom: 14, borderWidth: 1, borderColor: '#f9ab00' },
-  warningTitle: { fontSize: 16, fontWeight: '700', color: '#e37400', marginBottom: 8 },
-  warningText: { fontSize: 13, color: '#202124', lineHeight: 18 },
+  warningTitle: { fontSize: 16, fontFamily: FONT.bold, fontWeight: '700', color: '#e37400', marginBottom: 8 },
+  warningText: { fontSize: 13, fontFamily: FONT.regular, color: '#202124', lineHeight: 18 },
   noteCard: { backgroundColor: '#e8f0fe', borderRadius: 10, padding: 12, marginBottom: 14, borderWidth: 1, borderColor: '#d2e3fc' },
-  noteTitle: { fontSize: 14, fontWeight: '600', color: '#1a73e8', marginBottom: 4 },
-  noteText: { fontSize: 12, color: '#3c4043', lineHeight: 16 },
+  noteTitle: { fontSize: 14, fontFamily: FONT.semibold, fontWeight: '600', color: '#1a73e8', marginBottom: 4 },
+  noteText: { fontSize: 12, fontFamily: FONT.regular, color: '#3c4043', lineHeight: 16 },
   doneBtn: { backgroundColor: '#34a853', borderRadius: 12, padding: 16, alignItems: 'center', marginTop: 10 },
-  doneBtnText: { color: '#fff', fontSize: 17, fontWeight: '600' },
+  doneBtnText: { color: '#fff', fontSize: 17, fontFamily: FONT.semibold, fontWeight: '600' },
   identifyBtn: { backgroundColor: '#1a73e8', marginBottom: 12 },
   modelLoadingRow: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 10, marginBottom: 8 },
-  modelLoadingText: { fontSize: 13, color: '#5f6368', fontStyle: 'italic' },
+  modelLoadingText: { fontSize: 13, fontFamily: FONT.regular, color: '#5f6368', fontStyle: 'italic' },
   modelErrorRow: { backgroundColor: '#fef7e0', borderRadius: 8, padding: 10, marginBottom: 10, borderWidth: 1, borderColor: '#f9ab00' },
-  modelErrorText: { fontSize: 12, color: '#e37400' },
+  modelErrorText: { fontSize: 12, fontFamily: FONT.regular, color: '#e37400' },
   modelSuggestionsCard: { backgroundColor: '#f0f7ff', borderRadius: 12, padding: 14, marginBottom: 16, borderWidth: 1, borderColor: '#d2e3fc' },
-  modelSuggestionsTitle: { fontSize: 14, fontWeight: '700', color: '#1a73e8', marginBottom: 2 },
-  modelSuggestionsSubtitle: { fontSize: 11, color: '#5f6368', marginBottom: 10, fontStyle: 'italic', lineHeight: 15 },
+  modelSuggestionsTitle: { fontSize: 14, fontFamily: FONT.bold, fontWeight: '700', color: '#1a73e8', marginBottom: 2 },
+  modelSuggestionsSubtitle: { fontSize: 11, fontFamily: FONT.regular, color: '#5f6368', marginBottom: 10, fontStyle: 'italic', lineHeight: 15 },
   modelChips: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
   modelChip: { borderRadius: 20, paddingHorizontal: 12, paddingVertical: 8, borderWidth: 1, flexDirection: 'row', alignItems: 'center', gap: 8 },
   modelChipHigh: { backgroundColor: '#e8f0fe', borderColor: '#a8c8fa' },
   modelChipMed: { backgroundColor: '#f1f3f4', borderColor: '#dadce0' },
-  modelChipText: { fontSize: 13, fontWeight: '600', color: '#202124' },
-  modelChipMeta: { fontSize: 11, color: '#5f6368' },
+  modelChipText: { fontSize: 13, fontFamily: FONT.semibold, fontWeight: '600', color: '#202124' },
+  modelChipMeta: { fontSize: 11, fontFamily: FONT.regular, color: '#5f6368' },
   photoRefCard: { backgroundColor: '#e8f0fe', borderRadius: 12, padding: 12, marginBottom: 14, borderWidth: 1, borderColor: '#d2e3fc', alignItems: 'center' },
   photoRefImg: { width: '100%', height: 160, borderRadius: 8, marginBottom: 8, backgroundColor: '#e8eaed' },
-  photoRefLabel: { fontSize: 12, color: '#1a73e8', fontWeight: '600' },
-suggestionsTitle: { fontSize: 14, fontWeight: '700', color: '#5f6368', marginBottom: 8 },
+  photoRefLabel: { fontSize: 12, fontFamily: FONT.semibold, color: '#1a73e8', fontWeight: '600' },
+suggestionsTitle: { fontSize: 14, fontFamily: FONT.bold, fontWeight: '700', color: '#5f6368', marginBottom: 8 },
 colorSwatch: { width: 20, height: 20, borderRadius: 10, borderWidth: 1, borderColor: '#c4c4c4' },
 });

@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet, Dimensions } from 'react-native';
 import Svg, { Line, Polyline, Circle, Text as SvgText } from 'react-native-svg';
-import { T } from '../theme';
+import { FONT,  T } from '../theme';
 import { useLanguage } from '../context/LanguageContext';
 import { toMgdl } from '../utils/glucoseStats';
 import type { GlucoseLog } from '../types';
@@ -82,6 +82,6 @@ export default function GlucoseTrendChart({ logs }: { logs: GlucoseLog[] }) {
 
 const styles = StyleSheet.create({
   empty: { paddingVertical: 24, alignItems: 'center' },
-  emptyText: { color: T.muted, fontSize: 13, textAlign: 'center', fontStyle: 'italic' },
-  legend: { color: T.muted, fontSize: 11, textAlign: 'center', marginTop: 4 },
+  emptyText: { color: T.muted, fontSize: 13, fontFamily: FONT.regular, textAlign: 'center', fontStyle: 'italic' },
+  legend: { color: T.muted, fontSize: 11, fontFamily: FONT.regular, textAlign: 'center', marginTop: 4 },
 });

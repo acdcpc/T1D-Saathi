@@ -4,7 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 import ISPADBadge from '../components/ISPADBadge';
 import { useLanguage } from '../context/LanguageContext';
-import { T, card, section } from '../theme';
+import { FONT,  T, card, section } from '../theme';
 
 const HELPLINE = '9851350883';
 
@@ -104,34 +104,34 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: T.bg },
   content: { padding: 16, paddingTop: 10 },
   headerRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 },
-  backArrow: { fontSize: 32, color: T.text, fontWeight: '300' },
-  title: { fontSize: 22, fontWeight: '800', color: T.red },
+  backArrow: { fontSize: 32, fontFamily: FONT.regular, color: T.text, fontWeight: '300' },
+  title: { fontSize: 22, fontFamily: FONT.extrabold, fontWeight: '800', color: T.red },
 
   callCard: {
     backgroundColor: T.redLight, borderRadius: 16, padding: 20,
     alignItems: 'center', borderWidth: 2, borderColor: T.red, marginBottom: 20,
   },
-  callTitle: { fontSize: 14, fontWeight: '700', color: T.redDark, marginBottom: 10 },
+  callTitle: { fontSize: 14, fontFamily: FONT.bold, fontWeight: '700', color: T.redDark, marginBottom: 10 },
   callBtn: {
     flexDirection: 'row', alignItems: 'center', gap: 8,
     backgroundColor: T.red, borderRadius: 28, paddingHorizontal: 24, paddingVertical: 14,
   },
-  callIcon: { fontSize: 20 },
-  callNum: { color: '#fff', fontSize: 22, fontWeight: '800' },
-  callSub: { fontSize: 12, color: T.redDark, marginTop: 10 },
+  callIcon: { fontSize: 20, fontFamily: FONT.regular },
+  callNum: { color: '#fff', fontSize: 22, fontFamily: FONT.extrabold, fontWeight: '800' },
+  callSub: { fontSize: 12, fontFamily: FONT.regular, color: T.redDark, marginTop: 10 },
 
   sectionLabel: { ...section },
 
   protocolCard: {
     ...card, borderLeftWidth: 4, borderLeftColor: T.red, marginBottom: 12,
   },
-  protocolIcon: { fontSize: 24, marginBottom: 6 },
-  protocolTitle: { fontSize: 16, fontWeight: '700', color: T.text, marginBottom: 2 },
-  protocolSub: { fontSize: 13, color: T.muted, marginBottom: 10 },
+  protocolIcon: { fontSize: 24, fontFamily: FONT.regular, marginBottom: 6 },
+  protocolTitle: { fontSize: 16, fontFamily: FONT.bold, fontWeight: '700', color: T.text, marginBottom: 2 },
+  protocolSub: { fontSize: 13, fontFamily: FONT.regular, color: T.muted, marginBottom: 10 },
 
   stepRow: { flexDirection: 'row', marginBottom: 6, gap: 6 },
-  stepNum: { fontSize: 13, fontWeight: '700', color: T.red, width: 18 },
-  stepText: { fontSize: 13, color: T.text, flex: 1, lineHeight: 18 },
+  stepNum: { fontSize: 13, fontFamily: FONT.bold, fontWeight: '700', color: T.red, width: 18 },
+  stepText: { fontSize: 13, fontFamily: FONT.regular, color: T.text, flex: 1, lineHeight: 18 },
 
-  footer: { textAlign: 'center', color: T.muted, fontSize: 11, marginTop: 20, lineHeight: 16 },
+  footer: { textAlign: 'center', color: T.muted, fontSize: 11, fontFamily: FONT.regular, marginTop: 20, lineHeight: 16 },
 });

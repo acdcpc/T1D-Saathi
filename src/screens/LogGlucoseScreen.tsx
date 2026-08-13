@@ -7,13 +7,15 @@ import * as Haptics from 'expo-haptics';
 import ISPADBadge from '../components/ISPADBadge';
 import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
+import { usePatient } from '../context/PatientContext';
 import { supabase } from '../lib/supabase';
 import { safeInsert } from '../utils/offlineQueue';
 import { HYPO_THRESHOLD, HYPO_RECHECK_MINUTES, calculateCorrectionDose, calculateCarbDose, convertGlucose } from '../rules/sickDayRules';
 import type { InsulinRegimen, UnitSystem } from '../types';
+import { FONT } from '../theme';
 
 export default function LogGlucoseScreen({ route, navigation }: any) {
-  const { patientId } = route.params;
+  const patientId = (route.params as any)?.patientId || usePatient()?.id || '';
   const { user } = useAuth();
   const { t } = useLanguage();
 
@@ -163,30 +165,30 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#F0F7FF' },
   content: { padding: 20, paddingTop: 90, paddingBottom: 60 },
   centered: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  title: { fontSize: 24, fontWeight: '800', color: '#202124', marginBottom: 20 },
-  label: { fontSize: 14, fontWeight: '600', color: '#202124', marginBottom: 6, marginTop: 14 },
-  input: { backgroundColor: '#fff', borderRadius: 10, padding: 14, fontSize: 16, borderWidth: 1, borderColor: '#dadce0' },
+  title: { fontSize: 24, fontFamily: FONT.extrabold, fontWeight: '800', color: '#202124', marginBottom: 20 },
+  label: { fontSize: 14, fontFamily: FONT.semibold, fontWeight: '600', color: '#202124', marginBottom: 6, marginTop: 14 },
+  input: { backgroundColor: '#fff', borderRadius: 10, padding: 14, fontSize: 16, fontFamily: FONT.regular, borderWidth: 1, borderColor: '#dadce0' },
   glucoseRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  glucoseInput: { flex: 1, backgroundColor: '#fff', borderRadius: 10, padding: 14, fontSize: 32, fontWeight: '700', borderWidth: 1, borderColor: '#dadce0', textAlign: 'center' },
+  glucoseInput: { flex: 1, backgroundColor: '#fff', borderRadius: 10, padding: 14, fontSize: 32, fontFamily: FONT.bold, fontWeight: '700', borderWidth: 1, borderColor: '#dadce0', textAlign: 'center' },
   unitToggle: { flexDirection: 'row', gap: 4 },
   unitBtn: { borderRadius: 8, paddingHorizontal: 12, paddingVertical: 10, backgroundColor: '#e8eaed' },
   unitActive: { backgroundColor: '#1a73e8' },
-  unitText: { fontSize: 13, color: '#3c4043' },
+  unitText: { fontSize: 13, fontFamily: FONT.regular, color: '#3c4043' },
   unitTextActive: { color: '#fff' },
   regimenInfo: { backgroundColor: '#e8f0fe', borderRadius: 10, padding: 14, marginTop: 14 },
-  regimenText: { fontSize: 13, color: '#1a73e8', paddingVertical: 1 },
+  regimenText: { fontSize: 13, fontFamily: FONT.regular, color: '#1a73e8', paddingVertical: 1 },
   logBtn: { backgroundColor: '#1a73e8', borderRadius: 12, padding: 16, alignItems: 'center', marginTop: 24 },
-  logBtnText: { color: '#fff', fontSize: 17, fontWeight: '600' },
+  logBtnText: { color: '#fff', fontSize: 17, fontFamily: FONT.semibold, fontWeight: '600' },
   hypoAlert: { backgroundColor: '#fce8e6', borderRadius: 12, padding: 16, marginTop: 20, borderWidth: 2, borderColor: '#ea4335' },
-  hypoTitle: { fontSize: 18, fontWeight: '700', color: '#ea4335', marginBottom: 8 },
-  hypoText: { fontSize: 14, color: '#202124', marginBottom: 8 },
-  step: { fontSize: 14, color: '#202124', paddingVertical: 2 },
+  hypoTitle: { fontSize: 18, fontFamily: FONT.bold, fontWeight: '700', color: '#ea4335', marginBottom: 8 },
+  hypoText: { fontSize: 14, fontFamily: FONT.regular, color: '#202124', marginBottom: 8 },
+  step: { fontSize: 14, fontFamily: FONT.regular, color: '#202124', paddingVertical: 2 },
   resultCard: { backgroundColor: '#fff', borderRadius: 12, padding: 18, marginTop: 20, borderWidth: 1, borderColor: '#e8eaed' },
-  resultTitle: { fontSize: 16, fontWeight: '700', color: '#202124', marginBottom: 12 },
+  resultTitle: { fontSize: 16, fontFamily: FONT.bold, fontWeight: '700', color: '#202124', marginBottom: 12 },
   resultRow: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 6 },
-  resultLabel: { fontSize: 15, color: '#5f6368' },
-  resultValue: { fontSize: 15, fontWeight: '600', color: '#202124' },
-  resultLabelBold: { fontSize: 17, fontWeight: '700', color: '#202124' },
-  resultValueBold: { fontSize: 17, fontWeight: '700', color: '#1a73e8' },
+  resultLabel: { fontSize: 15, fontFamily: FONT.regular, color: '#5f6368' },
+  resultValue: { fontSize: 15, fontFamily: FONT.semibold, fontWeight: '600', color: '#202124' },
+  resultLabelBold: { fontSize: 17, fontFamily: FONT.bold, fontWeight: '700', color: '#202124' },
+  resultValueBold: { fontSize: 17, fontFamily: FONT.bold, fontWeight: '700', color: '#1a73e8' },
   divider: { height: 1, backgroundColor: '#e8eaed', marginVertical: 8 },
 });

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Modal, FlatList } from 'react-native';
-import { T } from '../theme';
+import { FONT,  T } from '../theme';
 
 /** Reusable modal dropdown picker (matches the app's chip/picker style). */
 export default function Dropdown({ label, options, value, onChange, placeholder }: {
@@ -42,16 +42,16 @@ export default function Dropdown({ label, options, value, onChange, placeholder 
 }
 
 const styles = StyleSheet.create({
-  label: { fontSize: 13, fontWeight: '600', color: T.text, marginBottom: 6, marginTop: 10 },
+  label: { fontSize: 13, fontFamily: FONT.semibold, fontWeight: '600', color: T.text, marginBottom: 6, marginTop: 10 },
   dropdown: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', backgroundColor: T.surface, borderRadius: 10, padding: 14, borderWidth: 1, borderColor: T.border },
-  dropdownText: { fontSize: 15, color: T.text },
-  dropdownPlaceholder: { fontSize: 15, color: T.muted },
-  dropdownIcon: { fontSize: 16, color: T.muted },
+  dropdownText: { fontSize: 15, fontFamily: FONT.regular, color: T.text },
+  dropdownPlaceholder: { fontSize: 15, fontFamily: FONT.regular, color: T.muted },
+  dropdownIcon: { fontSize: 16, fontFamily: FONT.regular, color: T.muted },
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'flex-end' },
   dropdownModal: { backgroundColor: '#fff', borderTopLeftRadius: 20, borderTopRightRadius: 20, padding: 20, maxHeight: '70%' },
-  dropdownTitle: { fontSize: 16, fontWeight: '700', color: T.text, textAlign: 'center', marginBottom: 12 },
+  dropdownTitle: { fontSize: 16, fontFamily: FONT.bold, fontWeight: '700', color: T.text, textAlign: 'center', marginBottom: 12 },
   dropdownOption: { padding: 14, borderRadius: 8, marginVertical: 2 },
   dropdownOptionActive: { backgroundColor: T.blueLight },
-  dropdownOptionText: { fontSize: 15, color: T.text },
+  dropdownOptionText: { fontSize: 15, fontFamily: FONT.regular, color: T.text },
   dropdownOptionActiveText: { color: T.blue, fontWeight: '700' },
 });

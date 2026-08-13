@@ -5,7 +5,7 @@ import {
 } from 'react-native';
 import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
-import { T, primBtn, input } from '../theme';
+import { FONT,  T, primBtn, input } from '../theme';
 
 export default function LoginScreen({ navigation }: any) {
   const { signIn, signUp, signInWithGoogle, signInAsGuest } = useAuth();
@@ -142,30 +142,30 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: T.bg },
   scroll: { flexGrow: 1, justifyContent: 'center', padding: 24 },
   header: { alignItems: 'center', marginBottom: 36 },
-  appTitle: { fontWeight: '800', fontSize: 26, color: T.text },
-  appSubtitle: { fontSize: 14, color: T.muted, marginTop: 2 },
-  tagline: { fontSize: 14, color: T.blue, marginTop: 10, fontWeight: '600' },
+  appTitle: { fontWeight: '800', fontSize: 26, fontFamily: FONT.extrabold, color: T.text },
+  appSubtitle: { fontSize: 14, fontFamily: FONT.regular, color: T.muted, marginTop: 2 },
+  tagline: { fontSize: 14, fontFamily: FONT.semibold, color: T.blue, marginTop: 10, fontWeight: '600' },
 
   form: { gap: 14 },
   field: { ...input },
-  btnText: { color: '#fff', fontSize: 16, fontWeight: '600' },
+  btnText: { color: '#fff', fontSize: 16, fontFamily: FONT.semibold, fontWeight: '600' },
 
-  switchText: { color: T.blue, textAlign: 'center', fontSize: 14, paddingVertical: 8 },
+  switchText: { color: T.blue, textAlign: 'center', fontSize: 14, fontFamily: FONT.regular, paddingVertical: 8 },
 
   divider: { flexDirection: 'row', alignItems: 'center', marginVertical: 8 },
   line: { flex: 1, height: 1, backgroundColor: T.border },
-  orText: { marginHorizontal: 12, color: T.muted, fontSize: 13 },
+  orText: { marginHorizontal: 12, color: T.muted, fontSize: 13, fontFamily: FONT.regular },
 
   outlineBtn: {
     borderWidth: 1.5, borderColor: T.border, borderRadius: 28,
     paddingVertical: 13, alignItems: 'center', backgroundColor: T.surface,
   },
-  outlineBtnText: { color: T.text, fontSize: 16, fontWeight: '600' },
+  outlineBtnText: { color: T.text, fontSize: 16, fontFamily: FONT.semibold, fontWeight: '600' },
 
   guestBtn: {
     borderRadius: 28, paddingVertical: 13, alignItems: 'center', backgroundColor: T.blueLight,
   },
-  guestBtnText: { color: T.blue, fontSize: 16, fontWeight: '600' },
+  guestBtnText: { color: T.blue, fontSize: 16, fontFamily: FONT.semibold, fontWeight: '600' },
 
-  disclaimer: { textAlign: 'center', color: T.muted, fontSize: 11, marginTop: 28, paddingHorizontal: 20, lineHeight: 16 },
+  disclaimer: { textAlign: 'center', color: T.muted, fontSize: 11, fontFamily: FONT.regular, marginTop: 28, paddingHorizontal: 20, lineHeight: 16 },
 });

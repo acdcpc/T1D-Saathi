@@ -3,6 +3,7 @@ import { View, Text, TouchableOpacity, StyleSheet, FlatList, Linking, ActivityIn
 import { useLanguage } from '../context/LanguageContext';
 import { supabase } from '../lib/supabase';
 import type { Hospital } from '../types';
+import { FONT } from '../theme';
 
 export default function HealthCentersScreen({ route }: any) {
   const patientId = route?.params?.patientId;
@@ -99,28 +100,28 @@ export default function HealthCentersScreen({ route }: any) {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#F0F7FF' },
   centered: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  title: { fontSize: 24, fontWeight: '800', color: '#202124', padding: 20, paddingTop: 90 },
+  title: { fontSize: 24, fontFamily: FONT.extrabold, fontWeight: '800', color: '#202124', padding: 20, paddingTop: 90 },
   viewToggle: { flexDirection: 'row', marginHorizontal: 20, marginBottom: 16 },
   toggleBtn: { flex: 1, padding: 10, alignItems: 'center', borderRadius: 8, backgroundColor: '#e8eaed' },
   toggleActive: { backgroundColor: '#1a73e8' },
-  toggleText: { fontSize: 14, color: '#3c4043', fontWeight: '600' },
+  toggleText: { fontSize: 14, fontFamily: FONT.semibold, color: '#3c4043', fontWeight: '600' },
   toggleActiveText: { color: '#fff' },
   list: { padding: 20, paddingTop: 0 },
   empty: { padding: 40, alignItems: 'center' },
-  emptyTitle: { fontSize: 18, fontWeight: '600', color: '#202124' },
-  emptyText: { fontSize: 14, color: '#5f6368', textAlign: 'center', marginTop: 8 },
+  emptyTitle: { fontSize: 18, fontFamily: FONT.semibold, fontWeight: '600', color: '#202124' },
+  emptyText: { fontSize: 14, fontFamily: FONT.regular, color: '#5f6368', textAlign: 'center', marginTop: 8 },
   card: { backgroundColor: '#fff', borderRadius: 12, padding: 16, marginBottom: 12, borderWidth: 1, borderColor: '#e8eaed' },
   assignedBadge: { backgroundColor: '#e8f0fe', borderRadius: 6, paddingHorizontal: 8, paddingVertical: 3, alignSelf: 'flex-start', marginBottom: 6 },
-  assignedText: { fontSize: 10, fontWeight: '700', color: '#1a73e8' },
-  hospitalName: { fontSize: 17, fontWeight: '600', color: '#202124', marginBottom: 4 },
-  detail: { fontSize: 13, color: '#5f6368', paddingVertical: 1 },
-  region: { fontSize: 12, color: '#80868b', marginBottom: 8 },
-  sourceBadge: { fontSize: 11, color: '#34a853', fontWeight: '600' },
+  assignedText: { fontSize: 10, fontFamily: FONT.bold, fontWeight: '700', color: '#1a73e8' },
+  hospitalName: { fontSize: 17, fontFamily: FONT.semibold, fontWeight: '600', color: '#202124', marginBottom: 4 },
+  detail: { fontSize: 13, fontFamily: FONT.regular, color: '#5f6368', paddingVertical: 1 },
+  region: { fontSize: 12, fontFamily: FONT.regular, color: '#80868b', marginBottom: 8 },
+  sourceBadge: { fontSize: 11, fontFamily: FONT.semibold, color: '#34a853', fontWeight: '600' },
   actionRow: { flexDirection: 'row', gap: 10, marginTop: 10 },
   callBtn: { backgroundColor: '#ea4335', borderRadius: 8, paddingVertical: 10, paddingHorizontal: 16, flex: 1, alignItems: 'center' },
-  callText: { color: '#fff', fontSize: 14, fontWeight: '700' },
+  callText: { color: '#fff', fontSize: 14, fontFamily: FONT.bold, fontWeight: '700' },
   dirBtn: { backgroundColor: '#1a73e8', borderRadius: 8, paddingVertical: 10, paddingHorizontal: 16, flex: 1, alignItems: 'center' },
-  dirText: { color: '#fff', fontSize: 14, fontWeight: '600' },
-  coords: { fontSize: 10, color: '#80868b', marginTop: 6 },
-  smallNote: { textAlign: 'center', fontSize: 10, color: '#5f6368', padding: 10 },
+  dirText: { color: '#fff', fontSize: 14, fontFamily: FONT.semibold, fontWeight: '600' },
+  coords: { fontSize: 10, fontFamily: FONT.regular, color: '#80868b', marginTop: 6 },
+  smallNote: { textAlign: 'center', fontSize: 10, fontFamily: FONT.regular, color: '#5f6368', padding: 10 },
 });

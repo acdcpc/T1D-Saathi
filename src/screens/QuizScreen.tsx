@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Alert } from 'react-native';
 import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
+import { FONT } from '../theme';
 
 const SAMPLE_QUESTIONS = [
   { id: 'q1', text: 'What is the normal blood glucose range for a person without diabetes?', options: ['70-120 mg/dL', '150-200 mg/dL', '200-300 mg/dL', '50-80 mg/dL'], answer: 0 },
@@ -70,16 +71,16 @@ export default function QuizScreen({ route, navigation }: any) {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#F0F7FF' },
   content: { padding: 20, paddingTop: 90, paddingBottom: 60 },
-  title: { fontSize: 24, fontWeight: '800', color: '#202124', marginBottom: 8 },
-  progress: { fontSize: 14, color: '#5f6368', marginBottom: 20 },
+  title: { fontSize: 24, fontFamily: FONT.extrabold, fontWeight: '800', color: '#202124', marginBottom: 8 },
+  progress: { fontSize: 14, fontFamily: FONT.regular, color: '#5f6368', marginBottom: 20 },
   questionCard: { backgroundColor: '#fff', borderRadius: 12, padding: 18, borderWidth: 1, borderColor: '#e8eaed' },
-  questionText: { fontSize: 17, fontWeight: '600', color: '#202124', marginBottom: 20, lineHeight: 24 },
+  questionText: { fontSize: 17, fontFamily: FONT.semibold, fontWeight: '600', color: '#202124', marginBottom: 20, lineHeight: 24 },
   optionBtn: { backgroundColor: '#e8f0fe', borderRadius: 10, padding: 16, marginBottom: 10 },
-  optionText: { fontSize: 15, color: '#202124' },
+  optionText: { fontSize: 15, fontFamily: FONT.regular, color: '#202124' },
   resultCard: { backgroundColor: '#fff', borderRadius: 16, padding: 30, alignItems: 'center', borderWidth: 1, borderColor: '#e8eaed', marginTop: 20 },
-  scoreLabel: { fontSize: 16, color: '#5f6368' },
-  scoreValue: { fontSize: 56, fontWeight: '800', color: '#1a73e8' },
-  scoreDetail: { fontSize: 14, color: '#5f6368', marginTop: 4 },
+  scoreLabel: { fontSize: 16, fontFamily: FONT.regular, color: '#5f6368' },
+  scoreValue: { fontSize: 56, fontFamily: FONT.extrabold, fontWeight: '800', color: '#1a73e8' },
+  scoreDetail: { fontSize: 14, fontFamily: FONT.regular, color: '#5f6368', marginTop: 4 },
   doneBtn: { backgroundColor: '#1a73e8', borderRadius: 12, padding: 16, alignItems: 'center', marginTop: 20 },
-  doneText: { color: '#fff', fontSize: 17, fontWeight: '600' },
+  doneText: { color: '#fff', fontSize: 17, fontFamily: FONT.semibold, fontWeight: '600' },
 });
