@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Linking } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 import ISPADBadge from '../components/ISPADBadge';
@@ -17,9 +18,10 @@ export default function EmergencyScreen({ navigation }: any) {
     Linking.openURL(`tel:${HELPLINE}`);
   };
 
-  const protocols = [
+  const protocols: { icon: keyof typeof Ionicons.glyphMap; color: string; title: string; subtitle: string; steps: string[] }[] = [
     {
-      icon: '🔴',
+      icon: 'alert-circle',
+      color: T.red,
       title: isNe ? 'गम्भीर हाइपो' : 'Severe Hypoglycemia',
       subtitle: isNe ? 'ग्लुकोज ५४ mg/dL भन्दा कम वा बेहोस' : 'Glucose < 54 mg/dL or unconscious',
       steps: [
@@ -30,7 +32,8 @@ export default function EmergencyScreen({ navigation }: any) {
       ],
     },
     {
-      icon: '🟠',
+      icon: 'flame',
+      color: T.orange,
       title: isNe ? 'गम्भीर हाइपर' : 'Severe Hyperglycemia',
       subtitle: isNe ? 'ग्लुकोज २५० mg/dL भन्दा माथि + केटोन्स सहित' : 'Glucose > 250 mg/dL with ketones',
       steps: [
@@ -41,7 +44,8 @@ export default function EmergencyScreen({ navigation }: any) {
       ],
     },
     {
-      icon: '⚫',
+      icon: 'warning',
+      color: T.text,
       title: 'DKA',
       subtitle: isNe ? 'उच्च केटोन्स + वाकवाकी + पेट दुखाइ' : 'High ketones + nausea + abdominal pain',
       steps: [
@@ -67,7 +71,7 @@ export default function EmergencyScreen({ navigation }: any) {
         <View style={styles.callCard}>
           <Text style={styles.callTitle}>{isNe ? 'तुरुन्त सहायता' : 'Immediate Help'}</Text>
           <TouchableOpacity style={styles.callBtn} onPress={callHelpline} activeOpacity={0.7}>
-            <Text style={styles.callIcon}>📞</Text>
+            <Ionicons name="call" size={22} color="#fff" />
             <Text style={styles.callNum}>{HELPLINE}</Text>
           </TouchableOpacity>
           <Text style={styles.callSub}>{isNe ? 'डा. अर्चना — २४/७ हेल्पलाइन' : 'Dr. Archana — 24/7 Helpline'}</Text>
@@ -78,7 +82,7 @@ export default function EmergencyScreen({ navigation }: any) {
 
         {protocols.map((p, i) => (
           <View key={i} style={styles.protocolCard}>
-            <Text style={styles.protocolIcon}>{p.icon}</Text>
+            <Ionicons name={p.icon} size={26} color={p.color} style={{ marginBottom: 6 }} />
             <Text style={styles.protocolTitle}>{p.title}</Text>
             <Text style={styles.protocolSub}>{p.subtitle}</Text>
             {p.steps.map((s, j) => (
@@ -116,7 +120,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row', alignItems: 'center', gap: 8,
     backgroundColor: T.red, borderRadius: 28, paddingHorizontal: 24, paddingVertical: 14,
   },
-  callIcon: { fontSize: 20, fontFamily: FONT.regular },
   callNum: { color: '#fff', fontSize: 22, fontFamily: FONT.extrabold, fontWeight: '800' },
   callSub: { fontSize: 12, fontFamily: FONT.regular, color: T.redDark, marginTop: 10 },
 
@@ -125,7 +128,6 @@ const styles = StyleSheet.create({
   protocolCard: {
     ...card, borderLeftWidth: 4, borderLeftColor: T.red, marginBottom: 12,
   },
-  protocolIcon: { fontSize: 24, fontFamily: FONT.regular, marginBottom: 6 },
   protocolTitle: { fontSize: 16, fontFamily: FONT.bold, fontWeight: '700', color: T.text, marginBottom: 2 },
   protocolSub: { fontSize: 13, fontFamily: FONT.regular, color: T.muted, marginBottom: 10 },
 

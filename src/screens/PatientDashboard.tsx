@@ -8,6 +8,7 @@ import { supabase } from '../lib/supabase';
 import { HYPO_THRESHOLD } from '../rules/sickDayRules';
 import { toBSDateTimeDisplay } from '../utils/bsDateDisplay';
 import { computeGlucoseStats } from '../utils/glucoseStats';
+import { computeIOB } from '../utils/insulinOnBoard';
 import { generateGlucoseReport } from '../utils/pdfReport';
 import ISPADBadge from '../components/ISPADBadge';
 import GlucoseTrendChart from '../components/GlucoseTrendChart';
@@ -40,17 +41,18 @@ export default function PatientDashboard({ route, navigation }: any) {
 
   const isHypo = latestGlucose && latestGlucose.value < HYPO_THRESHOLD;
   const stats = computeGlucoseStats(history);
+  const iob = computeIOB(history);
 
-  const actions = [
-    { icon: '🩸', label: isNe ? 'ग्लुकोज' : 'Log Glucose', route: 'Log', border: T.border },
-    { icon: '🍽️', label: isNe ? 'खाना र डोज' : 'Food & Dose', route: 'Food', border: T.teal },
-    { icon: '🤒', label: isNe ? 'बिमारी दिन' : 'Sick Day', route: 'SickDayWizard', border: T.orange },
-    { icon: '💉', label: isNe ? 'इन्सुलिन' : 'Regimen', route: 'RegimenSettings', border: T.border },
-    { icon: '📚', label: isNe ? 'शिक्षा' : 'Education', route: 'Learn', border: T.border },
-    { icon: '🏥', label: isNe ? 'स्वास्थ्य केन्द्र' : 'Nearby Care', route: 'HealthCenters', border: T.border },
-    { icon: '📞', label: isNe ? 'हेल्पलाइन' : 'Helpline', route: 'Helpline', border: T.red },
-    { icon: '💬', label: isNe ? 'सन्देश' : 'Messages', route: 'Messages', border: T.border },
-    { icon: '🚨', label: isNe ? 'आपतकाल' : 'Emergency', route: 'Emergency', border: T.red },
+  const actions: { icon: keyof typeof Ionicons.glyphMap; color: string; label: string; route: string; border: string }[] = [
+    { icon: 'water-outline', color: T.blue, label: isNe ? 'ग्लुकोज' : 'Log Glucose', route: 'Log', border: T.border },
+    { icon: 'restaurant-outline', color: T.teal, label: isNe ? 'खाना र डोज' : 'Food & Dose', route: 'Food', border: T.teal },
+    { icon: 'thermometer-outline', color: T.orange, label: isNe ? 'बिमारी दिन' : 'Sick Day', route: 'SickDayWizard', border: T.orange },
+    { icon: 'medical-outline', color: T.purple, label: isNe ? 'इन्सुलिन' : 'Regimen', route: 'RegimenSettings', border: T.border },
+    { icon: 'book-outline', color: T.blue, label: isNe ? 'शिक्षा' : 'Education', route: 'Learn', border: T.border },
+    { icon: 'medkit-outline', color: T.blue, label: isNe ? 'स्वास्थ्य केन्द्र' : 'Nearby Care', route: 'HealthCenters', border: T.border },
+    { icon: 'call-outline', color: T.red, label: isNe ? 'हेल्पलाइन' : 'Helpline', route: 'Helpline', border: T.red },
+    { icon: 'chatbubble-ellipses-outline', color: T.blue, label: isNe ? 'सन्देश' : 'Messages', route: 'Messages', border: T.border },
+    { icon: 'warning-outline', color: T.red, label: isNe ? 'आपतकाल' : 'Emergency', route: 'Emergency', border: T.red },
   ];
 
   return (
@@ -82,6 +84,9 @@ export default function PatientDashboard({ route, navigation }: any) {
                 <Text style={styles.unit}> mg/dL</Text>
               </Text>
               <Text style={styles.timestamp}>{toBSDateTimeDisplay(latestGlucose.timestamp)}</Text>
+              {iob > 0 && (
+                <Text style={styles.iobText}>💉 {isNe ? 'सक्रिय इन्सुलिन' : 'Active insulin'}: {iob} U</Text>
+              )}
             </View>
           ) : (
             <Text style={styles.noData}>{isNe ? 'कुनै लग छैन' : t('noLogsYet')}</Text>
@@ -151,7 +156,7 @@ export default function PatientDashboard({ route, navigation }: any) {
               onPress={() => navigation.navigate(a.route, { patientId: patient.id })}
               activeOpacity={0.7}
             >
-              <Text style={styles.actionIcon}>{a.icon}</Text>
+              <Ionicons name={a.icon} size={26} color={a.color} style={{ marginBottom: 6 }} />
               <Text style={styles.actionText}>{a.label}</Text>
             </TouchableOpacity>
           ))}
@@ -182,6 +187,7 @@ const styles = StyleSheet.create({
   unit: { fontSize: 18, fontFamily: FONT.regular, fontWeight: '400', color: T.muted },
   hypoText: { color: T.red },
   timestamp: { fontSize: 12, fontFamily: FONT.regular, color: T.muted, marginTop: 4 },
+  iobText: { fontSize: 12, fontFamily: FONT.semibold, fontWeight: '600', color: T.purple, marginTop: 4 },
   noData: { fontSize: 15, fontFamily: FONT.regular, color: T.muted, fontStyle: 'italic' },
 
   hypoAlert: { backgroundColor: T.redLight, borderRadius: 12, padding: 16, marginBottom: 16, borderWidth: 2, borderColor: T.red },
@@ -220,6 +226,5 @@ const styles = StyleSheet.create({
     shadowRadius: 6,
     elevation: 1,
   },
-  actionIcon: { fontSize: 28, fontFamily: FONT.regular, marginBottom: 6 },
   actionText: { fontSize: 11, fontFamily: FONT.semibold, fontWeight: '600', color: T.text, textAlign: 'center' },
 });

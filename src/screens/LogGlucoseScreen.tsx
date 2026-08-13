@@ -21,6 +21,7 @@ export default function LogGlucoseScreen({ route, navigation }: any) {
 
   const [glucose, setGlucose] = useState('');
   const [carbs, setCarbs] = useState('');
+  const [insulinGiven, setInsulinGiven] = useState('');
   const [unit, setUnit] = useState<UnitSystem>('mgdl');
   const [regimen, setRegimen] = useState<InsulinRegimen | null>(null);
   const [loading, setLoading] = useState(true);
@@ -70,6 +71,7 @@ export default function LogGlucoseScreen({ route, navigation }: any) {
       context: 'routine' as const,
       timestamp: new Date().toISOString(),
       carbs: parseFloat(carbs) || 0,
+      insulin_given: parseFloat(insulinGiven) || 0,
     };
     const { online, error } = await safeInsert('glucose_logs', logEntry);
     if (error) return Alert.alert(t('error'), error.message);
@@ -115,6 +117,9 @@ export default function LogGlucoseScreen({ route, navigation }: any) {
 
       <Text style={styles.label}>{t('carbs')} ({t('optional')})</Text>
       <TextInput style={styles.input} value={carbs} onChangeText={setCarbs} keyboardType="numeric" placeholder="grams" />
+
+      <Text style={styles.label}>{t('insulinGiven') || 'Insulin given (U)'} ({t('optional')})</Text>
+      <TextInput style={styles.input} value={insulinGiven} onChangeText={setInsulinGiven} keyboardType="numeric" placeholder="0" />
 
       {regimen && (
         <View style={styles.regimenInfo}>

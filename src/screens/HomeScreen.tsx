@@ -138,13 +138,13 @@ export default function HomeScreen({ navigation }: any) {
           </View>
           <View style={styles.featurePreview}>
             {[
-              { icon: '📊', label: isNe ? 'ग्लुकोज लग' : 'Glucose Log' },
-              { icon: '📸', label: isNe ? 'खाना फोटो' : 'Food Photo' },
-              { icon: '🏥', label: isNe ? 'स्वास्थ्य केन्द्र' : 'Health Centers' },
-              { icon: '📚', label: isNe ? 'शिक्षा' : 'Education' },
+              { icon: 'water-outline', label: isNe ? 'ग्लुकोज लग' : 'Glucose Log' },
+              { icon: 'camera-outline', label: isNe ? 'खाना फोटो' : 'Food Photo' },
+              { icon: 'medkit-outline', label: isNe ? 'स्वास्थ्य केन्द्र' : 'Health Centers' },
+              { icon: 'book-outline', label: isNe ? 'शिक्षा' : 'Education' },
             ].map((f, i) => (
               <View key={i} style={styles.featureChip}>
-                <Text style={styles.featureChipIcon}>{f.icon}</Text>
+                <Ionicons name={f.icon as any} size={24} color={T.blue} style={{ marginBottom: 4 }} />
                 <Text style={styles.featureChipLabel}>{f.label}</Text>
               </View>
             ))}
@@ -255,7 +255,6 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: T.border,
   },
-  featureChipIcon: { fontSize: 24, fontFamily: FONT.regular, marginBottom: 4 },
   featureChipLabel: { fontSize: 11, fontFamily: FONT.semibold, color: T.muted, fontWeight: '600', textAlign: 'center' },
 
   // FAB
