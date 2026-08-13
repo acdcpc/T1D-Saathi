@@ -11,6 +11,8 @@ import { computeGlucoseStats } from '../utils/glucoseStats';
 import { computeIOB } from '../utils/insulinOnBoard';
 import { generateGlucoseReport } from '../utils/pdfReport';
 import ISPADBadge from '../components/ISPADBadge';
+import ChildAvatar from '../components/ChildAvatar';
+import DhakaDivider from '../components/DhakaDivider';
 import GlucoseTrendChart from '../components/GlucoseTrendChart';
 import { FONT,  T, card, section, avatar } from '../theme';
 import type { PatientProfile, GlucoseLog, SickDayEpisode } from '../types';
@@ -63,15 +65,17 @@ export default function PatientDashboard({ route, navigation }: any) {
       >
         {/* Avatar header */}
         <View style={styles.profileHeader}>
-          <View style={styles.profileAv}>
-            <Text style={styles.profileAvText}>{patient.name[0]?.toUpperCase()}</Text>
-          </View>
+          <ChildAvatar name={patient.name} sex={patient.sex} size={56} />
           <View style={styles.profileInfo}>
             <Text style={styles.name}>{patient.name}</Text>
             <Text style={styles.subtitle}>
               {patient.insulin_type || (isNe ? 'इन्सुलिन' : 'Insulin')} · {patient.sex}
             </Text>
           </View>
+        </View>
+
+        <View style={{ marginBottom: 16 }}>
+          <DhakaDivider />
         </View>
 
         {/* Glucose stat card */}
@@ -162,6 +166,13 @@ export default function PatientDashboard({ route, navigation }: any) {
           ))}
         </View>
 
+        <View style={styles.cgmCard}>
+          <Ionicons name="bluetooth-outline" size={18} color={T.muted} />
+          <Text style={styles.cgmText}>
+            {isNe ? 'CGM जडान (Dexcom/Libre) — चाँडै आउँदैछ' : 'Connect CGM (Dexcom/Libre) — coming soon'}
+          </Text>
+        </View>
+
         <ISPADBadge />
         <View style={{ height: 60 }} />
       </ScrollView>
@@ -210,6 +221,12 @@ const styles = StyleSheet.create({
   },
   pdfBtnText: { color: '#fff', fontSize: 15, fontFamily: FONT.bold, fontWeight: '700' },
 
+  cgmCard: {
+    flexDirection: 'row', alignItems: 'center', gap: 8,
+    backgroundColor: T.surface, borderRadius: 12, padding: 14,
+    borderWidth: 1, borderColor: T.border, marginTop: 16,
+  },
+  cgmText: { fontSize: 13, fontFamily: FONT.regular, color: T.muted },
   sectionLabel: { ...section, paddingHorizontal: 4 },
   actionGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
   actionCard: {

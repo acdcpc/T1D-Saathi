@@ -8,6 +8,7 @@ import ISPADBadge from '../components/ISPADBadge';
 import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
 import { usePatient } from '../context/PatientContext';
+import { speak } from '../utils/speech';
 import { supabase } from '../lib/supabase';
 import { safeInsert } from '../utils/offlineQueue';
 import { HYPO_THRESHOLD, HYPO_RECHECK_MINUTES, calculateCorrectionDose, calculateCarbDose, convertGlucose } from '../rules/sickDayRules';
@@ -17,7 +18,7 @@ import { FONT } from '../theme';
 export default function LogGlucoseScreen({ route, navigation }: any) {
   const patientId = (route.params as any)?.patientId || usePatient()?.id || '';
   const { user } = useAuth();
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
 
   const [glucose, setGlucose] = useState('');
   const [carbs, setCarbs] = useState('');
@@ -81,6 +82,7 @@ export default function LogGlucoseScreen({ route, navigation }: any) {
       setResult(null);
       scheduleHypoReminder();
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+      speak(language === 'ne' ? 'ग्लुकोज कम छ। तुरुन्त उपचार गर्नुहोस्।' : 'Low glucose. Treat hypoglycemia immediately.', language);
     } else if (regimen) {
       const targetGlucose = regimen.correction_target || 120;
       const tddVal = regimen.tdd || 40;
@@ -88,8 +90,10 @@ export default function LogGlucoseScreen({ route, navigation }: any) {
       const carbRatioVal = regimen.carb_ratio;
       const correction = calculateCorrectionDose(glucoseMgdl, targetGlucose, tddVal, isfVal);
       const carb = calculateCarbDose(parseFloat(carbs) || 0, carbRatioVal, tddVal);
-      setResult({ correction: Math.round(correction * 10) / 10, carb: Math.round(carb * 10) / 10, total: Math.round((correction + carb) * 10) / 10 });
+      const total = Math.round((correction + carb) * 10) / 10;
+      setResult({ correction: Math.round(correction * 10) / 10, carb: Math.round(carb * 10) / 10, total });
       setIsHypo(false);
+      speak(language === 'ne' ? `कुल सुझाव गरिएको डोज ${total} युनिट` : `Total suggested dose ${total} units`, language);
     }
 
     const syncMsg = online ? '' : ' (saved offline)'; Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success); Alert.alert('✅', `Glucose logged: ${gVal} ${unit === 'mgdl' ? 'mg/dL' : 'mmol/L'}${syncMsg}`);

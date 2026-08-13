@@ -7,6 +7,7 @@ import * as Haptics from 'expo-haptics';
 import ISPADBadge from '../components/ISPADBadge';
 import { useAuth } from '../context/AuthContext';
 import { usePatient } from '../context/PatientContext';
+import { speak } from '../utils/speech';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useLanguage } from '../context/LanguageContext';
 import { supabase } from '../lib/supabase';
@@ -31,7 +32,7 @@ const PORTION_LABELS: Record<number, string> = {
 export default function FoodEstimatorScreen({ route }: any) {
   const patientId = (route.params as any)?.patientId || usePatient()?.id || '';
   const { user } = useAuth();
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const insets = useSafeAreaInsets();
 
   const [step, setStep] = useState<Step>('photo');
@@ -244,6 +245,7 @@ export default function FoodEstimatorScreen({ route }: any) {
     setNotApproved(!approved);
     setStep('dosing');
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    speak(language === 'ne' ? `कुल सुझाव गरिएको डोज ${dosing.totalDose} युनिट` : `Total suggested dose ${dosing.totalDose} units`, language);
   };
 
   const confirmAndCalculate = () => {

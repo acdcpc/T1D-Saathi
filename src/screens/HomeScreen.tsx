@@ -8,6 +8,8 @@ import { supabase } from '../lib/supabase';
 import { getQueueLength, getConflictedEntries } from '../utils/offlineQueue';
 import { FONT, T, card, section, fab, avatar } from '../theme';
 import Skeleton from '../components/Skeleton';
+import ChildAvatar from '../components/ChildAvatar';
+import DhakaDivider from '../components/DhakaDivider';
 import type { PatientProfile } from '../types';
 
 export default function HomeScreen({ navigation }: any) {
@@ -64,11 +66,7 @@ export default function HomeScreen({ navigation }: any) {
       activeOpacity={0.7}
     >
       <View style={styles.cardContent}>
-        <View style={styles.avBox}>
-          <View style={styles.av}>
-            <Text style={styles.avText}>{item.name[0]?.toUpperCase()}</Text>
-          </View>
-        </View>
+        <ChildAvatar name={item.name} sex={item.sex} />
         <View style={styles.cardInfo}>
           <Text style={styles.patientName}>{item.name}</Text>
           <Text style={styles.patientMeta}>
@@ -104,6 +102,8 @@ export default function HomeScreen({ navigation }: any) {
           </TouchableOpacity>
         </View>
       </View>
+
+      <DhakaDivider />
 
       <Text style={styles.lastSync}>
         {lastSynced

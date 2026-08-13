@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Alert, Switch } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -6,6 +6,7 @@ import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
 import { FONT, T, card, section, primBtn } from '../theme';
 import { configureReminders } from '../utils/reminders';
+import { isVoiceReadbackEnabled, setVoiceReadbackEnabled } from '../utils/speech';
 import type { Language } from '../types';
 
 export default function SettingsScreen({ navigation }: any) {
@@ -14,6 +15,16 @@ export default function SettingsScreen({ navigation }: any) {
   const isNe = language === 'ne';
   const [preMeal, setPreMeal] = useState(false);
   const [bedtime, setBedtime] = useState(false);
+  const [voice, setVoice] = useState(false);
+
+  useEffect(() => {
+    (async () => setVoice(await isVoiceReadbackEnabled()))();
+  }, []);
+
+  const handleVoiceToggle = async (val: boolean) => {
+    setVoice(val);
+    await setVoiceReadbackEnabled(val);
+  };
 
   const handleReminderToggle = async (which: 'preMeal' | 'bedtime', val: boolean) => {
     const next = { preMeal, bedtime, [which]: val };
@@ -93,6 +104,16 @@ export default function SettingsScreen({ navigation }: any) {
             <Text style={styles.rowSub}>{isNe ? 'रात ९ बजे' : '9 PM'}</Text>
           </View>
           <Switch value={bedtime} onValueChange={(v) => handleReminderToggle('bedtime', v)} trackColor={{ true: T.blue }} />
+        </View>
+
+        {/* Accessibility */}
+        <Text style={styles.sectionLabel}>{isNe ? 'पहुँचयोग्यता' : 'Accessibility'}</Text>
+        <View style={styles.rowCard}>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.rowTitle}>{isNe ? 'आवाज पढेर सुनाउने' : 'Voice readback'}</Text>
+            <Text style={styles.rowSub}>{isNe ? 'ग्लुकोज र डोज ठूलो स्वरमा सुनाउनुहोस्' : 'Speak glucose and dose values aloud'}</Text>
+          </View>
+          <Switch value={voice} onValueChange={handleVoiceToggle} trackColor={{ true: T.blue }} />
         </View>
 
         {/* Account */}
