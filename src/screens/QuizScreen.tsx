@@ -37,7 +37,7 @@ export default function QuizScreen({ route, navigation }: any) {
 
     return (
       <View style={styles.container}>
-        <Text style={styles.title}>📝 {phase === 'pre' ? t('preQuiz') : t('postQuiz')}</Text>
+        <Text style={styles.title}>{phase === 'pre' ? t('preQuiz') : t('postQuiz')}</Text>
         <View style={styles.resultCard}>
           <Text style={styles.scoreLabel}>{t('quizScore')}</Text>
           <Text style={styles.scoreValue}>{score}%</Text>
@@ -54,7 +54,7 @@ export default function QuizScreen({ route, navigation }: any) {
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      <Text style={styles.title}>📝 {phase === 'pre' ? t('preQuiz') : t('postQuiz')}</Text>
+      <Text style={styles.title}>{phase === 'pre' ? t('preQuiz') : t('postQuiz')}</Text>
       <Text style={styles.progress}>Question {currentQ + 1} of {SAMPLE_QUESTIONS.length}</Text>
       <View style={styles.questionCard}>
         <Text style={styles.questionText}>{q.text}</Text>

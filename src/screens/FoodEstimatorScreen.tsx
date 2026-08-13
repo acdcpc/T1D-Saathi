@@ -300,7 +300,7 @@ export default function FoodEstimatorScreen({ route }: any) {
 
         {imageUri && (
           <TouchableOpacity style={[s.primaryBtn, s.identifyBtn]} onPress={goToIdentify} disabled={loading}>
-            <Text style={s.primaryText}>📝 Identify Foods</Text>
+            <Text style={s.primaryText}>Identify Foods</Text>
           </TouchableOpacity>
         )}
 
@@ -361,7 +361,7 @@ export default function FoodEstimatorScreen({ route }: any) {
                 <Text style={s.removeBtn}>✕</Text>
               </TouchableOpacity>
             </View>
-            <Text style={s.itemSource}>{item.source === 'local_db' ? '📍 Matched to Nepali foods' : item.source === 'manual' ? '✏️ Manual entry' : '🔍 Vision estimate'}</Text>
+            <Text style={s.itemSource}>{item.source === 'local_db' ? 'Matched to Nepali foods' : item.source === 'manual' ? 'Manual entry' : 'Vision estimate'}</Text>
             {item.confidence === 'low' && (
               <View style={s.lowConfNote}><Text style={s.lowConfText}>Low confidence — please verify portion & food type</Text></View>
             )}
@@ -435,7 +435,7 @@ export default function FoodEstimatorScreen({ route }: any) {
         <TextInput style={s.insulinInput} value={plannedInsulin} onChangeText={setPlannedInsulin} keyboardType="numeric" placeholder="Leave empty for suggestion" />
 
         <TouchableOpacity style={[s.primaryBtn, s.confirmBtn]} onPress={confirmAndCalculate}>
-          <Text style={s.primaryText}>✅ Confirm & Calculate Dose</Text>
+          <Text style={s.primaryText}>Confirm & Calculate Dose</Text>
         </TouchableOpacity>
         <Text style={s.smallNote}>{t('disclaimer')}</Text>
       </ScrollView>
@@ -483,7 +483,7 @@ export default function FoodEstimatorScreen({ route }: any) {
         )}
 
         <View style={s.noteCard}>
-          <Text style={s.noteTitle}>📝 Confirmed Meal ({totals.total_carbs_g}g carbs)</Text>
+          <Text style={s.noteTitle}>Confirmed Meal ({totals.total_carbs_g}g carbs)</Text>
           <Text style={s.noteText}>
             {items.map((i, idx) => `${i.food_name} (${i.carbs_g}g)`).join(', ')}
           </Text>
@@ -493,7 +493,7 @@ export default function FoodEstimatorScreen({ route }: any) {
         </View>
 
         <TouchableOpacity style={s.doneBtn} onPress={() => { setImageUri(null); setStep('photo'); setItems([]); setEstimate(null); }}>
-          <Text style={s.doneBtnText}>✅ Done — Log Another Meal</Text>
+          <Text style={s.doneBtnText}>Done — Log Another Meal</Text>
         </TouchableOpacity>
       </ScrollView>
     );
