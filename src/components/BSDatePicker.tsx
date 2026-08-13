@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Modal, ScrollView } from 'react-native';
 import NepaliDate from 'nepali-date-converter';
+import { Ionicons } from '@expo/vector-icons';
 import { FONT } from '../theme';
 
 interface BSDatePickerProps {
@@ -36,6 +37,7 @@ export default function BSDatePicker({ value, onChange, label }: BSDatePickerPro
   let bsYear = currentBS.getYear() - 10;
   let bsMonth = 1;
   let bsDay = 1;
+  const hasValue = !!value;
 
   if (value) {
     try {
@@ -51,7 +53,7 @@ export default function BSDatePicker({ value, onChange, label }: BSDatePickerPro
   const [selectedMonth, setSelectedMonth] = useState(bsMonth);
   const [selectedDay, setSelectedDay] = useState(bsDay);
 
-  const displayDate = formatBSDisplay(selectedYear, selectedMonth, selectedDay);
+  const displayText = hasValue ? formatBSDisplay(bsYear, bsMonth, bsDay) : null;
 
   const confirm = () => {
     try {
@@ -75,8 +77,10 @@ export default function BSDatePicker({ value, onChange, label }: BSDatePickerPro
     <View>
       {label && <Text style={styles.label}>{label}</Text>}
       <TouchableOpacity style={styles.pickerBtn} onPress={() => setModalVisible(true)}>
-        <Text style={styles.pickerText}>{displayDate}</Text>
-        <Text style={styles.pickerIcon}>📅</Text>
+        <Text style={displayText ? styles.pickerText : styles.pickerPlaceholder}>
+          {displayText || 'Select date'}
+        </Text>
+        <Ionicons name="calendar-outline" size={20} color="#5f6368" />
       </TouchableOpacity>
 
       <Modal visible={modalVisible} transparent animationType="slide">
@@ -123,7 +127,7 @@ export default function BSDatePicker({ value, onChange, label }: BSDatePickerPro
               </View>
             </View>
 
-            <Text style={styles.preview}>Selected: {displayDate}</Text>
+            <Text style={styles.preview}>Selected: {formatBSDisplay(selectedYear, selectedMonth, selectedDay)}</Text>
 
             <View style={styles.btnRow}>
               <TouchableOpacity style={[styles.btn, styles.cancelBtn]} onPress={() => setModalVisible(false)}>
@@ -142,14 +146,14 @@ export default function BSDatePicker({ value, onChange, label }: BSDatePickerPro
 
 function formatBSDisplay(year: number, month: number, day: number): string {
   const m = MONTHS[month - 1];
-  return `${m ? m.name : ''} ${day}, ${year} BS  ·  ${year}.${String(month).padStart(2, '0')}.${String(day).padStart(2, '0')}`;
+  return `${m ? m.name : ''} ${day}, ${year} BS`;
 }
 
 const styles = StyleSheet.create({
   label: { fontSize: 14, fontFamily: FONT.semibold, fontWeight: '600', color: '#202124', marginBottom: 6, marginTop: 10 },
   pickerBtn: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#fff', borderRadius: 10, padding: 14, borderWidth: 1, borderColor: '#dadce0' },
   pickerText: { fontSize: 15, fontFamily: FONT.regular, color: '#202124' },
-  pickerIcon: { fontSize: 18, fontFamily: FONT.regular },
+  pickerPlaceholder: { fontSize: 15, fontFamily: FONT.regular, color: '#9aa0a6' },
   modalOverlay: { flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(0,0,0,0.5)' },
   modalContent: { backgroundColor: '#fff', borderTopLeftRadius: 20, borderTopRightRadius: 20, padding: 20, maxHeight: '80%' },
   modalTitle: { fontSize: 18, fontFamily: FONT.bold, fontWeight: '700', color: '#202124', textAlign: 'center' },
