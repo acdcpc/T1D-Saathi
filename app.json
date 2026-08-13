@@ -1,13 +1,13 @@
 {
   "expo": {
     "name": "T1D Saathi",
-    "slug": "T1D-Saathi",
+    "slug": "T1d-sathi",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "scheme": "com.t1dsaathi.app",
     "userInterfaceStyle": "light",
-    "owner": "alokthapas-team",
+    "owner": "alokthedons-team",
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.t1dsaathi.app",
@@ -54,8 +54,16 @@
       ]
     ],
     "extra": {
+      "supabaseUrl": "",
+      "supabaseAnonKey": "",
+      "projectRef": "",
+      "firebaseApiKey": "",
+      "firebaseProjectId": "",
+      "firebaseAppId": "",
+      "firebaseSenderId": "",
+      "firebaseAuthDomain": "",
       "eas": {
-        "projectId": "7054509d-7c0a-42fb-938a-661787de17e1"
+        "projectId": "71830608-fcdf-4f3e-bee8-f5597571031e"
       }
     }
   }

@@ -67,17 +67,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return r;
   }, []);
 
-  /** Upsert a profiles row so screens that read profiles never 404. */
+  /** Ensure a profiles row exists so screens that read profiles never 404.
+   *  Uses select-then-insert/update instead of upsert(onConflict) because
+   *  `profiles.user_id` has no UNIQUE constraint (upsert fails with 42P10). */
   const ensureProfile = useCallback(async (u: User) => {
-    const { error } = await supabase.from('profiles').upsert(
-      {
-        user_id: u.id,
-        full_name: u.user_metadata?.full_name ?? null,
-        avatar_url: u.user_metadata?.avatar_url ?? null,
-        role: (u.user_metadata?.role as UserRole) || 'parent',
-      },
-      { onConflict: 'user_id' },
-    );
+    const row = {
+      user_id: u.id,
+      full_name: u.user_metadata?.full_name ?? null,
+      avatar_url: u.user_metadata?.avatar_url ?? null,
+      role: (u.user_metadata?.role as UserRole) || 'parent',
+    };
+    const { data: existing } = await supabase
+      .from('profiles')
+      .select('id')
+      .eq('user_id', u.id)
+      .maybeSingle();
+    const { error } = existing
+      ? await supabase.from('profiles').update(row).eq('user_id', u.id)
+      : await supabase.from('profiles').insert(row);
     if (error) console.warn('[AuthContext] profile upsert error:', error.message);
   }, []);
 
