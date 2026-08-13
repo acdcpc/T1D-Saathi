@@ -34,3 +34,7 @@ CREATE TABLE IF NOT EXISTS crash_reports (
 ALTER TABLE crash_reports ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "Authenticated users can report crashes" ON crash_reports;
 CREATE POLICY "Authenticated users can report crashes" ON crash_reports FOR INSERT WITH CHECK (auth.uid() IS NOT NULL);
+
+-- 4. Helpline clinician credentials + clinic hours
+ALTER TABLE helplines ADD COLUMN IF NOT EXISTS credentials TEXT;
+ALTER TABLE helplines ADD COLUMN IF NOT EXISTS hours TEXT;

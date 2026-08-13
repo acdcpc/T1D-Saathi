@@ -12,6 +12,7 @@ import Skeleton from '../components/Skeleton';
 import ChildAvatar from '../components/ChildAvatar';
 import DhakaDivider from '../components/DhakaDivider';
 import ConflictDialog from '../components/ConflictDialog';
+import AnimatedPressable from '../components/AnimatedPressable';
 import { usePreferences } from '../context/PreferencesContext';
 import type { PatientProfile } from '../types';
 
@@ -81,10 +82,9 @@ export default function HomeScreen({ navigation }: any) {
       : (isNe ? 'शुभ साँझ' : 'Good evening');
 
   const renderPatient = ({ item }: { item: PatientProfile }) => (
-    <TouchableOpacity
+    <AnimatedPressable
       style={styles.patientCard}
       onPress={() => navigation.navigate('PatientTabs', { patient: item })}
-      activeOpacity={0.7}
     >
       <View style={styles.cardContent}>
         <ChildAvatar name={item.name} sex={item.sex} />
@@ -96,7 +96,7 @@ export default function HomeScreen({ navigation }: any) {
         </View>
         <Ionicons name="chevron-forward" size={20} color={T.muted} />
       </View>
-    </TouchableOpacity>
+    </AnimatedPressable>
   );
 
   return (

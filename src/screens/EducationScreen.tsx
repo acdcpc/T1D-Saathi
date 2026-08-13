@@ -6,13 +6,13 @@ import { useLanguage } from '../context/LanguageContext';
 import { usePatient } from '../context/PatientContext';
 import { FONT } from '../theme';
 
-const TOPICS: { id: string; topic: string; topic_ne: string; icon: keyof typeof Ionicons.glyphMap; order: number; audience?: string }[] = [
-  { id: '1', topic: 'Diagnosis & Pathophysiology', topic_ne: 'निदान र रोगविज्ञान', icon: 'flask-outline', order: 1 },
-  { id: '2', topic: 'Dietary Guidance', topic_ne: 'आहार मार्गदर्शन', icon: 'nutrition-outline', order: 2 },
-  { id: '3', topic: 'Insulin Therapy & Management', topic_ne: 'इन्सुलिन थेरापी', icon: 'medical-outline', order: 3 },
-  { id: '4', topic: 'Psychosocial (Patient)', topic_ne: 'मनोसामाजिक (बिरामी)', icon: 'happy-outline', order: 4, audience: 'patient' },
-  { id: '5', topic: 'Psychosocial (Family)', topic_ne: 'मनोसामाजिक (परिवार)', icon: 'people-outline', order: 5, audience: 'family' },
-  { id: '6', topic: 'Sick Day Management', topic_ne: 'बिरामी दिन व्यवस्थापन', icon: 'thermometer-outline', order: 6 },
+const TOPICS: { id: string; topic: string; topic_ne: string; icon: keyof typeof Ionicons.glyphMap; color: string; order: number; audience?: string }[] = [
+  { id: '1', topic: 'Diagnosis & Pathophysiology', topic_ne: 'निदान र रोगविज्ञान', icon: 'flask-outline', color: '#1a73e8', order: 1 },
+  { id: '2', topic: 'Dietary Guidance', topic_ne: 'आहार मार्गदर्शन', icon: 'nutrition-outline', color: '#0D9488', order: 2 },
+  { id: '3', topic: 'Insulin Therapy & Management', topic_ne: 'इन्सुलिन थेरापी', icon: 'medical-outline', color: '#C0392B', order: 3 },
+  { id: '4', topic: 'Psychosocial (Patient)', topic_ne: 'मनोसामाजिक (बिरामी)', icon: 'happy-outline', color: '#7C3AED', order: 4, audience: 'patient' },
+  { id: '5', topic: 'Psychosocial (Family)', topic_ne: 'मनोसामाजिक (परिवार)', icon: 'people-outline', color: '#F59E0B', order: 5, audience: 'family' },
+  { id: '6', topic: 'Sick Day Management', topic_ne: 'बिरामी दिन व्यवस्थापन', icon: 'thermometer-outline', color: '#DB2777', order: 6 },
 ];
 
 export default function EducationScreen({ route, navigation }: any) {
@@ -61,7 +61,7 @@ export default function EducationScreen({ route, navigation }: any) {
           const done = completed.includes(item.id);
           return (
             <TouchableOpacity style={[styles.card, done && styles.cardDone]} onPress={() => toggle(item.id)}>
-              <Ionicons name={item.icon} size={26} color={done ? '#0D9488' : '#1a73e8'} style={{ marginRight: 14 }} />
+              <View style={[styles.iconTile, { backgroundColor: (done ? '#D1FAE5' : item.color + '1A') }]}><Ionicons name={item.icon} size={24} color={done ? '#0D9488' : item.color} /></View>
               <View style={styles.cardText}>
                 <Text style={styles.cardTitle}>{isNe ? item.topic_ne : item.topic}</Text>
                 {item.audience && <Text style={styles.audience}>For: {item.audience}</Text>}
@@ -72,7 +72,7 @@ export default function EducationScreen({ route, navigation }: any) {
         }}
       />
       <TouchableOpacity style={styles.quizBtn} onPress={() => navigation.navigate('Quiz', { patientId, phase: 'pre' })}>
-        <Text style={styles.quizText}>📝 {t('preQuiz')}</Text>
+        <Ionicons name="create-outline" size={18} color="#fff" /><Text style={styles.quizText}>{t('preQuiz')}</Text>
       </TouchableOpacity>
     </View>
   );
@@ -92,6 +92,7 @@ const styles = StyleSheet.create({
   cardText: { flex: 1 },
   cardTitle: { fontSize: 16, fontFamily: FONT.semibold, fontWeight: '600', color: '#202124' },
   audience: { fontSize: 12, fontFamily: FONT.regular, color: '#5f6368', marginTop: 2 },
-  quizBtn: { backgroundColor: '#1a73e8', borderRadius: 12, padding: 16, alignItems: 'center', marginTop: 10 },
+  quizBtn: { backgroundColor: '#1a73e8', borderRadius: 12, padding: 16, alignItems: 'center', marginTop: 10, flexDirection: 'row', justifyContent: 'center', gap: 8 },
+  iconTile: { width: 44, height: 44, borderRadius: 12, alignItems: 'center', justifyContent: 'center', marginRight: 14 },
   quizText: { color: '#fff', fontSize: 17, fontFamily: FONT.semibold, fontWeight: '600' },
 });

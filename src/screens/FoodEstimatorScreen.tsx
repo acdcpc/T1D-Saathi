@@ -3,6 +3,7 @@ import {
   View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Alert, ActivityIndicator, Image,
 } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
+import * as ImageManipulator from 'expo-image-manipulator';
 import * as Haptics from 'expo-haptics';
 import ISPADBadge from '../components/ISPADBadge';
 import { useAuth } from '../context/AuthContext';
@@ -76,16 +77,30 @@ export default function FoodEstimatorScreen({ route }: any) {
   }, [patientId]);
 
   // ─── Photo capture ───
+  // Compress + resize before ML inference and any upload (max 1024px, JPEG q0.7).
+  const compressImage = async (uri: string): Promise<string> => {
+    try {
+      const res = await ImageManipulator.manipulateAsync(
+        uri,
+        [{ resize: { width: 1024 } }],
+        { compress: 0.7, format: ImageManipulator.SaveFormat.JPEG }
+      );
+      return res.uri;
+    } catch {
+      return uri; // fall back to original on any failure
+    }
+  };
+
   const pickImage = async () => {
     const r = await ImagePicker.launchImageLibraryAsync({ mediaTypes: 'images', allowsEditing: true, quality: 0.8 });
-    if (!r.canceled && r.assets[0]) { setImageUri(r.assets[0].uri); }
+    if (!r.canceled && r.assets[0]) { setImageUri(await compressImage(r.assets[0].uri)); }
   };
 
   const takePhoto = async () => {
     const p = await ImagePicker.requestCameraPermissionsAsync();
     if (!p.granted) return Alert.alert('Permission needed', 'Camera access required');
     const r = await ImagePicker.launchCameraAsync({ allowsEditing: true, quality: 0.8 });
-    if (!r.canceled && r.assets[0]) { setImageUri(r.assets[0].uri); }
+    if (!r.canceled && r.assets[0]) { setImageUri(await compressImage(r.assets[0].uri)); }
   };
 
   // ─── Vision pipeline ───

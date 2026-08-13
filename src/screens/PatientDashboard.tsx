@@ -15,6 +15,7 @@ import ChildAvatar from '../components/ChildAvatar';
 import DhakaDivider from '../components/DhakaDivider';
 import GlucoseTrendChart from '../components/GlucoseTrendChart';
 import TirDonut from '../components/TirDonut';
+import AnimatedPressable from '../components/AnimatedPressable';
 import { usePreferences } from '../context/PreferencesContext';
 import { toDisplayNumber } from '../utils/nepaliNumber';
 import { FONT,  T, card, section, avatar } from '../theme';
@@ -34,7 +35,7 @@ export default function PatientDashboard({ route, navigation }: any) {
     const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
     const [{ data: latest }, { data: logs }, { data: sickDay }] = await Promise.all([
       supabase.from('glucose_logs').select('*').eq('patient_id', patient.id).order('timestamp', { ascending: false }).limit(1),
-      supabase.from('glucose_logs').select('*').eq('patient_id', patient.id).gte('timestamp', thirtyDaysAgo).order('timestamp', { ascending: true }),
+      supabase.from('glucose_logs').select('*').eq('patient_id', patient.id).gte('timestamp', thirtyDaysAgo).order('timestamp', { ascending: true }).limit(500),
       supabase.from('sick_day_episodes').select('*').eq('patient_id', patient.id).is('end_date', null).order('start_date', { ascending: false }).limit(1),
     ]);
     setLatestGlucose(latest?.[0] || null);
@@ -161,15 +162,14 @@ export default function PatientDashboard({ route, navigation }: any) {
         <Text style={styles.sectionLabel}>{isNe ? 'द्रुत कार्यहरू' : t('quickLog')}</Text>
         <View style={styles.actionGrid}>
           {actions.map((a, i) => (
-            <TouchableOpacity
+            <AnimatedPressable
               key={i}
               style={[styles.actionCard, { borderColor: a.border, borderWidth: a.border !== T.border ? 2 : 1 }]}
               onPress={() => navigation.navigate(a.route, { patientId: patient.id })}
-              activeOpacity={0.7}
             >
               <Ionicons name={a.icon} size={26} color={a.color} style={{ marginBottom: 6 }} />
               <Text style={styles.actionText}>{a.label}</Text>
-            </TouchableOpacity>
+            </AnimatedPressable>
           ))}
         </View>
 

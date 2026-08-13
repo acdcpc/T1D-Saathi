@@ -3,7 +3,8 @@ import { View, Text, TouchableOpacity, StyleSheet, Linking, ActivityIndicator } 
 import { Ionicons } from '@expo/vector-icons';
 import { useLanguage } from '../context/LanguageContext';
 import { supabase } from '../lib/supabase';
-import { FONT } from '../theme';
+import { FONT, T } from '../theme';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 interface Helpline {
   id: string;
@@ -12,6 +13,8 @@ interface Helpline {
   role_ne: string;
   phone: string;
   priority: number;
+  credentials?: string;
+  hours?: string;
 }
 
 export default function HelplineScreen() {
@@ -34,7 +37,7 @@ export default function HelplineScreen() {
   if (loading) return <View style={styles.centered}><ActivityIndicator size="large" color="#ea4335" /></View>;
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
       <Text style={styles.title}>{language === 'ne' ? 'सहयोग लाइन' : 'Helpline'}</Text>
       <Text style={styles.subtitle}>
         {language === 'ne'
@@ -45,10 +48,20 @@ export default function HelplineScreen() {
       {helplines.map(hl => (
         <View key={hl.id} style={styles.card}>
           <View style={styles.cardHeader}>
-            <Text style={styles.name}>{hl.name}</Text>
+            <View style={styles.avatar}><Ionicons name="person" size={30} color={T.red} /></View>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.name}>{hl.name}</Text>
+              <Text style={styles.role}>{language === 'ne' && hl.role_ne ? hl.role_ne : hl.role_en}</Text>
+            </View>
             {hl.priority === 1 && <View style={styles.primaryBadge}><Text style={styles.primaryText}>PRIMARY</Text></View>}
           </View>
-          <Text style={styles.role}>{language === 'ne' && hl.role_ne ? hl.role_ne : hl.role_en}</Text>
+          {hl.credentials ? (
+            <Text style={styles.credentials}>{hl.credentials}</Text>
+          ) : null}
+          <View style={styles.hoursRow}>
+            <Ionicons name="time-outline" size={14} color={T.muted} />
+            <Text style={styles.hours}>{hl.hours || (language === 'ne' ? 'आइत–शुक्र · बिहान ९ – साँझ ५' : 'Sun–Fri · 9 AM – 5 PM')}</Text>
+          </View>
           <TouchableOpacity style={styles.callButton} onPress={() => callNumber(hl.phone)}>
             <Ionicons name="call" size={28} color="#fff" />
             <Text style={styles.callNumber}>{hl.phone}</Text>
@@ -71,7 +84,7 @@ export default function HelplineScreen() {
             : 'This helpline does not replace local emergency services. In a true emergency, go to the nearest hospital or call an ambulance.'}
         </Text>
       </View>
-    </View>
+    </SafeAreaView>
   );
 }
 
@@ -81,7 +94,11 @@ const styles = StyleSheet.create({
   title: { fontSize: 28, fontFamily: FONT.extrabold, fontWeight: '800', color: '#ea4335', marginBottom: 4 },
   subtitle: { fontSize: 15, fontFamily: FONT.regular, color: '#5f6368', marginBottom: 24 },
   card: { backgroundColor: '#fff', borderRadius: 16, padding: 20, marginBottom: 16, borderWidth: 2, borderColor: '#ea4335', shadowColor: '#ea4335', shadowOpacity: 0.1, shadowRadius: 8, elevation: 3 },
-  cardHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 4, gap: 8 },
+  cardHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 10, gap: 10 },
+  avatar: { width: 52, height: 52, borderRadius: 26, backgroundColor: '#fce8e6', alignItems: 'center', justifyContent: 'center' },
+  credentials: { fontSize: 13, fontFamily: FONT.semibold, color: '#202124', marginBottom: 8, fontWeight: '600' },
+  hoursRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 12 },
+  hours: { fontSize: 12, fontFamily: FONT.regular, color: '#5f6368' },
   name: { fontSize: 22, fontFamily: FONT.bold, fontWeight: '700', color: '#202124' },
   primaryBadge: { backgroundColor: '#ea4335', borderRadius: 6, paddingHorizontal: 8, paddingVertical: 2 },
   primaryText: { fontSize: 10, fontFamily: FONT.bold, fontWeight: '700', color: '#fff' },
