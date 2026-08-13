@@ -13,12 +13,14 @@ import { supabase } from '../lib/supabase';
 import { safeInsert } from '../utils/offlineQueue';
 import { HYPO_THRESHOLD, HYPO_RECHECK_MINUTES, calculateCorrectionDose, calculateCarbDose, convertGlucose } from '../rules/sickDayRules';
 import type { InsulinRegimen, UnitSystem } from '../types';
-import { FONT } from '../theme';
+import { FONT, T } from '../theme';
+import { usePreferences } from '../context/PreferencesContext';
 
 export default function LogGlucoseScreen({ route, navigation }: any) {
   const patientId = (route.params as any)?.patientId || usePatient()?.id || '';
   const { user } = useAuth();
   const { t, language } = useLanguage();
+  const { theme: TH, fontScale } = usePreferences();
 
   const [glucose, setGlucose] = useState('');
   const [carbs, setCarbs] = useState('');
@@ -28,6 +30,7 @@ export default function LogGlucoseScreen({ route, navigation }: any) {
   const [loading, setLoading] = useState(true);
   const [result, setResult] = useState<{ correction: number; carb: number; total: number } | null>(null);
   const [isHypo, setIsHypo] = useState(false);
+  const [glucoseError, setGlucoseError] = useState<string | null>(null);
 
   useEffect(() => {
     (async () => {
@@ -58,7 +61,11 @@ export default function LogGlucoseScreen({ route, navigation }: any) {
 
   const handleLog = async () => {
     const gVal = parseFloat(glucose);
-    if (isNaN(gVal)) return Alert.alert(t('error'), 'Enter a valid glucose value');
+    if (isNaN(gVal) || gVal <= 0) {
+      setGlucoseError(language === 'ne' ? 'मान्य ग्लुकोज मान लेख्नुहोस्' : 'Enter a valid glucose value');
+      return;
+    }
+    setGlucoseError(null);
 
     const glucoseMgdl = unit === 'mmol' ? convertGlucose(gVal, 'mmol', 'mgdl') : gVal;
     const isLow = glucoseMgdl < HYPO_THRESHOLD;
@@ -96,19 +103,19 @@ export default function LogGlucoseScreen({ route, navigation }: any) {
       speak(language === 'ne' ? `कुल सुझाव गरिएको डोज ${total} युनिट` : `Total suggested dose ${total} units`, language);
     }
 
-    const syncMsg = online ? '' : ' (saved offline)'; Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success); Alert.alert('✅', `Glucose logged: ${gVal} ${unit === 'mgdl' ? 'mg/dL' : 'mmol/L'}${syncMsg}`);
+    const syncMsg = online ? '' : ' (saved offline)'; Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success); Alert.alert(t('success'), `Glucose logged: ${gVal} ${unit === 'mgdl' ? 'mg/dL' : 'mmol/L'}${syncMsg}`);
   };
 
   if (loading) return <View style={styles.centered}><ActivityIndicator size="large" color="#1a73e8" /></View>;
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+    <ScrollView style={[styles.container, { backgroundColor: TH.bg }]} contentContainerStyle={styles.content}>
       <Text style={styles.title}>{t('logGlucose')}</Text>
       <ISPADBadge />
 
       <Text style={styles.label}>{t('currentGlucose')}</Text>
       <View style={styles.glucoseRow}>
-        <TextInput style={styles.glucoseInput} value={glucose} onChangeText={setGlucose} keyboardType="numeric" placeholder="0" />
+        <TextInput style={[styles.glucoseInput, glucoseError && styles.inputError, { color: TH.text }]} value={glucose} onChangeText={(v) => { setGlucose(v); if (glucoseError) setGlucoseError(null); }} keyboardType="numeric" placeholder="0" />
         <View style={styles.unitToggle}>
           <TouchableOpacity style={[styles.unitBtn, unit === 'mgdl' && styles.unitActive]} onPress={() => setUnit('mgdl')}>
             <Text style={[styles.unitText, unit === 'mgdl' && styles.unitTextActive]}>{t('mgdl')}</Text>
@@ -118,6 +125,7 @@ export default function LogGlucoseScreen({ route, navigation }: any) {
           </TouchableOpacity>
         </View>
       </View>
+      {glucoseError ? <Text style={styles.errorText}>{glucoseError}</Text> : null}
 
       <Text style={styles.label}>{t('carbs')} ({t('optional')})</Text>
       <TextInput style={styles.input} value={carbs} onChangeText={setCarbs} keyboardType="numeric" placeholder="grams" />
@@ -178,6 +186,8 @@ const styles = StyleSheet.create({
   label: { fontSize: 14, fontFamily: FONT.semibold, fontWeight: '600', color: '#202124', marginBottom: 6, marginTop: 14 },
   input: { backgroundColor: '#fff', borderRadius: 10, padding: 14, fontSize: 16, fontFamily: FONT.regular, borderWidth: 1, borderColor: '#dadce0' },
   glucoseRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  inputError: { borderColor: T.red, borderWidth: 1.5 },
+  errorText: { color: T.red, fontSize: 12, fontFamily: FONT.regular, marginTop: 6 },
   glucoseInput: { flex: 1, backgroundColor: '#fff', borderRadius: 10, padding: 14, fontSize: 32, fontFamily: FONT.bold, fontWeight: '700', borderWidth: 1, borderColor: '#dadce0', textAlign: 'center' },
   unitToggle: { flexDirection: 'row', gap: 4 },
   unitBtn: { borderRadius: 8, paddingHorizontal: 12, paddingVertical: 10, backgroundColor: '#e8eaed' },

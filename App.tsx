@@ -1,6 +1,6 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { View } from 'react-native';
-import { NavigationContainer } from '@react-navigation/native';
+import { NavigationContainer, createNavigationContainerRef } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { AuthProvider, useAuth } from './src/context/AuthContext';
 import { LanguageProvider } from './src/context/LanguageContext';
@@ -8,6 +8,9 @@ import { PreferencesProvider } from './src/context/PreferencesContext';
 import { useNetworkSync } from './src/utils/useNetworkSync';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { useAppFonts } from './src/lib/fonts';
+import { configureDeepLinks } from './src/utils/deepLinks';
+import { installCrashReporting } from './src/utils/crashReporting';
+import { useShakeDetector } from './src/hooks/useShakeDetector';
 
 import LoginScreen from './src/screens/LoginScreen';
 import OnboardingScreen from './src/screens/OnboardingScreen';
@@ -25,8 +28,17 @@ import SettingsScreen from './src/screens/SettingsScreen';
 import RegimenSettingsScreen from './src/screens/RegimenSettingsScreen';
 import ClinicianPatientListScreen from './src/screens/ClinicianPatientListScreen';
 import ClinicianPatientDetailScreen from './src/screens/ClinicianPatientDetailScreen';
+import BarcodeScannerScreen from './src/screens/BarcodeScannerScreen';
+import CommunityScreen from './src/screens/CommunityScreen';
 
 const Stack = createNativeStackNavigator();
+const navigationRef = createNavigationContainerRef<any>();
+
+/** Global side-effects that need the navigation context (shake-to-emergency). */
+function GlobalHandlers() {
+  useShakeDetector(true);
+  return null;
+}
 
 function AppNavigator() {
   const { user, role } = useAuth();
@@ -59,6 +71,8 @@ function AppNavigator() {
           <Stack.Screen name="Emergency" component={EmergencyScreen} />
           <Stack.Screen name="Settings" component={SettingsScreen} />
           <Stack.Screen name="RegimenSettings" component={RegimenSettingsScreen} />
+          <Stack.Screen name="BarcodeScanner" component={BarcodeScannerScreen} />
+          <Stack.Screen name="Community" component={CommunityScreen} />
         </>
       )}
     </Stack.Navigator>
@@ -67,22 +81,28 @@ function AppNavigator() {
 
 export default function App() {
   useAppFonts();
+
+  useEffect(() => {
+    installCrashReporting();
+    return configureDeepLinks(navigationRef);
+  }, []);
+
   return (
     <SafeAreaProvider>
       <LanguageProvider>
         <PreferencesProvider>
-        <AuthProvider>
-          <ErrorBoundary>
-            <View style={{ flex: 1 }}>
-              <NavigationContainer>
-                <AppNavigator />
-              </NavigationContainer>
-            </View>
-          </ErrorBoundary>
-        </AuthProvider>
+          <AuthProvider>
+            <ErrorBoundary>
+              <View style={{ flex: 1 }}>
+                <NavigationContainer ref={navigationRef}>
+                  <AppNavigator />
+                  <GlobalHandlers />
+                </NavigationContainer>
+              </View>
+            </ErrorBoundary>
+          </AuthProvider>
         </PreferencesProvider>
       </LanguageProvider>
     </SafeAreaProvider>
   );
 }
-

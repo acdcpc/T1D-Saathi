@@ -59,6 +59,8 @@ export default function PatientDashboard({ route, navigation }: any) {
     { icon: 'call-outline', color: T.red, label: isNe ? 'हेल्पलाइन' : 'Helpline', route: 'Helpline', border: T.red },
     { icon: 'chatbubble-ellipses-outline', color: T.blue, label: isNe ? 'सन्देश' : 'Messages', route: 'Messages', border: T.border },
     { icon: 'warning-outline', color: T.red, label: isNe ? 'आपतकाल' : 'Emergency', route: 'Emergency', border: T.red },
+    { icon: 'barcode-outline', color: T.teal, label: isNe ? 'बारकोड' : 'Scan Barcode', route: 'BarcodeScanner', border: T.border },
+    { icon: 'people-outline', color: T.blue, label: isNe ? 'समुदाय' : 'Community', route: 'Community', border: T.border },
   ];
 
   return (
