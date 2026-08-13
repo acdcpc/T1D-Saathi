@@ -4,6 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
+import { usePreferences } from '../context/PreferencesContext';
 import { FONT, T, card, section, primBtn } from '../theme';
 import { configureReminders } from '../utils/reminders';
 import { isVoiceReadbackEnabled, setVoiceReadbackEnabled } from '../utils/speech';
@@ -12,6 +13,7 @@ import type { Language } from '../types';
 export default function SettingsScreen({ navigation }: any) {
   const { signOut } = useAuth();
   const { language, setLanguage, t } = useLanguage();
+  const { highContrast, largeButtons, fontScale, theme: TH, setHighContrast, setLargeButtons, setFontScale } = usePreferences();
   const isNe = language === 'ne';
   const [preMeal, setPreMeal] = useState(false);
   const [bedtime, setBedtime] = useState(false);
@@ -51,13 +53,13 @@ export default function SettingsScreen({ navigation }: any) {
   };
 
   return (
-    <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
+    <SafeAreaView style={[styles.container, { backgroundColor: TH.bg }]} edges={['top', 'bottom']}>
       <ScrollView contentContainerStyle={styles.content}>
         <View style={styles.headerRow}>
           <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
             <Ionicons name="arrow-back" size={22} color={T.text} />
           </TouchableOpacity>
-          <Text style={styles.title}>{isNe ? 'सेटिङ' : 'Settings'}</Text>
+          <Text style={[styles.title, { color: TH.text }]}>{isNe ? 'सेटिङ' : 'Settings'}</Text>
           <View style={{ width: 22 }} />
         </View>
 
@@ -114,6 +116,28 @@ export default function SettingsScreen({ navigation }: any) {
             <Text style={styles.rowSub}>{isNe ? 'ग्लुकोज र डोज ठूलो स्वरमा सुनाउनुहोस्' : 'Speak glucose and dose values aloud'}</Text>
           </View>
           <Switch value={voice} onValueChange={handleVoiceToggle} trackColor={{ true: T.blue }} />
+        </View>
+
+        <View style={styles.rowCard}>
+          <View style={{ flex: 1 }}>
+            <Text style={[styles.rowTitle, { color: TH.text }]}>{isNe ? 'उच्च कन्ट्रास्ट' : 'High contrast'}</Text>
+            <Text style={styles.rowSub}>{isNe ? 'सेतो पृष्ठभूमि र गाढा अक्षर' : 'White background, darker text'}</Text>
+          </View>
+          <Switch value={highContrast} onValueChange={setHighContrast} trackColor={{ true: TH.blue }} />
+        </View>
+        <View style={styles.rowCard}>
+          <View style={{ flex: 1 }}>
+            <Text style={[styles.rowTitle, { color: TH.text }]}>{isNe ? 'ठूला बटन' : 'Large buttons'}</Text>
+            <Text style={styles.rowSub}>{isNe ? 'ठूला टच लक्ष्य' : 'Bigger touch targets'}</Text>
+          </View>
+          <Switch value={largeButtons} onValueChange={setLargeButtons} trackColor={{ true: TH.blue }} />
+        </View>
+        <View style={styles.rowCard}>
+          <View style={{ flex: 1 }}>
+            <Text style={[styles.rowTitle, { color: TH.text }]}>{isNe ? 'ठूलो अक्षर' : 'Larger text'}</Text>
+            <Text style={styles.rowSub}>{isNe ? '१.२ गुणा ठूलो पाठ' : '1.2× text size'}</Text>
+          </View>
+          <Switch value={fontScale >= 1.2} onValueChange={(v) => setFontScale(v ? 1.2 : 1)} trackColor={{ true: TH.blue }} />
         </View>
 
         {/* Account */}

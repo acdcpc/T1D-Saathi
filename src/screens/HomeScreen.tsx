@@ -6,22 +6,27 @@ import { useFocusEffect } from '@react-navigation/native';
 import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
 import { supabase } from '../lib/supabase';
-import { getQueueLength, getConflictedEntries } from '../utils/offlineQueue';
+import { getQueueLength, getConflictedEntries, retryConflictedEntry, discardConflictedEntry, QueuedEntry } from '../utils/offlineQueue';
 import { FONT, T, card, section, fab, avatar } from '../theme';
 import Skeleton from '../components/Skeleton';
 import ChildAvatar from '../components/ChildAvatar';
 import DhakaDivider from '../components/DhakaDivider';
+import ConflictDialog from '../components/ConflictDialog';
+import { usePreferences } from '../context/PreferencesContext';
 import type { PatientProfile } from '../types';
 
 export default function HomeScreen({ navigation }: any) {
   const { user, role } = useAuth();
   const { t, language } = useLanguage();
+  const { theme: TH, scale } = usePreferences();
   const isNe = language === 'ne';
   const [patients, setPatients] = useState<PatientProfile[]>([]);
   const [refreshing, setRefreshing] = useState(false);
   const [loading, setLoading] = useState(true);
   const [pendingSync, setPendingSync] = useState(0);
   const [conflictedCount, setConflictedCount] = useState(0);
+  const [conflictedEntries, setConflictedEntries] = useState<QueuedEntry[]>([]);
+  const [showConflict, setShowConflict] = useState(false);
   const [lastSynced, setLastSynced] = useState<Date | null>(null);
 
   const fetchPatients = useCallback(async () => {
@@ -46,12 +51,27 @@ export default function HomeScreen({ navigation }: any) {
       const conflicted = await getConflictedEntries();
       setPendingSync(len);
       setConflictedCount(conflicted.length);
+      setConflictedEntries(conflicted);
     };
     checkQueue();
     const timer = setInterval(checkQueue, 30000); // check every 30s
     return () => clearInterval(timer);
   }, []);
   const onRefresh = async () => { setRefreshing(true); await fetchPatients(); setRefreshing(false); };
+
+  const handleRetryConflict = async (id: string) => {
+    await retryConflictedEntry(id);
+    const conflicted = await getConflictedEntries();
+    setConflictedEntries(conflicted);
+    setConflictedCount(conflicted.length);
+  };
+
+  const handleDiscardConflict = async (id: string) => {
+    await discardConflictedEntry(id);
+    const conflicted = await getConflictedEntries();
+    setConflictedEntries(conflicted);
+    setConflictedCount(conflicted.length);
+  };
 
   const hour = new Date().getHours();
   const greeting = hour < 12
@@ -80,28 +100,28 @@ export default function HomeScreen({ navigation }: any) {
   );
 
   return (
-    <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
+    <SafeAreaView style={[styles.container, { backgroundColor: TH.bg }]} edges={['top', 'bottom']}>
       {/* Header — Kapoori Ka pattern */}
       <View style={styles.headerRow}>
         <View style={styles.headerLeft}>
-          <Text style={styles.headerTitle}>T1D साथी</Text>
+          <Text style={[styles.headerTitle, { color: TH.text }]}>T1D साथी</Text>
           <Text style={styles.headerSubtitle}>
             {greeting} · T1D Saathi
           </Text>
         </View>
         <View style={styles.headerRight}>
           {(pendingSync > 0 || conflictedCount > 0) && (
-            <TouchableOpacity style={styles.syncBadge} onPress={() => {}}>
+            <TouchableOpacity style={styles.syncBadge} onPress={() => setShowConflict(true)}>
               <Ionicons name={conflictedCount > 0 ? "warning-outline" : "cloud-upload-outline"} size={16} color={conflictedCount > 0 ? T.red : T.orange} />
               <Text style={[styles.syncBadgeText, { color: conflictedCount > 0 ? T.red : T.orange }]}>
                 {conflictedCount > 0 ? `${conflictedCount}⚠` : pendingSync}
               </Text>
             </TouchableOpacity>
           )}
-          <TouchableOpacity style={styles.emergencyBtn} onPress={() => navigation.navigate('Emergency')}>
+          <TouchableOpacity style={[styles.emergencyBtn, { padding: 8 * scale }]} onPress={() => navigation.navigate('Emergency')}>
             <Ionicons name="warning" size={22} color={T.red} />
           </TouchableOpacity>
-          <TouchableOpacity style={styles.settingsBtn} onPress={() => navigation.navigate('Settings')}>
+          <TouchableOpacity style={[styles.settingsBtn, { padding: 8 * scale }]} onPress={() => navigation.navigate('Settings')}>
             <Ionicons name="settings-outline" size={22} color={T.muted} />
           </TouchableOpacity>
         </View>
@@ -160,7 +180,7 @@ export default function HomeScreen({ navigation }: any) {
           keyExtractor={(item) => item.id}
           renderItem={renderPatient}
           contentContainerStyle={styles.list}
-          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={T.blue} />}
+          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={TH.blue} colors={[TH.blue]} progressBackgroundColor={TH.surface} />}
           ListHeaderComponent={
             <Text style={styles.sectionLabel}>
               {isNe ? 'तपाईंको बिरामीहरू' : 'Your Patients'}
@@ -188,6 +208,15 @@ export default function HomeScreen({ navigation }: any) {
           <Text style={styles.clinicianBarText}>{isNe ? 'क्लिनिसियन पोर्टल' : 'Clinician Portal'} ›</Text>
         </TouchableOpacity>
       )}
+
+      <ConflictDialog
+        visible={showConflict}
+        entries={conflictedEntries}
+        isNe={isNe}
+        onRetry={handleRetryConflict}
+        onDiscard={handleDiscardConflict}
+        onClose={() => setShowConflict(false)}
+      />
     </SafeAreaView>
   );
 }

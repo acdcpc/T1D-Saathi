@@ -14,12 +14,16 @@ import ISPADBadge from '../components/ISPADBadge';
 import ChildAvatar from '../components/ChildAvatar';
 import DhakaDivider from '../components/DhakaDivider';
 import GlucoseTrendChart from '../components/GlucoseTrendChart';
+import TirDonut from '../components/TirDonut';
+import { usePreferences } from '../context/PreferencesContext';
+import { toDisplayNumber } from '../utils/nepaliNumber';
 import { FONT,  T, card, section, avatar } from '../theme';
 import type { PatientProfile, GlucoseLog, SickDayEpisode } from '../types';
 
 export default function PatientDashboard({ route, navigation }: any) {
   const patient: PatientProfile = usePatient() || (route.params as any)?.patient;
   const { t, language } = useLanguage();
+  const { theme: TH } = usePreferences();
   const isNe = language === 'ne';
   const [latestGlucose, setLatestGlucose] = useState<GlucoseLog | null>(null);
   const [history, setHistory] = useState<GlucoseLog[]>([]);
@@ -58,10 +62,10 @@ export default function PatientDashboard({ route, navigation }: any) {
   ];
 
   return (
-    <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
+    <SafeAreaView style={[styles.container, { backgroundColor: TH.bg }]} edges={['top', 'bottom']}>
       <ScrollView
         contentContainerStyle={styles.content}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={T.blue} />}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={TH.blue} colors={[TH.blue]} progressBackgroundColor={TH.surface} />}
       >
         {/* Avatar header */}
         <View style={styles.profileHeader}>
@@ -125,9 +129,10 @@ export default function PatientDashboard({ route, navigation }: any) {
         {history.length >= 2 && (
           <View style={styles.trendCard}>
             <Text style={styles.cardLabel}>{isNe ? 'पछिल्लो ३० दिनको तथ्यांक' : 'Last 30 days'}</Text>
+            <TirDonut pct={stats.timeInRangePct} color={TH.teal} label={isNe ? 'समय दायरामा (TIR)' : 'Time in Range'} />
             <View style={styles.statRow}>
               <View style={styles.statTile}>
-                <Text style={styles.statValue}>{stats.timeInRangePct}%</Text>
+                <Text style={styles.statValue}>{toDisplayNumber(stats.timeInRangePct, isNe)}%</Text>
                 <Text style={styles.statLabel}>{isNe ? 'समय दायरामा (TIR)' : 'Time in Range'}</Text>
               </View>
               <View style={styles.statTile}>

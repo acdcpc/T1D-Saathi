@@ -5,22 +5,47 @@ import {
 } from 'react-native';
 import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
+import { usePreferences } from '../context/PreferencesContext';
 import { FONT,  T, primBtn, input } from '../theme';
 
 export default function LoginScreen({ navigation }: any) {
   const { signIn, signUp, signInWithGoogle, signInAsGuest } = useAuth();
   const { t, language } = useLanguage();
+  const { theme: TH, fontScale } = usePreferences();
   const isNe = language === 'ne';
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isSignup, setIsSignup] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [emailError, setEmailError] = useState<string | null>(null);
+  const [passwordError, setPasswordError] = useState<string | null>(null);
+
+  const validate = (): boolean => {
+    let ok = true;
+    const emailRe = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!email.trim()) {
+      setEmailError(isNe ? 'इमेल आवश्यक छ' : 'Email is required');
+      ok = false;
+    } else if (!emailRe.test(email.trim())) {
+      setEmailError(isNe ? 'मान्य इमेल लेख्नुहोस्' : 'Enter a valid email');
+      ok = false;
+    } else {
+      setEmailError(null);
+    }
+    if (!password.trim()) {
+      setPasswordError(isNe ? 'पासवर्ड आवश्यक छ' : 'Password is required');
+      ok = false;
+    } else if (password.length < 6) {
+      setPasswordError(isNe ? 'पासवर्ड कम्तिमा ६ अक्षरको हुनुपर्छ' : 'Password must be at least 6 characters');
+      ok = false;
+    } else {
+      setPasswordError(null);
+    }
+    return ok;
+  };
 
   const handleSubmit = async () => {
-    if (!email.trim() || !password.trim()) {
-      Alert.alert(isNe ? 'त्रुटि' : 'Error', isNe ? 'सबै फिल्ड भर्नुहोस्' : 'Please fill in all fields');
-      return;
-    }
+    if (!validate()) return;
     setLoading(true);
     try {
       if (isSignup) {
@@ -77,31 +102,33 @@ export default function LoginScreen({ navigation }: any) {
   };
 
   return (
-    <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
+    <KeyboardAvoidingView style={[styles.container, { backgroundColor: TH.bg }]} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
       <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
         <View style={styles.header}>
-          <Text style={styles.appTitle}>T1D साथी</Text>
+          <Text style={[styles.appTitle, { color: TH.text, fontSize: 26 * fontScale }]}>T1D साथी</Text>
           <Text style={styles.appSubtitle}>T1D Saathi</Text>
           <Text style={styles.tagline}>{isNe ? 'तपाईंको मधुमेह सहयात्री' : 'Your Diabetes Companion'}</Text>
         </View>
         <View style={styles.form}>
           <TextInput
-            style={styles.field}
+            style={[styles.field, emailError && styles.fieldError, { color: TH.text, fontSize: 15 * fontScale }]}
             placeholder={isNe ? 'इमेल' : 'Email'}
             value={email}
-            onChangeText={setEmail}
+            onChangeText={(v) => { setEmail(v); if (emailError) setEmailError(null); }}
             keyboardType="email-address"
             autoCapitalize="none"
-            placeholderTextColor={T.muted}
+            placeholderTextColor={TH.muted}
           />
+          {emailError ? <Text style={styles.errorText}>{emailError}</Text> : null}
           <TextInput
-            style={styles.field}
+            style={[styles.field, passwordError && styles.fieldError, { color: TH.text, fontSize: 15 * fontScale }]}
             placeholder={isNe ? 'पासवर्ड' : 'Password'}
             value={password}
-            onChangeText={setPassword}
+            onChangeText={(v) => { setPassword(v); if (passwordError) setPasswordError(null); }}
             secureTextEntry
-            placeholderTextColor={T.muted}
+            placeholderTextColor={TH.muted}
           />
+          {passwordError ? <Text style={styles.errorText}>{passwordError}</Text> : null}
           <TouchableOpacity
             style={[primBtn, loading && { opacity: 0.7 }]}
             onPress={handleSubmit}
@@ -148,6 +175,8 @@ const styles = StyleSheet.create({
 
   form: { gap: 14 },
   field: { ...input },
+  fieldError: { borderColor: T.red, borderWidth: 1.5 },
+  errorText: { color: T.red, fontSize: 12, fontFamily: FONT.regular, marginTop: -6 },
   btnText: { color: '#fff', fontSize: 16, fontFamily: FONT.semibold, fontWeight: '600' },
 
   switchText: { color: T.blue, textAlign: 'center', fontSize: 14, fontFamily: FONT.regular, paddingVertical: 8 },
