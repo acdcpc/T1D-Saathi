@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { View, Text, FlatList, TouchableOpacity, StyleSheet, RefreshControl, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useFocusEffect } from '@react-navigation/native';
 import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
 import { supabase } from '../lib/supabase';
@@ -36,7 +37,7 @@ export default function HomeScreen({ navigation }: any) {
     setLoading(false);
   }, [user]);
 
-  useEffect(() => { fetchPatients(); }, [fetchPatients]);
+  useFocusEffect(useCallback(() => { fetchPatients(); }, [fetchPatients]));
 
   // Check offline sync queue on mount and periodically
   useEffect(() => {
@@ -97,6 +98,9 @@ export default function HomeScreen({ navigation }: any) {
               </Text>
             </TouchableOpacity>
           )}
+          <TouchableOpacity style={styles.emergencyBtn} onPress={() => navigation.navigate('Emergency')}>
+            <Ionicons name="warning" size={22} color={T.red} />
+          </TouchableOpacity>
           <TouchableOpacity style={styles.settingsBtn} onPress={() => navigation.navigate('Settings')}>
             <Ionicons name="settings-outline" size={22} color={T.muted} />
           </TouchableOpacity>
@@ -203,6 +207,7 @@ const styles = StyleSheet.create({
   headerSubtitle: { fontSize: 13, fontFamily: FONT.regular, color: T.muted, marginTop: 1 },
   headerRight: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   settingsBtn: { padding: 4 },
+  emergencyBtn: { padding: 4 },
   syncBadge: {
     flexDirection: 'row', alignItems: 'center', gap: 4,
     backgroundColor: T.surface, borderRadius: 12,

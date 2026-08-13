@@ -1,6 +1,6 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
-import { NavigationContainer, createNavigationContainerRef } from '@react-navigation/native';
+import { View } from 'react-native';
+import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { AuthProvider, useAuth } from './src/context/AuthContext';
 import { LanguageProvider } from './src/context/LanguageContext';
@@ -26,23 +26,6 @@ import ClinicianPatientListScreen from './src/screens/ClinicianPatientListScreen
 import ClinicianPatientDetailScreen from './src/screens/ClinicianPatientDetailScreen';
 
 const Stack = createNativeStackNavigator();
-const navigationRef = createNavigationContainerRef<any>();
-
-/** Floating one-tap Emergency (SOS) button — visible on every parent screen. */
-function EmergencyFab() {
-  const { user, role } = useAuth();
-  if (!user || role === 'clinician') return null;
-  return (
-    <TouchableOpacity
-      style={styles.fab}
-      activeOpacity={0.85}
-      onPress={() => { if (navigationRef.isReady()) navigationRef.navigate('Emergency'); }}
-    >
-      <Text style={styles.fabEmoji}>🆘</Text>
-      <Text style={styles.fabText}>Emergency</Text>
-    </TouchableOpacity>
-  );
-}
 
 function AppNavigator() {
   const { user, role } = useAuth();
@@ -89,10 +72,9 @@ export default function App() {
         <AuthProvider>
           <ErrorBoundary>
             <View style={{ flex: 1 }}>
-              <NavigationContainer ref={navigationRef}>
+              <NavigationContainer>
                 <AppNavigator />
               </NavigationContainer>
-              <EmergencyFab />
             </View>
           </ErrorBoundary>
         </AuthProvider>
@@ -101,24 +83,3 @@ export default function App() {
   );
 }
 
-const styles = StyleSheet.create({
-  fab: {
-    position: 'absolute',
-    right: 16,
-    bottom: 96,
-    backgroundColor: '#C0392B',
-    borderRadius: 28,
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    shadowColor: '#000',
-    shadowOpacity: 0.3,
-    shadowRadius: 6,
-    shadowOffset: { width: 0, height: 3 },
-    elevation: 6,
-  },
-  fabEmoji: { fontSize: 16 },
-  fabText: { color: '#fff', fontSize: 14, fontWeight: '700' },
-});

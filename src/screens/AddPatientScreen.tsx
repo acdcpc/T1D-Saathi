@@ -116,6 +116,7 @@ export default function AddPatientScreen({ navigation }: any) {
 
     const { error } = await supabase.from('patients').insert(patientData);
     if (error) {
+      console.error('[AddPatient] patient insert error:', error.code, error.message);
       setLoading(false);
       return Alert.alert(t('error'), error.message);
     }
