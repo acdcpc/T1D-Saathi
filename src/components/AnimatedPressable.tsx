@@ -1,4 +1,7 @@
 // Pressable with a subtle press-in scale animation (built-in Animated, no reanimated).
+// NOTE: the layout `style` is applied to the outer Pressable so percentage widths
+// and flex sizing behave exactly like a normal TouchableOpacity; only the scale
+// transform lives on the inner Animated.View.
 import React, { useRef } from 'react';
 import { Animated, Pressable, StyleProp, ViewStyle } from 'react-native';
 
@@ -32,10 +35,11 @@ export default function AnimatedPressable({
       onLongPress={onLongPress}
       disabled={disabled}
       hitSlop={hitSlop}
+      style={style}
       onPressIn={() => animateTo(pressScale)}
       onPressOut={() => animateTo(1)}
     >
-      <Animated.View style={[style, { transform: [{ scale: anim }] }]}>
+      <Animated.View style={{ transform: [{ scale: anim }] }}>
         {children}
       </Animated.View>
     </Pressable>

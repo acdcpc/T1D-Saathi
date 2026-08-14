@@ -28,25 +28,27 @@ export default function TirDonut({
 
   return (
     <View style={{ alignItems: 'center' }}>
-      <Svg width={size} height={size}>
-        <Circle cx={size / 2} cy={size / 2} r={r} stroke={trackColor} strokeWidth={strokeWidth} fill="none" />
-        <Circle
-          cx={size / 2}
-          cy={size / 2}
-          r={r}
-          stroke={color}
-          strokeWidth={strokeWidth}
-          fill="none"
-          strokeDasharray={`${filled} ${c - filled}`}
-          strokeLinecap="round"
-          rotation={-90}
-          origin={`${size / 2}, ${size / 2}`}
-        />
-      </Svg>
-      <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, alignItems: 'center', justifyContent: 'center' }}>
-        <Text style={{ fontSize: size * 0.22, fontFamily: FONT.extrabold, fontWeight: '800', color: '#1A1A2E' }}>
-          {clamped}%
-        </Text>
+      <View style={{ width: size, height: size }}>
+        <Svg width={size} height={size}>
+          <Circle cx={size / 2} cy={size / 2} r={r} stroke={trackColor} strokeWidth={strokeWidth} fill="none" />
+          <Circle
+            cx={size / 2}
+            cy={size / 2}
+            r={r}
+            stroke={color}
+            strokeWidth={strokeWidth}
+            fill="none"
+            strokeDasharray={`${filled} ${c - filled}`}
+            strokeLinecap="round"
+            rotation={-90}
+            origin={`${size / 2}, ${size / 2}`}
+          />
+        </Svg>
+        <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, alignItems: 'center', justifyContent: 'center' }}>
+          <Text style={{ fontSize: size * 0.22, fontFamily: FONT.extrabold, fontWeight: '800', color: '#1A1A2E' }}>
+            {clamped}%
+          </Text>
+        </View>
       </View>
       {label ? (
         <Text style={{ fontSize: 12, fontFamily: FONT.medium, color: '#7A6E65', marginTop: 6 }}>{label}</Text>
