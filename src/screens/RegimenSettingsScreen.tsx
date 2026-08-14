@@ -32,7 +32,9 @@ export default function RegimenSettingsScreen({ route, navigation }: any) {
   const [frequency, setFrequency] = useState('');
   const [delivery, setDelivery] = useState<string>('pen');
   const [tdd, setTdd] = useState('');
-  const [target, setTarget] = useState('120');
+  const [isf, setIsf] = useState('');
+  const [carbRatio, setCarbRatio] = useState('');
+  const [target, setTarget] = useState('');
 
   useEffect(() => {
     (async () => {
@@ -50,31 +52,40 @@ export default function RegimenSettingsScreen({ route, navigation }: any) {
         setFrequency(data.frequency || '');
         setDelivery(data.delivery_method);
         setTdd(data.tdd ? String(data.tdd) : '');
-        setTarget(data.correction_target ? String(data.correction_target) : '120');
+        setIsf(data.isf ? String(data.isf) : '');
+        setCarbRatio(data.carb_ratio ? String(data.carb_ratio) : '');
+        setTarget(data.correction_target ? String(data.correction_target) : '');
       }
       setLoading(false);
     })();
   }, [patientId]);
 
-  // Auto-calculated ISF / I:C from TDD
+  // Auto-calculated ISF / I:C from TDD (fallback when manual override is empty)
   const tddNum = parseFloat(tdd);
   const tddValid = !Number.isNaN(tddNum) && tddNum > 0;
   const autoIsf = tddValid ? Math.round((ISF_CONSTANT / tddNum) * 10) / 10 : null;
   const autoIcr = tddValid ? Math.round((ICR_CONSTANT / tddNum) * 10) / 10 : null;
 
   const handleSave = async () => {
-    if (!insulinType.trim()) return Alert.alert(t('error'), 'Insulin type is required');
-    if (!tddValid) return Alert.alert(t('error'), 'Enter a valid Total Daily Dose');
+    const tddValue = parseFloat(tdd);
+    const targetValue = parseFloat(target);
+    if (!insulinType.trim() || !Number.isFinite(tddValue) || tddValue <= 0 || !Number.isFinite(targetValue) || targetValue <= 0) {
+      Alert.alert(t('error'), 'Insulin type, total daily dose, and correction target are required.');
+      return;
+    }
     const entry = {
       patient_id: patientId,
       insulin_type: insulinType.trim(),
       dose: parseFloat(dose) || 0,
       frequency,
       delivery_method: delivery,
-      tdd: tddNum,
-      isf: autoIsf,        // auto-calculated
-      carb_ratio: autoIcr, // auto-calculated
-      correction_target: parseFloat(target) || 120,
+      tdd: tddValue,
+      isf: parseFloat(isf) || autoIsf || null,
+      carb_ratio: parseFloat(carbRatio) || autoIcr || null,
+      correction_target: targetValue,
+      approved_by_clinician: false,
+      approved_at: null,
+      approved_by: null,
       effective_date: new Date().toISOString(),
     };
     const { error } = await supabase.from('insulin_regimens').insert(entry);
@@ -93,6 +104,7 @@ export default function RegimenSettingsScreen({ route, navigation }: any) {
       contentContainerStyle={[styles.content, { paddingTop: insets.top + 16, paddingBottom: insets.bottom + 40 }]}
     >
       <Text style={styles.title}>{t('insulinRegimen')}</Text>
+      <Text style={styles.notice}>New regimen settings remain unavailable for dosing until reviewed and approved by a clinician.</Text>
 
       <Dropdown
         label={`${t('insulinType')} *`}
@@ -143,6 +155,12 @@ export default function RegimenSettingsScreen({ route, navigation }: any) {
         <Text style={styles.autoNote}>Starting estimates — review with your clinician.</Text>
       </View>
 
+      <Text style={styles.label}>{t('isf')} (mg/dL per unit) — optional override</Text>
+      <TextInput style={styles.input} value={isf} onChangeText={setIsf} keyboardType="numeric" placeholder="e.g. 50" />
+
+      <Text style={styles.label}>{t('carbRatio')} (I:C ratio) — optional override</Text>
+      <TextInput style={styles.input} value={carbRatio} onChangeText={setCarbRatio} keyboardType="numeric" placeholder="e.g. 10" />
+
       <Text style={styles.label}>{t('correctionTarget')} (mg/dL)</Text>
       <TextInput style={styles.input} value={target} onChangeText={setTarget} keyboardType="numeric" />
 
@@ -159,6 +177,7 @@ const styles = StyleSheet.create({
   centered: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   title: { fontSize: 24, fontFamily: FONT.extrabold, fontWeight: '800', color: '#202124', marginBottom: 20 },
   label: { fontSize: 14, fontFamily: FONT.semibold, fontWeight: '600', color: '#202124', marginBottom: 6, marginTop: 14 },
+  notice: { backgroundColor: '#FEF3C7', color: '#92400E', borderRadius: 10, padding: 12, fontSize: 13, lineHeight: 19, marginBottom: 4 },
   input: { backgroundColor: '#fff', borderRadius: 10, padding: 14, fontSize: 16, fontFamily: FONT.regular, borderWidth: 1, borderColor: '#dadce0' },
   row: { flexDirection: 'row', gap: 8 },
   chip: { borderRadius: 20, paddingHorizontal: 16, paddingVertical: 8, backgroundColor: '#e8eaed' },

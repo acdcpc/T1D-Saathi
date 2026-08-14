@@ -59,7 +59,7 @@ async function callExternalAPI(imageUri: string): Promise<FoodItem[]> {
         calories: item.nutrients?.calories ?? 0,
         confidence: item.confidence > 0.8 ? 'high' as const
           : item.confidence > 0.5 ? 'medium' as const : 'low' as const,
-        source: result.provider === 'usda' ? 'usda' as const : 'open_food_facts' as const,
+        source: 'open_food_facts' as const,
       }));
     }
     return [];

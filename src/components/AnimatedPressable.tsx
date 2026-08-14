@@ -13,6 +13,10 @@ interface Props {
   style?: StyleProp<ViewStyle>;
   children?: React.ReactNode;
   hitSlop?: number;
+  accessibilityRole?: 'button' | 'link' | 'imagebutton' | 'none' | string;
+  accessibilityLabel?: string;
+  accessibilityState?: Record<string, unknown>;
+  accessibilityHint?: string;
 }
 
 export default function AnimatedPressable({
@@ -23,6 +27,10 @@ export default function AnimatedPressable({
   style,
   children,
   hitSlop = 4,
+  accessibilityRole,
+  accessibilityLabel,
+  accessibilityState,
+  accessibilityHint,
 }: Props) {
   const anim = useRef(new Animated.Value(1)).current;
 
@@ -36,6 +44,10 @@ export default function AnimatedPressable({
       disabled={disabled}
       hitSlop={hitSlop}
       style={style}
+      accessibilityRole={accessibilityRole as any}
+      accessibilityLabel={accessibilityLabel}
+      accessibilityState={accessibilityState as any}
+      accessibilityHint={accessibilityHint}
       onPressIn={() => animateTo(pressScale)}
       onPressOut={() => animateTo(1)}
     >

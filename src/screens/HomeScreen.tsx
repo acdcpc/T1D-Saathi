@@ -93,6 +93,8 @@ export default function HomeScreen({ navigation }: any) {
 
   const renderPatient = ({ item }: { item: PatientProfile }) => (
     <AnimatedPressable
+      accessibilityRole="button"
+      accessibilityLabel={`Open patient ${item.name}`}
       style={styles.patientCard}
       onPress={() => navigation.navigate('PatientTabs', { patient: item })}
     >
@@ -131,7 +133,7 @@ export default function HomeScreen({ navigation }: any) {
           <TouchableOpacity style={[styles.emergencyBtn, { padding: 8 * scale }]} onPress={() => navigation.navigate('Emergency')}>
             <Ionicons name="warning" size={22} color={T.red} />
           </TouchableOpacity>
-          <TouchableOpacity style={[styles.settingsBtn, { padding: 8 * scale }]} onPress={() => navigation.navigate('Settings')}>
+          <TouchableOpacity accessibilityRole="button" accessibilityLabel={isNe ? 'सेटिङ्स खोल्नुहोस्' : 'Open settings'} style={[styles.settingsBtn, { padding: 8 * scale }]} onPress={() => navigation.navigate('Settings')}>
             <Ionicons name="settings-outline" size={22} color={T.muted} />
           </TouchableOpacity>
         </View>
@@ -210,6 +212,8 @@ export default function HomeScreen({ navigation }: any) {
 
       {/* FAB — Kapoori Ka pattern */}
       <TouchableOpacity
+        accessibilityRole="button"
+        accessibilityLabel={isNe ? 'बिरामी थप्नुहोस्' : 'Add patient'}
         style={styles.fab}
         activeOpacity={0.85}
         onPress={() => navigation.navigate('AddPatient', {})}
@@ -220,6 +224,8 @@ export default function HomeScreen({ navigation }: any) {
       {/* Clinician switch */}
       {role === 'clinician' && (
         <TouchableOpacity
+          accessibilityRole="button"
+          accessibilityLabel={isNe ? 'क्लिनिसियन पोर्टल खोल्नुहोस्' : 'Open clinician portal'}
           style={styles.clinicianBar}
           onPress={() => navigation.reset({ index: 0, routes: [{ name: 'ClinicianPatientList' }] })}
         >
@@ -254,8 +260,8 @@ const styles = StyleSheet.create({
   headerTitle: { fontWeight: '800', fontSize: 22, fontFamily: FONT.extrabold, color: T.text },
   headerSubtitle: { fontSize: 13, fontFamily: FONT.regular, color: T.muted, marginTop: 1 },
   headerRight: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  settingsBtn: { padding: 4 },
-  emergencyBtn: { padding: 4 },
+  settingsBtn: { padding: 10, minWidth: 44, minHeight: 44, alignItems: 'center' as const, justifyContent: 'center' as const },
+  emergencyBtn: { padding: 10, minWidth: 44, minHeight: 44, alignItems: 'center' as const, justifyContent: 'center' as const },
   syncBadge: {
     flexDirection: 'row', alignItems: 'center', gap: 4,
     backgroundColor: T.surface, borderRadius: 12,
@@ -266,7 +272,6 @@ const styles = StyleSheet.create({
   updateBanner: { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: T.amberLight, borderRadius: 12, marginHorizontal: 16, marginTop: 8, padding: 12, borderWidth: 1, borderColor: T.orange },
   updateBannerText: { flex: 1, fontSize: 13, fontFamily: FONT.semibold, color: T.amberDark, fontWeight: '600' },
   lastSync: { fontSize: 11, fontFamily: FONT.regular, color: T.muted, paddingHorizontal: 20, marginTop: 2, fontStyle: 'italic' },
-
   loader: { flex: 1 },
   skeletonWrap: { paddingHorizontal: 16, paddingTop: 16, gap: 10 },
   skeletonCard: { ...card, flexDirection: 'row', alignItems: 'center', gap: 14, marginBottom: 0 },

@@ -108,10 +108,9 @@ Create a `.env` file with these variables (see `.env.example` for template):
 | `EXPO_PUBLIC_FIREBASE_APP_ID` | Firebase app ID |
 | `EXPO_PUBLIC_FIREBASE_SENDER_ID` | Firebase sender ID |
 | `EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN` | Firebase auth domain |
-| `EXPO_PUBLIC_USDA_API_KEY` | USDA FoodData Central key (free from api.data.gov) |
-| `EXPO_PUBLIC_LOGMEAL_API_KEY` | LogMeal vision API key (optional) |
-| `EXPO_PUBLIC_FATSECRET_CLIENT_ID` | FatSecret OAuth client ID (optional) |
-| `EXPO_PUBLIC_FATSECRET_CLIENT_SECRET` | FatSecret OAuth client secret (optional) |
+| `EXPO_PUBLIC_LOGMEAL_API_KEY` | **Removed from the mobile client; do not add provider secrets here** |
+| `EXPO_PUBLIC_FATSECRET_CLIENT_ID` | **Removed from the mobile client; do not add provider credentials here** |
+| `EXPO_PUBLIC_FATSECRET_CLIENT_SECRET` | **Never place this secret in Expo or a mobile build** |
 
 ### Database
 
@@ -132,7 +131,7 @@ eas build --platform android --profile preview
 
 ## Known Limitations
 
-- 🍽️ **Food Estimator**: Uses Google AIY Food V1 on-device TFLite model for initial classification, then maps predictions to the curated local Nepali food database (22 items) for accurate macros. The model is trained on global cuisine and will not recognize specific Nepali dish names — it provides coarse categories (e.g. "rice", "curry") that are matched to local dishes. User must verify suggestions before dosing. External APIs (USDA, Open Food Facts) provide fallback nutrition data. Model requires EAS dev-client build (not Expo Go). On web, falls back to manual search.
+- 🍽️ **Food Estimator**: Uses the on-device Google AIY Food V1 TFLite model mapped to the curated local Nepali food database; no food photo leaves the device. External provider APIs (LogMeal/FatSecret/USDA) are disabled until a privacy-reviewed server endpoint is configured. Manual Nepali-food entry remains available. Model requires an EAS dev-client build (not Expo Go).
 - 📅 **Bikram Sambat**: BS date picker is available but some date fields still use Gregorian internally.
 - 📡 **Offline Queue**: Glucose and meal logs queue locally when offline, but sync validation for conflict resolution is basic.
 - 🔐 **Google Auth**: Requires manual configuration in Google Cloud Console (OAuth consent screen + redirect URIs).
@@ -142,7 +141,7 @@ eas build --platform android --profile preview
 
 ## ⚠️ Clinical Safety Note
 
-**This app is a companion tool, not a medical device.** All dosing constants (ICR via 500 Rule, ISF via 1800 Rule, correction factors) and sick-day thresholds follow ISPAD 2022 Clinical Practice Consensus Guidelines but **require clinician review and sign-off before use in actual patient care**. Dosing recommendations should always be verified by a qualified healthcare provider.
+**This app is a companion tool, not a medical device.** Dose calculation now fails closed unless the current glucose, meal carbohydrates, and active clinician-approved regimen are present and valid. All dosing constants (ICR via 500 Rule, ISF via 1800 Rule, correction factors) and sick-day thresholds require formal clinician review and sign-off before use in actual patient care. A displayed result is not a prescription and must be verified by a qualified healthcare provider.
 
 ---
 
@@ -159,6 +158,10 @@ T1D Saathi's visual design is aligned with the Kapoori Ka design language:
 See `src/theme.ts` for the full design token catalog.
 
 ---
+
+## Pilot readiness
+
+The repository branch currently treats photo recognition and dosing as safety-gated prototype features. Before a pilot, configure a privacy-reviewed server-side vision integration, approve regimen data through an authorized clinician workflow, apply all Supabase migrations, test RLS with unrelated accounts, and validate clinical copy with qualified diabetes professionals. Do not use the app for patient dosing until those controls are complete.
 
 ## License
 

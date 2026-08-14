@@ -254,9 +254,9 @@ export default function SickDayWizardScreen({ route, navigation }: any) {
   // Step 3: Results & Guidance
   const glucoseVal = parseFloat(glucose);
   const isEmergency = matchedRule?.escalate || redFlags.length > 0;
-  const suppDose = matchedRule?.supplemental_insulin_percent
-    ? ((regimen?.tdd || 40) * Math.abs(matchedRule.supplemental_insulin_percent!) / 100)
-    : 0;
+  const suppDose = matchedRule?.supplemental_insulin_percent && regimen?.approved_by_clinician && regimen.tdd
+    ? (regimen.tdd * Math.abs(matchedRule.supplemental_insulin_percent) / 100)
+    : null;
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={[styles.content, { paddingTop: insets.top + 16, paddingBottom: insets.bottom + 40 }]}>
@@ -288,17 +288,21 @@ export default function SickDayWizardScreen({ route, navigation }: any) {
             <Text style={styles.guidanceLabel}>{t('supplementalInsulin')}</Text>
             {glucoseVal < HYPO_THRESHOLD ? (
               <View style={styles.hypoBox}>
-                <Text style={styles.hypoBoxTitle}>🛑 {t('hypoWarning')}</Text>
+                <Text style={styles.hypoBoxTitle}>{t('hypoWarning')}</Text>
                 <Text style={styles.guidanceText}>{t('doNotIncreaseInsulin')}</Text>
                 <Text style={styles.guidanceText}>{t('treatHypoFirst')}</Text>
               </View>
             ) : matchedRule.supplemental_insulin_percent ? (
-              <>
-                <Text style={styles.guidanceText}>{matchedRule.supplemental_insulin_percent > 0 ? 'Increase' : 'Reduce'} TDD by {Math.abs(matchedRule.supplemental_insulin_percent)}%</Text>
-                <Text style={styles.doseText}>
-                  {matchedRule.supplemental_insulin_percent > 0 ? '+' : ''}{suppDose.toFixed(1)} units (from TDD of {regimen?.tdd || 40} U)
-                </Text>
-              </>
+              suppDose !== null ? (
+                <>
+                  <Text style={styles.guidanceText}>{matchedRule.supplemental_insulin_percent > 0 ? 'Increase' : 'Reduce'} TDD by {Math.abs(matchedRule.supplemental_insulin_percent)}%</Text>
+                  <Text style={styles.doseText}>
+                    {matchedRule.supplemental_insulin_percent > 0 ? '+' : ''}{suppDose.toFixed(1)} units from the clinician-approved TDD
+                  </Text>
+                </>
+              ) : (
+                <Text style={styles.guidanceText}>Supplemental insulin guidance is unavailable because the regimen is not clinician-approved. Contact the care team.</Text>
+              )
             ) : (
               <Text style={styles.guidanceText}>{t('noExtraInsulin')}</Text>
             )}

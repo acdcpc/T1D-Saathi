@@ -82,7 +82,7 @@ export default function LogGlucoseScreen({ route, navigation }: any) {
       insulin_given: parseFloat(insulinGiven) || 0,
     };
     const { online, error } = await safeInsert('glucose_logs', logEntry);
-    if (error) return Alert.alert(t('error'), error.message);
+    if (error) return Alert.alert(t('error'), error instanceof Error ? error.message : 'The glucose record could not be saved.');
 
     if (isLow) {
       setIsHypo(true);
@@ -90,17 +90,14 @@ export default function LogGlucoseScreen({ route, navigation }: any) {
       scheduleHypoReminder();
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
       speak(language === 'ne' ? 'ग्लुकोज कम छ। तुरुन्त उपचार गर्नुहोस्।' : 'Low glucose. Treat hypoglycemia immediately.', language);
-    } else if (regimen) {
-      const targetGlucose = regimen.correction_target || 120;
-      const tddVal = regimen.tdd || 40;
-      const isfVal = regimen.isf;
-      const carbRatioVal = regimen.carb_ratio;
-      const correction = calculateCorrectionDose(glucoseMgdl, targetGlucose, tddVal, isfVal);
-      const carb = calculateCarbDose(parseFloat(carbs) || 0, carbRatioVal, tddVal);
-      const total = Math.round((correction + carb) * 10) / 10;
-      setResult({ correction: Math.round(correction * 10) / 10, carb: Math.round(carb * 10) / 10, total });
+    } else if (regimen?.approved_by_clinician && regimen.tdd && regimen.correction_target) {
+      const correction = calculateCorrectionDose(glucoseMgdl, regimen.correction_target, regimen.tdd, regimen.isf);
+      const carb = calculateCarbDose(parseFloat(carbs) || 0, regimen.carb_ratio, regimen.tdd);
+      setResult({ correction: Math.round(correction * 10) / 10, carb: Math.round(carb * 10) / 10, total: Math.round((correction + carb) * 10) / 10 });
       setIsHypo(false);
-      speak(language === 'ne' ? `कुल सुझाव गरिएको डोज ${total} युनिट` : `Total suggested dose ${total} units`, language);
+    } else {
+      setResult(null);
+      setIsHypo(false);
     }
 
     const syncMsg = online ? '' : ' (saved offline)'; Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success); Alert.alert(t('success'), `Glucose logged: ${gVal} ${unit === 'mgdl' ? 'mg/dL' : 'mmol/L'}${syncMsg}`);
@@ -115,8 +112,7 @@ export default function LogGlucoseScreen({ route, navigation }: any) {
 
       <Text style={styles.label}>{t('currentGlucose')}</Text>
       <View style={styles.glucoseRow}>
-        <TextInput style={[styles.glucoseInput, glucoseError && styles.inputError, { color: TH.text }]} value={glucose} onChangeText={(v) => { setGlucose(v); if (glucoseError) setGlucoseError(null); }} keyboardType="numeric" placeholder="0" />
-        <View style={styles.unitToggle}>
+        <TextInput accessibilityLabel={t('enterGlucose')} style={[styles.glucoseInput, glucoseError && styles.inputError, { color: TH.text }]} value={glucose} onChangeText={(v) => { setGlucose(v); if (glucoseError) setGlucoseError(null); }} keyboardType="numeric" placeholder="0" />        <View style={styles.unitToggle}>
           <TouchableOpacity style={[styles.unitBtn, unit === 'mgdl' && styles.unitActive]} onPress={() => setUnit('mgdl')}>
             <Text style={[styles.unitText, unit === 'mgdl' && styles.unitTextActive]}>{t('mgdl')}</Text>
           </TouchableOpacity>
@@ -137,11 +133,12 @@ export default function LogGlucoseScreen({ route, navigation }: any) {
         <View style={styles.regimenInfo}>
           <Text style={styles.regimenText}>{t('insulinType')}: {regimen.insulin_type}</Text>
           <Text style={styles.regimenText}>{t('tdd')}: {regimen.tdd || 'N/A'} U</Text>
-          <Text style={styles.regimenText}>{t('isf')}: {regimen.isf || `1800/${regimen.tdd || 40}`} mg/dL per U</Text>
+          <Text style={styles.regimenText}>{t('isf')}: {regimen.isf || 'N/A'} mg/dL per U</Text>
+          <Text style={styles.regimenText}>{regimen.approved_by_clinician ? 'Clinician-approved regimen' : 'Dose calculation unavailable until clinician approval'}</Text>
         </View>
       )}
 
-      <TouchableOpacity style={styles.logBtn} onPress={handleLog}>
+      <TouchableOpacity accessibilityRole="button" accessibilityLabel={t('calculate')} style={styles.logBtn} onPress={handleLog}>
         <Text style={styles.logBtnText}>{t('calculate')}</Text>
       </TouchableOpacity>
 

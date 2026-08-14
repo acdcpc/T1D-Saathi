@@ -10,6 +10,7 @@ import { toBSDateTimeDisplay } from '../utils/bsDateDisplay';
 import { computeGlucoseStats } from '../utils/glucoseStats';
 import { computeIOB } from '../utils/insulinOnBoard';
 import { generateGlucoseReport } from '../utils/pdfReport';
+import { glucoseToMgDl } from '../utils/dosingCalc';
 import ISPADBadge from '../components/ISPADBadge';
 import ChildAvatar from '../components/ChildAvatar';
 import DhakaDivider from '../components/DhakaDivider';
@@ -18,8 +19,7 @@ import TirDonut from '../components/TirDonut';
 import AnimatedPressable from '../components/AnimatedPressable';
 import { usePreferences } from '../context/PreferencesContext';
 import { toDisplayNumber } from '../utils/nepaliNumber';
-import { FONT,  T, card, section, avatar } from '../theme';
-import type { PatientProfile, GlucoseLog, SickDayEpisode } from '../types';
+import { FONT,  T, card, section, avatar } from '../theme';import type { PatientProfile, GlucoseLog, SickDayEpisode } from '../types';
 
 export default function PatientDashboard({ route, navigation }: any) {
   const patient: PatientProfile = usePatient() || (route.params as any)?.patient;
@@ -46,10 +46,12 @@ export default function PatientDashboard({ route, navigation }: any) {
   useEffect(() => { fetchData(); }, [fetchData]);
   const onRefresh = async () => { setRefreshing(true); await fetchData(); setRefreshing(false); };
 
-  const isHypo = latestGlucose && latestGlucose.value < HYPO_THRESHOLD;
+  const latestMgDl = latestGlucose
+    ? (() => { try { return glucoseToMgDl(latestGlucose.value, latestGlucose.unit); } catch { return null; } })()
+    : null;
+  const isHypo = latestMgDl !== null && latestMgDl < HYPO_THRESHOLD;
   const stats = computeGlucoseStats(history);
   const iob = computeIOB(history);
-
   const actions: { icon: keyof typeof Ionicons.glyphMap; color: string; label: string; route: string; border: string }[] = [
     { icon: 'water-outline', color: T.blue, label: isNe ? 'ग्लुकोज' : 'Log Glucose', route: 'Log', border: T.border },
     { icon: 'restaurant-outline', color: T.teal, label: isNe ? 'खाना र डोज' : 'Food & Dose', route: 'Food', border: T.teal },
@@ -92,13 +94,12 @@ export default function PatientDashboard({ route, navigation }: any) {
             <View>
               <Text style={[styles.glucoseValue, isHypo && styles.hypoText]}>
                 {latestGlucose.value}
-                <Text style={styles.unit}> mg/dL</Text>
+                <Text style={styles.unit}> {latestGlucose.unit === 'mmol' ? 'mmol/L' : 'mg/dL'}</Text>
               </Text>
               <Text style={styles.timestamp}>{toBSDateTimeDisplay(latestGlucose.timestamp)}</Text>
               {iob > 0 && (
                 <Text style={styles.iobText}>{isNe ? 'सक्रिय इन्सुलिन' : 'Active insulin'}: {iob} U</Text>
-              )}
-            </View>
+              )}            </View>
           ) : (
             <Text style={styles.noData}>{isNe ? 'कुनै लग छैन' : t('noLogsYet')}</Text>
           )}
@@ -164,6 +165,8 @@ export default function PatientDashboard({ route, navigation }: any) {
           {actions.map((a, i) => (
             <AnimatedPressable
               key={i}
+              accessibilityRole="button"
+              accessibilityLabel={a.label}
               style={[styles.actionCard, { borderColor: a.border, borderWidth: a.border !== T.border ? 2 : 1 }]}
               onPress={() => navigation.navigate(a.route, { patientId: patient.id })}
             >
@@ -237,7 +240,8 @@ const styles = StyleSheet.create({
   sectionLabel: { ...section, paddingHorizontal: 4 },
   actionGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
   actionCard: {
-    width: '30%',
+    width: '31%',
+    minHeight: 92,
     backgroundColor: T.surface,
     borderRadius: 12,
     padding: 14,

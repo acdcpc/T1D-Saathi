@@ -11,6 +11,7 @@ import * as WebBrowser from 'expo-web-browser';
 import { supabase } from '../lib/supabase';
 import type { User, Session } from '@supabase/supabase-js';
 import type { UserRole } from '../types';
+import { clearOfflineQueue } from '../utils/offlineQueue';
 
 // Must be called before openAuthSessionAsync (recommended by expo-web-browser)
 WebBrowser.maybeCompleteAuthSession();
@@ -183,6 +184,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const signOut = async () => {
+    try { await clearOfflineQueue(); } catch { /* no active queue to clear */ }
     await supabase.auth.signOut();
     setUser(null);
     setSession(null);

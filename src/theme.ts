@@ -127,7 +127,7 @@ export const avatar = {
 // ── Component presets ────────────────────────────────────────────
 
 export const glycemicBadge = (value: number, unit: 'mgdl' | 'mmol') => {
-  const mgdl = unit === 'mmol' ? value * 18 : value;
+  const mgdl = unit === 'mmol' ? value * 18.0182 : value;
   if (mgdl < 54) return { bg: T.redLight, fg: T.redDark, label: 'Severe Low' };
   if (mgdl < 70) return { bg: T.amberLight, fg: T.amberDark, label: 'Low' };
   if (mgdl <= 180) return { bg: T.greenLight, fg: T.greenDark, label: 'In Range' };

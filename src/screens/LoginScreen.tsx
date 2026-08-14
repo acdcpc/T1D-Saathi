@@ -113,23 +113,29 @@ export default function LoginScreen({ navigation }: any) {
           <TextInput
             style={[styles.field, emailError && styles.fieldError, { color: TH.text, fontSize: 15 * fontScale }]}
             placeholder={isNe ? 'इमेल' : 'Email'}
+            accessibilityLabel={isNe ? 'इमेल' : 'Email'}
             value={email}
             onChangeText={(v) => { setEmail(v); if (emailError) setEmailError(null); }}
             keyboardType="email-address"
             autoCapitalize="none"
-            placeholderTextColor={TH.muted}
-          />
+            textContentType="emailAddress"
+            returnKeyType="next"
+            placeholderTextColor={TH.muted}          />
           {emailError ? <Text style={styles.errorText}>{emailError}</Text> : null}
           <TextInput
             style={[styles.field, passwordError && styles.fieldError, { color: TH.text, fontSize: 15 * fontScale }]}
             placeholder={isNe ? 'पासवर्ड' : 'Password'}
+            accessibilityLabel={isNe ? 'पासवर्ड' : 'Password'}
             value={password}
             onChangeText={(v) => { setPassword(v); if (passwordError) setPasswordError(null); }}
             secureTextEntry
-            placeholderTextColor={TH.muted}
-          />
+            textContentType="password"
+            returnKeyType="done"
+            placeholderTextColor={TH.muted}          />
           {passwordError ? <Text style={styles.errorText}>{passwordError}</Text> : null}
           <TouchableOpacity
+            accessibilityRole="button"
+            accessibilityLabel={isSignup ? (isNe ? 'खाता बनाउनुहोस्' : 'Create account') : (isNe ? 'लग इन' : 'Log in')}
             style={[primBtn, loading && { opacity: 0.7 }]}
             onPress={handleSubmit}
             disabled={loading}
@@ -152,10 +158,9 @@ export default function LoginScreen({ navigation }: any) {
             <Text style={styles.orText}>OR</Text>
             <View style={styles.line} />
           </View>
-          <TouchableOpacity style={styles.outlineBtn} onPress={handleGoogle} disabled={loading}>
-            <Text style={styles.outlineBtnText}>G  {isNe ? 'गुगलबाट लग इन' : 'Continue with Google'}</Text>
+          <TouchableOpacity accessibilityRole="button" accessibilityLabel={isNe ? 'गुगलबाट लग इन' : 'Continue with Google'} style={styles.outlineBtn} onPress={handleGoogle} disabled={loading}>            <Text style={styles.outlineBtnText}>G  {isNe ? 'गुगलबाट लग इन' : 'Continue with Google'}</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.guestBtn} onPress={handleGuest} disabled={loading}>
+          <TouchableOpacity accessibilityRole="button" accessibilityLabel={isNe ? 'अतिथिको रूपमा जारी राख्नुहोस्' : 'Continue as guest'} style={styles.guestBtn} onPress={handleGuest} disabled={loading}>
             <Text style={styles.guestBtnText}>{isNe ? 'पाहुनाको रूपमा जारी राख्नुहोस्' : 'Continue as Guest'}</Text>
           </TouchableOpacity>
         </View>
