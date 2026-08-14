@@ -42,3 +42,8 @@ yarn-error.*
 .env
 T1D-Saathi-v1.0.0.apk
 *.keystore
+
+# Build artifacts
+*.apk
+*.aab
+*.ipa
