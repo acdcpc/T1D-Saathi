@@ -16,7 +16,7 @@ CREATE TABLE profiles (
 
 ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Users can read own profile" ON profiles FOR SELECT USING (auth.uid() = user_id);
-CREATE POLICY "Users can update own profile" ON profiles FOR UPDATE USING (auth.uid() = user_id);
+CREATE POLICY "Users can update own profile" ON profiles FOR UPDATE USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);
 CREATE POLICY "Users can insert own profile" ON profiles FOR INSERT WITH CHECK (auth.uid() = user_id);
 
 -- Patients table
@@ -41,9 +41,7 @@ CREATE TABLE patients (
 
 ALTER TABLE patients ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Parents can manage own patients" ON patients USING (auth.uid() = user_id);
-CREATE POLICY "Clinicians can read assigned patients" ON patients FOR SELECT USING (
-  EXISTS (SELECT 1 FROM care_team WHERE care_team.patient_id = patients.id AND care_team.clinician_id = auth.uid())
-);
+
 
 -- Insulin Regimens
 CREATE TABLE insulin_regimens (
@@ -57,16 +55,21 @@ CREATE TABLE insulin_regimens (
   carb_ratio NUMERIC,
   tdd NUMERIC,
   correction_target NUMERIC DEFAULT 120,
+  approved_by_clinician BOOLEAN NOT NULL DEFAULT false,
+  approved_at TIMESTAMPTZ,
+  approved_by UUID REFERENCES auth.users(id),
   effective_date TIMESTAMPTZ DEFAULT NOW()
 );
 
 ALTER TABLE insulin_regimens ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "Parents can manage regimens" ON insulin_regimens USING (
+CREATE POLICY "Parents can read own regimens" ON insulin_regimens FOR SELECT USING (
   EXISTS (SELECT 1 FROM patients WHERE patients.id = insulin_regimens.patient_id AND patients.user_id = auth.uid())
 );
-CREATE POLICY "Clinicians can read regimens" ON insulin_regimens FOR SELECT USING (
-  EXISTS (SELECT 1 FROM care_team ct JOIN patients p ON p.id = insulin_regimens.patient_id WHERE ct.patient_id = p.id AND ct.clinician_id = auth.uid())
+CREATE POLICY "Parents can create unapproved regimens" ON insulin_regimens FOR INSERT WITH CHECK (
+  approved_by_clinician = false AND EXISTS (SELECT 1 FROM patients WHERE patients.id = insulin_regimens.patient_id AND patients.user_id = auth.uid())
 );
+
+
 
 -- Glucose Logs
 CREATE TABLE glucose_logs (
@@ -79,14 +82,13 @@ CREATE TABLE glucose_logs (
   timestamp TIMESTAMPTZ DEFAULT NOW(),
   carbs NUMERIC,
   insulin_given NUMERIC,
-  notes TEXT
+  notes TEXT,
+  client_event_id TEXT UNIQUE
 );
 
 ALTER TABLE glucose_logs ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Parents can manage glucose logs" ON glucose_logs USING (auth.uid() = user_id);
-CREATE POLICY "Clinicians can read glucose logs" ON glucose_logs FOR SELECT USING (
-  EXISTS (SELECT 1 FROM care_team ct WHERE ct.patient_id = glucose_logs.patient_id AND ct.clinician_id = auth.uid())
-);
+
 
 -- Ketone Logs
 CREATE TABLE ketone_logs (
@@ -96,14 +98,13 @@ CREATE TABLE ketone_logs (
   value NUMERIC,
   method TEXT DEFAULT 'blood' CHECK (method IN ('blood', 'urine', 'unknown')),
   timestamp TIMESTAMPTZ DEFAULT NOW(),
-  episode_id UUID REFERENCES sick_day_episodes(id)
+  episode_id UUID,
+  client_event_id TEXT UNIQUE
 );
 
 ALTER TABLE ketone_logs ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Parents can manage ketone logs" ON ketone_logs USING (auth.uid() = user_id);
-CREATE POLICY "Clinicians can read ketone logs" ON ketone_logs FOR SELECT USING (
-  EXISTS (SELECT 1 FROM care_team ct WHERE ct.patient_id = ketone_logs.patient_id AND ct.clinician_id = auth.uid())
-);
+
 
 -- Sick Day Episodes
 CREATE TABLE sick_day_episodes (
@@ -114,14 +115,13 @@ CREATE TABLE sick_day_episodes (
   end_date TIMESTAMPTZ,
   symptoms JSONB,
   outcome TEXT,
-  escalated BOOLEAN DEFAULT false
+  escalated BOOLEAN DEFAULT false,
+  client_event_id TEXT UNIQUE
 );
 
 ALTER TABLE sick_day_episodes ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Parents can manage episodes" ON sick_day_episodes USING (auth.uid() = user_id);
-CREATE POLICY "Clinicians can read episodes" ON sick_day_episodes FOR SELECT USING (
-  EXISTS (SELECT 1 FROM care_team ct WHERE ct.patient_id = sick_day_episodes.patient_id AND ct.clinician_id = auth.uid())
-);
+
 
 -- Hospitals
 CREATE TABLE hospitals (
@@ -154,19 +154,25 @@ CREATE POLICY "Clinicians can view own assignments" ON care_team FOR SELECT USIN
 CREATE TABLE messages (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   thread_id UUID,
+  patient_id UUID REFERENCES patients(id) ON DELETE CASCADE,
   sender_id UUID REFERENCES auth.users(id) NOT NULL,
   recipient_id UUID REFERENCES auth.users(id),
-  body TEXT NOT NULL,
+  body TEXT NOT NULL CHECK (char_length(trim(body)) BETWEEN 1 AND 4000),
   related_log_id UUID,
   is_structured_advice BOOLEAN DEFAULT false,
   timestamp TIMESTAMPTZ DEFAULT NOW()
 );
 
 ALTER TABLE messages ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "Users can send/receive messages" ON messages USING (
+CREATE POLICY "Users can read related messages" ON messages FOR SELECT USING (
   auth.uid() = sender_id OR auth.uid() = recipient_id
 );
-CREATE POLICY "Users can insert messages" ON messages FOR INSERT WITH CHECK (auth.uid() = sender_id);
+CREATE POLICY "Users can send related messages" ON messages FOR INSERT WITH CHECK (
+  auth.uid() = sender_id AND patient_id IS NOT NULL AND EXISTS (
+    SELECT 1 FROM care_team ct WHERE ct.patient_id = messages.patient_id
+      AND (ct.clinician_id = auth.uid() OR ct.clinician_id = messages.recipient_id)
+  )
+);
 
 -- Education Content
 CREATE TABLE education_content (
@@ -197,9 +203,7 @@ CREATE TABLE assessment_responses (
 
 ALTER TABLE assessment_responses ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Parents can manage assessment" ON assessment_responses USING (auth.uid() = user_id);
-CREATE POLICY "Clinicians can read assessment" ON assessment_responses FOR SELECT USING (
-  EXISTS (SELECT 1 FROM care_team ct WHERE ct.patient_id = assessment_responses.patient_id AND ct.clinician_id = auth.uid())
-);
+
 
 -- Storage buckets
 -- Run these in Supabase Dashboard > Storage
@@ -215,8 +219,9 @@ BEGIN
     NEW.id,
     NEW.raw_user_meta_data->>'full_name',
     NEW.raw_user_meta_data->>'avatar_url',
-    COALESCE(NEW.raw_user_meta_data->>'role', 'parent')
-  );
+    'parent'
+  )
+  ON CONFLICT (user_id) DO NOTHING;
   RETURN NEW;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
@@ -225,3 +230,44 @@ DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
 CREATE TRIGGER on_auth_user_created
   AFTER INSERT ON auth.users
   FOR EACH ROW EXECUTE FUNCTION handle_new_user();
+
+CREATE OR REPLACE FUNCTION prevent_profile_role_change()
+RETURNS TRIGGER AS $$
+BEGIN
+  IF NEW.role IS DISTINCT FROM OLD.role
+     AND COALESCE(current_setting('request.jwt.claim.role', true), '') <> 'service_role' THEN
+    RAISE EXCEPTION 'profile role changes require an administrator';
+  END IF;
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
+
+DROP TRIGGER IF EXISTS protect_profile_role ON profiles;
+CREATE TRIGGER protect_profile_role
+  BEFORE UPDATE ON profiles
+  FOR EACH ROW EXECUTE FUNCTION prevent_profile_role_change();
+
+ALTER TABLE ketone_logs
+  ADD CONSTRAINT ketone_logs_episode_fk FOREIGN KEY (episode_id) REFERENCES sick_day_episodes(id);
+
+CREATE POLICY "Clinicians can read assigned patients" ON patients FOR SELECT USING (
+  EXISTS (SELECT 1 FROM care_team WHERE care_team.patient_id = patients.id AND care_team.clinician_id = auth.uid())
+);
+CREATE POLICY "Clinicians can read assigned regimens" ON insulin_regimens FOR SELECT USING (
+  EXISTS (SELECT 1 FROM care_team ct WHERE ct.patient_id = insulin_regimens.patient_id AND ct.clinician_id = auth.uid())
+);
+CREATE POLICY "Clinicians can approve assigned regimens" ON insulin_regimens FOR UPDATE USING (
+  EXISTS (SELECT 1 FROM care_team ct WHERE ct.patient_id = insulin_regimens.patient_id AND ct.clinician_id = auth.uid())
+) WITH CHECK (approved_by_clinician = true AND approved_by = auth.uid());
+CREATE POLICY "Clinicians can read glucose logs" ON glucose_logs FOR SELECT USING (
+  EXISTS (SELECT 1 FROM care_team ct WHERE ct.patient_id = glucose_logs.patient_id AND ct.clinician_id = auth.uid())
+);
+CREATE POLICY "Clinicians can read ketone logs" ON ketone_logs FOR SELECT USING (
+  EXISTS (SELECT 1 FROM care_team ct WHERE ct.patient_id = ketone_logs.patient_id AND ct.clinician_id = auth.uid())
+);
+CREATE POLICY "Clinicians can read episodes" ON sick_day_episodes FOR SELECT USING (
+  EXISTS (SELECT 1 FROM care_team ct WHERE ct.patient_id = sick_day_episodes.patient_id AND ct.clinician_id = auth.uid())
+);
+CREATE POLICY "Clinicians can read assessment" ON assessment_responses FOR SELECT USING (
+  EXISTS (SELECT 1 FROM care_team ct WHERE ct.patient_id = assessment_responses.patient_id AND ct.clinician_id = auth.uid())
+);

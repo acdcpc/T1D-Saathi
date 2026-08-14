@@ -26,13 +26,14 @@ export default function LoginScreen({ navigation }: any) {
       ? await signUp(email.trim(), password)
       : await signIn(email.trim(), password);
     setLoading(false);
-    if (error) Alert.alert(isNe ? 'त्रुटि' : 'Error', error.message);
+    if (error) Alert.alert(isNe ? 'त्रुटि' : 'Error', isNe ? 'लग इन हुन सकेन। इमेल र पासवर्ड जाँच गर्नुहोस्।' : 'Unable to continue. Check your email and password, then try again.');
   };
 
   const handleGuest = async () => {
     setLoading(true);
-    await signInAsGuest();
-    setLoading(false);
+    try { await signInAsGuest(); }
+    catch { Alert.alert(isNe ? 'त्रुटि' : 'Error', isNe ? 'अतिथि मोड उपलब्ध छैन।' : 'Guest mode is currently unavailable.'); }
+    finally { setLoading(false); }
   };
 
   return (
@@ -47,21 +48,29 @@ export default function LoginScreen({ navigation }: any) {
           <TextInput
             style={styles.field}
             placeholder={isNe ? 'इमेल' : 'Email'}
+            accessibilityLabel={isNe ? 'इमेल' : 'Email'}
             value={email}
             onChangeText={setEmail}
             keyboardType="email-address"
             autoCapitalize="none"
+            textContentType="emailAddress"
+            returnKeyType="next"
             placeholderTextColor={T.muted}
           />
           <TextInput
             style={styles.field}
             placeholder={isNe ? 'पासवर्ड' : 'Password'}
+            accessibilityLabel={isNe ? 'पासवर्ड' : 'Password'}
             value={password}
             onChangeText={setPassword}
             secureTextEntry
+            textContentType="password"
+            returnKeyType="done"
             placeholderTextColor={T.muted}
           />
           <TouchableOpacity
+            accessibilityRole="button"
+            accessibilityLabel={isSignup ? (isNe ? 'खाता बनाउनुहोस्' : 'Create account') : (isNe ? 'लग इन' : 'Log in')}
             style={[primBtn, loading && { opacity: 0.7 }]}
             onPress={handleSubmit}
             disabled={loading}
@@ -84,10 +93,10 @@ export default function LoginScreen({ navigation }: any) {
             <Text style={styles.orText}>OR</Text>
             <View style={styles.line} />
           </View>
-          <TouchableOpacity style={styles.outlineBtn} onPress={signInWithGoogle}>
+          <TouchableOpacity accessibilityRole="button" accessibilityLabel={isNe ? 'गुगलबाट लग इन' : 'Continue with Google'} style={styles.outlineBtn} onPress={signInWithGoogle} disabled={loading}>
             <Text style={styles.outlineBtnText}>G  {isNe ? 'गुगलबाट लग इन' : 'Continue with Google'}</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.guestBtn} onPress={handleGuest} disabled={loading}>
+          <TouchableOpacity accessibilityRole="button" accessibilityLabel={isNe ? 'अतिथिको रूपमा जारी राख्नुहोस्' : 'Continue as guest'} style={styles.guestBtn} onPress={handleGuest} disabled={loading}>
             <Text style={styles.guestBtnText}>{isNe ? 'पाहुनाको रूपमा जारी राख्नुहोस्' : 'Continue as Guest'}</Text>
           </TouchableOpacity>
         </View>

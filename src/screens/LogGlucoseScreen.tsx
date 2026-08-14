@@ -68,20 +68,19 @@ export default function LogGlucoseScreen({ route, navigation }: any) {
       carbs: parseFloat(carbs) || 0,
     };
     const { online, error } = await safeInsert('glucose_logs', logEntry);
-    if (error) return Alert.alert(t('error'), error.message);
+    if (error) return Alert.alert(t('error'), error instanceof Error ? error.message : 'The glucose record could not be saved.');
 
     if (isLow) {
       setIsHypo(true);
       setResult(null);
       scheduleHypoReminder();
-    } else if (regimen) {
-      const targetGlucose = regimen.correction_target || 120;
-      const tddVal = regimen.tdd || 40;
-      const isfVal = regimen.isf;
-      const carbRatioVal = regimen.carb_ratio;
-      const correction = calculateCorrectionDose(glucoseMgdl, targetGlucose, tddVal, isfVal);
-      const carb = calculateCarbDose(parseFloat(carbs) || 0, carbRatioVal, tddVal);
+    } else if (regimen?.approved_by_clinician && regimen.tdd && regimen.correction_target) {
+      const correction = calculateCorrectionDose(glucoseMgdl, regimen.correction_target, regimen.tdd, regimen.isf);
+      const carb = calculateCarbDose(parseFloat(carbs) || 0, regimen.carb_ratio, regimen.tdd);
       setResult({ correction: Math.round(correction * 10) / 10, carb: Math.round(carb * 10) / 10, total: Math.round((correction + carb) * 10) / 10 });
+      setIsHypo(false);
+    } else {
+      setResult(null);
       setIsHypo(false);
     }
 
@@ -96,7 +95,7 @@ export default function LogGlucoseScreen({ route, navigation }: any) {
 
       <Text style={styles.label}>{t('currentGlucose')}</Text>
       <View style={styles.glucoseRow}>
-        <TextInput style={styles.glucoseInput} value={glucose} onChangeText={setGlucose} keyboardType="numeric" placeholder="0" />
+        <TextInput accessibilityLabel={t('enterGlucose')} style={styles.glucoseInput} value={glucose} onChangeText={setGlucose} keyboardType="numeric" placeholder="0" />
         <View style={styles.unitToggle}>
           <TouchableOpacity style={[styles.unitBtn, unit === 'mgdl' && styles.unitActive]} onPress={() => setUnit('mgdl')}>
             <Text style={[styles.unitText, unit === 'mgdl' && styles.unitTextActive]}>{t('mgdl')}</Text>
@@ -114,11 +113,12 @@ export default function LogGlucoseScreen({ route, navigation }: any) {
         <View style={styles.regimenInfo}>
           <Text style={styles.regimenText}>{t('insulinType')}: {regimen.insulin_type}</Text>
           <Text style={styles.regimenText}>{t('tdd')}: {regimen.tdd || 'N/A'} U</Text>
-          <Text style={styles.regimenText}>{t('isf')}: {regimen.isf || `1800/${regimen.tdd || 40}`} mg/dL per U</Text>
+          <Text style={styles.regimenText}>{t('isf')}: {regimen.isf || 'N/A'} mg/dL per U</Text>
+          <Text style={styles.regimenText}>{regimen.approved_by_clinician ? 'Clinician-approved regimen' : 'Dose calculation unavailable until clinician approval'}</Text>
         </View>
       )}
 
-      <TouchableOpacity style={styles.logBtn} onPress={handleLog}>
+      <TouchableOpacity accessibilityRole="button" accessibilityLabel={t('calculate')} style={styles.logBtn} onPress={handleLog}>
         <Text style={styles.logBtnText}>{t('calculate')}</Text>
       </TouchableOpacity>
 

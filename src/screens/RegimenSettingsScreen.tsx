@@ -18,7 +18,7 @@ export default function RegimenSettingsScreen({ route, navigation }: any) {
   const [tdd, setTdd] = useState('');
   const [isf, setIsf] = useState('');
   const [carbRatio, setCarbRatio] = useState('');
-  const [target, setTarget] = useState('120');
+  const [target, setTarget] = useState('');
 
   useEffect(() => {
     (async () => {
@@ -38,23 +38,32 @@ export default function RegimenSettingsScreen({ route, navigation }: any) {
         setTdd(data.tdd ? String(data.tdd) : '');
         setIsf(data.isf ? String(data.isf) : '');
         setCarbRatio(data.carb_ratio ? String(data.carb_ratio) : '');
-        setTarget(data.correction_target ? String(data.correction_target) : '120');
+        setTarget(data.correction_target ? String(data.correction_target) : '');
       }
       setLoading(false);
     })();
   }, [patientId]);
 
   const handleSave = async () => {
+    const tddValue = parseFloat(tdd);
+    const targetValue = parseFloat(target);
+    if (!insulinType.trim() || !Number.isFinite(tddValue) || tddValue <= 0 || !Number.isFinite(targetValue) || targetValue <= 0) {
+      Alert.alert(t('error'), 'Insulin type, total daily dose, and correction target are required.');
+      return;
+    }
     const entry = {
       patient_id: patientId,
-      insulin_type: insulinType,
+      insulin_type: insulinType.trim(),
       dose: parseFloat(dose) || 0,
       frequency,
       delivery_method: delivery,
-      tdd: parseFloat(tdd) || null,
+      tdd: tddValue,
       isf: parseFloat(isf) || null,
       carb_ratio: parseFloat(carbRatio) || null,
-      correction_target: parseFloat(target) || 120,
+      correction_target: targetValue,
+      approved_by_clinician: false,
+      approved_at: null,
+      approved_by: null,
       effective_date: new Date().toISOString(),
     };
     const { error } = await supabase.from('insulin_regimens').insert(entry);
@@ -70,6 +79,7 @@ export default function RegimenSettingsScreen({ route, navigation }: any) {
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
       <Text style={styles.title}>{t('insulinRegimen')}</Text>
+      <Text style={styles.notice}>New regimen settings remain unavailable for dosing until reviewed and approved by a clinician.</Text>
       <Text style={styles.label}>{t('insulinType')}</Text>
       <TextInput style={styles.input} value={insulinType} onChangeText={setInsulinType} />
       <Text style={styles.label}>Dose (units)</Text>
@@ -105,7 +115,8 @@ const styles = StyleSheet.create({
   content: { padding: 20, paddingTop: 60 },
   centered: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   title: { fontSize: 24, fontWeight: '800', color: '#202124', marginBottom: 20 },
-  label: { fontSize: 14, fontWeight: '600', color: '#202124', marginBottom: 6, marginTop: 14 },
+  label: { fontSize: 14, fontWeight: '600', color: '#1A1A2E', marginBottom: 6, marginTop: 14 },
+  notice: { backgroundColor: '#FEF3C7', color: '#92400E', borderRadius: 10, padding: 12, fontSize: 13, lineHeight: 19 },
   input: { backgroundColor: '#fff', borderRadius: 10, padding: 14, fontSize: 16, borderWidth: 1, borderColor: '#dadce0' },
   row: { flexDirection: 'row', gap: 8 },
   chip: { borderRadius: 20, paddingHorizontal: 16, paddingVertical: 8, backgroundColor: '#e8eaed' },

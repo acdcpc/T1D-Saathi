@@ -34,6 +34,8 @@ export default function HomeScreen({ navigation }: any) {
 
   const renderPatient = ({ item }: { item: PatientProfile }) => (
     <TouchableOpacity
+      accessibilityRole="button"
+      accessibilityLabel={`Open patient ${item.name}`}
       style={styles.patientCard}
       onPress={() => navigation.navigate('PatientDashboard', { patient: item })}
       activeOpacity={0.7}
@@ -63,7 +65,7 @@ export default function HomeScreen({ navigation }: any) {
           <Text style={styles.headerTitle}>T1D साथी</Text>
           <Text style={styles.headerSubtitle}>T1D Saathi</Text>
         </View>
-        <TouchableOpacity style={styles.settingsBtn} onPress={() => navigation.navigate('Settings')}>
+        <TouchableOpacity accessibilityRole="button" accessibilityLabel={isNe ? 'सेटिङ्स खोल्नुहोस्' : 'Open settings'} style={styles.settingsBtn} onPress={() => navigation.navigate('Settings')}>
           <Ionicons name="settings-outline" size={22} color={T.muted} />
         </TouchableOpacity>
       </View>
@@ -114,6 +116,8 @@ export default function HomeScreen({ navigation }: any) {
 
       {/* FAB — Kapoori Ka pattern */}
       <TouchableOpacity
+        accessibilityRole="button"
+        accessibilityLabel={isNe ? 'बिरामी थप्नुहोस्' : 'Add patient'}
         style={styles.fab}
         activeOpacity={0.85}
         onPress={() => navigation.navigate('AddPatient', {})}
@@ -124,6 +128,8 @@ export default function HomeScreen({ navigation }: any) {
       {/* Clinician switch */}
       {role === 'clinician' && (
         <TouchableOpacity
+          accessibilityRole="button"
+          accessibilityLabel={isNe ? 'क्लिनिसियन पोर्टल खोल्नुहोस्' : 'Open clinician portal'}
           style={styles.clinicianBar}
           onPress={() => navigation.reset({ index: 0, routes: [{ name: 'ClinicianPatientList' }] })}
         >
@@ -148,7 +154,7 @@ const styles = StyleSheet.create({
   headerLeft: { flex: 1 },
   headerTitle: { fontWeight: '800', fontSize: 22, color: T.text },
   headerSubtitle: { fontSize: 13, color: T.muted, marginTop: 1 },
-  settingsBtn: { padding: 4 },
+  settingsBtn: { padding: 10, minWidth: 44, minHeight: 44, alignItems: 'center' as const, justifyContent: 'center' as const },
 
   loader: { flex: 1 },
 

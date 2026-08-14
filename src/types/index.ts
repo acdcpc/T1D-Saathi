@@ -15,7 +15,7 @@ export interface InsulinRegimen {
   id: string; patient_id: string; insulin_type: string; dose: number;
   frequency: string; delivery_method: 'pen' | 'syringe' | 'pump';
   effective_date: string; isf?: number; carb_ratio?: number; tdd?: number;
-  correction_target?: number;
+  correction_target?: number; approved_by_clinician?: boolean; approved_at?: string; approved_by?: string;
 }
 export interface GlucoseLog {
   id: string; patient_id: string; user_id: string; value: number;
@@ -49,7 +49,7 @@ export interface SickDayRule {
 }
 export interface ChatThread { id: string; patient_id: string; clinician_id: string; parent_id: string; created_at: string; }
 export interface Message {
-  id: string; thread_id: string; sender_id: string; recipient_id: string;
+  id: string; thread_id: string; patient_id: string; sender_id: string; recipient_id: string;
   body: string; related_log_id?: string; timestamp: string;
 }
 export type UserRole = 'parent' | 'clinician';

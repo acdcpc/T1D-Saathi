@@ -15,22 +15,22 @@ export function useNetworkSync(intervalMs = 60000) {
         if (now - lastSync.current > intervalMs) {
           lastSync.current = now;
           syncOfflineQueue().then((r) => {
-            if (r.synced > 0) console.log(`Synced ${r.synced} offline entries`);
-          });
+            if (r.discarded > 0) console.warn(`${r.discarded} offline entries require review and were not retried`);
+          }).catch(() => undefined);
         }
       }
     });
 
     // Initial sync
     syncOfflineQueue().then((r) => {
-      if (r.synced > 0) console.log(`Initial sync: ${r.synced} entries`);
-    });
+      if (r.discarded > 0) console.warn(`${r.discarded} offline entries require review and were not retried`);
+    }).catch(() => undefined);
 
     // Periodic sync
     const timer = setInterval(() => {
       syncOfflineQueue().then((r) => {
-        if (r.synced > 0) console.log(`Periodic sync: ${r.synced} entries`);
-      });
+        if (r.discarded > 0) console.warn(`${r.discarded} offline entries require review and were not retried`);
+      }).catch(() => undefined);
     }, intervalMs);
 
     return () => {

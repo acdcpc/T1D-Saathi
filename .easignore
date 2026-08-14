@@ -11,6 +11,6 @@ web-build/**
 *.pem
 .env
 .env.*
-! .env.example
+!.env.example
 scripts/**
 docs/**

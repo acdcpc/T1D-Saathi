@@ -8,7 +8,7 @@ import { useLanguage } from '../context/LanguageContext';
 import { supabase } from '../lib/supabase';
 import { safeInsert } from '../utils/offlineQueue';
 import { searchNepaliFoods } from '../data/nepaliFoods';
-import { calculateDosing, checkMealCoverage } from '../utils/dosingCalc';
+import { calculateDosing, checkMealCoverage, DosingValidationError } from '../utils/dosingCalc';
 import {
   estimateMealFromPhoto, adjustItemPortion, recalculateTotals,
   validateCalories, type FoodItem, type MealEstimateResult,
@@ -145,24 +145,42 @@ export default function FoodEstimatorScreen({ route }: any) {
 
   // ─── Confirm & dose ───
   const confirmAndCalculate = async () => {
+    if (!user) {
+      Alert.alert('Sign in required', 'Please sign in before saving a meal record.');
+      return;
+    }
+    if (!regimen || !regimen.tdd || !regimen.correction_target || !(regimen as InsulinRegimen & { approved_by_clinician?: boolean }).approved_by_clinician) {
+      Alert.alert('Dose unavailable', 'A clinician-approved insulin regimen is required. No dose was calculated.');
+      return;
+    }
+    if (items.length === 0 || totals.total_carbs_g <= 0) {
+      Alert.alert('Confirm the meal first', 'Add and review at least one food item before calculating a dose.');
+      return;
+    }
+
     const gVal = parseFloat(currentGlucose);
-    const tddVal = regimen?.tdd || 40;
-    const target = regimen?.correction_target || 120;
+    if (!Number.isFinite(gVal) || gVal <= 0) {
+      Alert.alert('Glucose required', 'Enter the child’s current glucose reading before calculating a dose.');
+      return;
+    }
 
-    const dosing = calculateDosing(isNaN(gVal) ? target : gVal, totals.total_carbs_g, {
-      tdd: tddVal,
-      icr_constant: 500,
-      isf_constant: 1800,
-      target_glucose: target,
-    });
+    try {
+      const dosing = calculateDosing(gVal, totals.total_carbs_g, {
+        tdd: regimen.tdd,
+        icr_constant: 500,
+        isf_constant: 1800,
+        target_glucose: regimen.correction_target,
+        approved_by_clinician: true,
+        regimen_id: regimen.id,
+      });
 
-    const planned = parseFloat(plannedInsulin) || 0;
-    const coverage = checkMealCoverage(totals.total_carbs_g, totals.total_calories, planned || dosing.mealBolus, dosing.icr);
+      const planned = plannedInsulin.trim() === '' ? dosing.mealBolus : parseFloat(plannedInsulin);
+      const coverage = checkMealCoverage(totals.total_carbs_g, totals.total_calories, planned, dosing.icr);
 
-    setDosingResult(dosing);
-    setCoverageCheck(coverage);
+      setDosingResult(dosing);
+      setCoverageCheck(coverage);
 
-    // Save meal log with confirmed data (corrected from estimate if edited)
+      // Save meal log with confirmed data (corrected from estimate if edited)
     const confirmedData = {
       patient_id: patientId,
       user_id: user?.id,
@@ -196,10 +214,17 @@ export default function FoodEstimatorScreen({ route }: any) {
       timestamp: new Date().toISOString(),
     };
 
-    const { online, error } = await safeInsert('meal_logs', confirmedData);
-    if (error) console.error('save error:', error);
+      const { error } = await safeInsert('meal_logs', confirmedData);
+      if (error) {
+        Alert.alert('Meal not saved', 'The dose result is shown, but the meal record could not be saved. Please retry when connected.');
+        return;
+      }
 
-    setStep('dosing');
+      setStep('dosing');
+    } catch (error) {
+      const message = error instanceof DosingValidationError ? error.message : 'Dose calculation is unavailable. Please contact your clinician.';
+      Alert.alert('Dose unavailable', message);
+    }
   };
 
   // ═══ RENDER: Step 1 — Photo ═══
@@ -271,17 +296,23 @@ export default function FoodEstimatorScreen({ route }: any) {
             {/* Portion stepper */}
             <Text style={s.portionLabel}>Portion: {item.portion_grams}g ({item.portion_desc})</Text>
             <View style={s.portionRow}>
-              {PORTIONS.map(p => (
-                <TouchableOpacity
-                  key={p}
-                  style={[s.portionChip, Math.abs(item.portion_grams / (item.portion_grams / 1) - p) < 0.01 ? s.portionActive : null]}
-                  onPress={() => updateItemPortion(idx, p)}
-                >
-                  <Text style={[s.portionChipText, Math.abs(item.portion_grams / (item.portion_grams / 1) - p) < 0.01 ? s.portionChipActiveText : null]}>
-                    {p === 1 ? '1×' : `${p}×`}
-                  </Text>
-                </TouchableOpacity>
-              ))}
+              {PORTIONS.map(p => {
+                const originalGrams = estimate?.items[idx]?.portion_grams || item.portion_grams;
+                const selected = Math.abs(item.portion_grams / originalGrams - p) < 0.01;
+                return (
+                  <TouchableOpacity
+                    key={p}
+                    accessibilityRole="button"
+                    accessibilityLabel={`Set portion to ${p} times`}
+                    style={[s.portionChip, selected ? s.portionActive : null]}
+                    onPress={() => updateItemPortion(idx, p)}
+                  >
+                    <Text style={[s.portionChipText, selected ? s.portionChipActiveText : null]}>
+                      {p === 1 ? '1×' : `${p}×`}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
             </View>
 
             {/* Item macros */}

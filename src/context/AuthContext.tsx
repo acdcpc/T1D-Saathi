@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useEffect, useCallback } fr
 import { supabase } from '../lib/supabase';
 import type { User, Session } from '@supabase/supabase-js';
 import type { UserRole } from '../types';
+import { clearOfflineQueue } from '../utils/offlineQueue';
 
 interface AuthContextType {
   user: User | null;
@@ -68,6 +69,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const signOut = async () => {
+    try { await clearOfflineQueue(); } catch { /* no active queue to clear */ }
     await supabase.auth.signOut();
     setRole(null);
   };

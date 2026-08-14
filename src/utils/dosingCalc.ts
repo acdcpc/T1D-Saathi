@@ -1,11 +1,16 @@
-// Dosing calculations for T1D Saathi
-// ISPAD-standard formulas with configurable constants
+// Clinical dosing helpers for T1D Saathi.
+// These calculations are intentionally fail-closed: callers must provide
+// complete, clinician-approved inputs and handle validation errors explicitly.
+
+export type GlucoseUnit = 'mgdl' | 'mmol';
 
 export interface DosingParams {
   tdd: number;
-  icr_constant?: number;   // default 500 (rapid-acting): 450 for some protocols
-  isf_constant?: number;   // default 1800 (rapid-acting): 1500 for regular insulin
-  target_glucose?: number; // default 120 mg/dL
+  icr_constant?: number;
+  isf_constant?: number;
+  target_glucose: number;
+  approved_by_clinician: boolean;
+  regimen_id?: string;
 }
 
 export interface DosingResult {
@@ -15,38 +20,84 @@ export interface DosingResult {
   correctionDose: number;
   totalDose: number;
   target_glucose: number;
+  glucose_unit: 'mgdl';
+  regimen_id?: string;
+}
+
+export class DosingValidationError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'DosingValidationError';
+  }
+}
+
+const finitePositive = (value: number) => Number.isFinite(value) && value > 0;
+
+/** Convert a glucose reading to mg/dL for the calculation layer. */
+export function glucoseToMgDl(value: number, unit: GlucoseUnit): number {
+  if (!Number.isFinite(value) || value <= 0) {
+    throw new DosingValidationError('Glucose must be a positive number.');
+  }
+  const mgdl = unit === 'mmol' ? value * 18.0182 : value;
+  if (mgdl < 20 || mgdl > 1000) {
+    throw new DosingValidationError('Glucose reading is outside the supported range.');
+  }
+  return Math.round(mgdl * 10) / 10;
+}
+
+export function mgDlToGlucose(value: number, unit: GlucoseUnit): number {
+  if (!Number.isFinite(value) || value <= 0) {
+    throw new DosingValidationError('Glucose must be a positive number.');
+  }
+  return Math.round((unit === 'mmol' ? value / 18.0182 : value) * 10) / 10;
 }
 
 export function calculateDosing(
   currentGlucose: number,
   mealCarbs: number,
-  params: DosingParams
+  params: DosingParams,
 ): DosingResult {
-  const icrConstant = params.icr_constant || 500;
-  const isfConstant = params.isf_constant || 1800;
-  const targetGlucose = params.target_glucose || 120;
+  const icrConstant = params.icr_constant ?? 500;
+  const isfConstant = params.isf_constant ?? 1800;
 
-  const icr = params.tdd > 0 ? icrConstant / params.tdd : 0;
-  const isf = params.tdd > 0 ? isfConstant / params.tdd : 0;
+  if (!params.approved_by_clinician) {
+    throw new DosingValidationError('A clinician-approved regimen is required before calculating a dose.');
+  }
+  if (!finitePositive(params.tdd) || params.tdd > 500) {
+    throw new DosingValidationError('The active total daily dose is missing or invalid.');
+  }
+  if (!finitePositive(params.target_glucose) || params.target_glucose < 60 || params.target_glucose > 250) {
+    throw new DosingValidationError('The approved glucose target is missing or invalid.');
+  }
+  if (!finitePositive(icrConstant) || !finitePositive(isfConstant)) {
+    throw new DosingValidationError('The approved dosing constants are invalid.');
+  }
+  if (!Number.isFinite(currentGlucose) || currentGlucose < 20 || currentGlucose > 1000) {
+    throw new DosingValidationError('A current glucose reading is required for dose calculation.');
+  }
+  if (!Number.isFinite(mealCarbs) || mealCarbs < 0 || mealCarbs > 1000) {
+    throw new DosingValidationError('Meal carbohydrates are missing or invalid.');
+  }
 
-  const mealBolus = icr > 0 ? mealCarbs / icr : 0;
-  const correctionDose = (isf > 0 && currentGlucose > targetGlucose)
-    ? (currentGlucose - targetGlucose) / isf
+  const icr = icrConstant / params.tdd;
+  const isf = isfConstant / params.tdd;
+  const mealBolus = mealCarbs / icr;
+  const correctionDose = currentGlucose > params.target_glucose
+    ? (currentGlucose - params.target_glucose) / isf
     : 0;
-
-  const totalDose = mealBolus + correctionDose;
 
   return {
     icr: Math.round(icr * 10) / 10,
     isf: Math.round(isf * 10) / 10,
     mealBolus: Math.round(mealBolus * 10) / 10,
     correctionDose: Math.round(correctionDose * 10) / 10,
-    totalDose: Math.round(totalDose * 10) / 10,
-    target_glucose: targetGlucose,
+    totalDose: Math.round((mealBolus + correctionDose) * 10) / 10,
+    target_glucose: params.target_glucose,
+    glucose_unit: 'mgdl',
+    regimen_id: params.regimen_id,
   };
 }
 
-// Check if meal carbs exceed coverage from planned insulin dose
 export interface CoverageCheck {
   covered: boolean;
   message: string | null;
@@ -59,30 +110,24 @@ export function checkMealCoverage(
   mealCarbs: number,
   mealCalories: number,
   plannedInsulinDose: number,
-  icr: number
+  icr: number,
 ): CoverageCheck {
-  if (icr <= 0) return { covered: true, message: null, deficit: 0, isHighCalorieMeal: false, highCalorieNote: null };
+  if (!Number.isFinite(mealCarbs) || mealCarbs < 0 || !Number.isFinite(plannedInsulinDose) || plannedInsulinDose < 0 || !finitePositive(icr)) {
+    return { covered: false, message: 'Meal coverage cannot be assessed from incomplete inputs.', deficit: 0, isHighCalorieMeal: false, highCalorieNote: null };
+  }
 
   const carbsCovered = plannedInsulinDose * icr;
   const deficit = mealCarbs - carbsCovered;
+  const covered = deficit <= 5;
+  const isHighCalorie = Number.isFinite(mealCalories) && mealCalories > 600;
 
-  const covered = deficit <= 5; // within 5g tolerance
-  const isHighCalorie = mealCalories > 600;
-
-  let message: string | null = null;
-  let highCalorieNote: string | null = null;
-
-  if (!covered && deficit > 0) {
-    message = `⚠️ This meal has more carbs than your planned dose covers. Without more insulin, blood sugar is likely to rise.\n\n` +
-      `• Planned dose: ${plannedInsulinDose.toFixed(1)} units covers ~${Math.round(carbsCovered)}g carbs\n` +
-      `• Meal carbs: ${mealCarbs}g\n` +
-      `• Shortfall: ~${Math.round(deficit)}g carbs\n\n` +
-      `Consider adjusting the dose or a smaller portion, or check with your clinician.`;
-  }
-
-  if (isHighCalorie) {
-    highCalorieNote = `📝 High-fat meals can raise sugar later than usual — consider rechecking glucose 2–3 hours after eating.`;
-  }
-
-  return { covered, message, deficit: Math.round(deficit), isHighCalorieMeal: isHighCalorie, highCalorieNote };
+  return {
+    covered,
+    message: !covered && deficit > 0
+      ? `This meal contains approximately ${Math.round(deficit)}g more carbohydrate than the entered dose covers. Confirm the plan with your clinician; do not independently increase insulin.`
+      : null,
+    deficit: Math.round(Math.max(0, deficit)),
+    isHighCalorieMeal: isHighCalorie,
+    highCalorieNote: isHighCalorie ? 'High-fat meals may affect glucose later than usual. Follow the clinician-approved monitoring plan.' : null,
+  };
 }
