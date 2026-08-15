@@ -15,7 +15,7 @@ import { supabase } from '../lib/supabase';
 import { safeInsert } from '../utils/offlineQueue';
 import { searchNepaliFoods, NEPALI_FOODS } from '../data/nepaliFoods';
 import { classifyFoodPhoto, type ModelSuggestion, type ModelResult } from '../utils/foodModelClassifier';
-import { calculateDosing, checkMealCoverage, DosingValidationError } from '../utils/dosingCalc';
+import { calculateDosing, checkMealCoverage, DosingValidationError, glucoseToMgDl } from '../utils/dosingCalc';
 import {
   adjustItemPortion, recalculateTotals,
   validateCalories, type FoodItem, type MealEstimateResult,
@@ -43,6 +43,7 @@ export default function FoodEstimatorScreen({ route }: any) {
   const [dosingSettings, setDosingSettings] = useState<any>(null);
   const [notApproved, setNotApproved] = useState(false);
   const [currentGlucose, setCurrentGlucose] = useState('');
+  const [glucoseUnit, setGlucoseUnit] = useState<'mgdl' | 'mmol'>('mgdl');
   const [plannedInsulin, setPlannedInsulin] = useState('');
 
   // Estimate state
@@ -221,15 +222,23 @@ export default function FoodEstimatorScreen({ route }: any) {
       Alert.alert('Glucose required', 'Enter the child’s current glucose reading before calculating a dose.');
       return;
     }
+    let glucoseMgdl: number;
+    try {
+      glucoseMgdl = glucoseToMgDl(gVal, glucoseUnit);
+    } catch (e) {
+      Alert.alert('Glucose required', e instanceof Error ? e.message : 'Enter a valid glucose reading.');
+      return;
+    }
 
     try {
-      const dosing = calculateDosing(gVal, totals.total_carbs_g, {
+      const dosing = calculateDosing(glucoseMgdl, totals.total_carbs_g, {
         tdd: regimen.tdd,
         icr_constant: 500,
         isf_constant: 1800,
         target_glucose: regimen.correction_target,
         approved_by_clinician: true,
         regimen_id: regimen.id,
+        glucose_timestamp: new Date().toISOString(),
       });
 
       const planned = plannedInsulin.trim() === '' ? dosing.mealBolus : parseFloat(plannedInsulin);
@@ -436,8 +445,18 @@ export default function FoodEstimatorScreen({ route }: any) {
         ))}
 
         {/* Dosing inputs */}
-        <Text style={s.label}>{t('currentGlucose')} (mg/dL)</Text>
-        <TextInput style={s.glucoseInput} value={currentGlucose} onChangeText={setCurrentGlucose} keyboardType="numeric" placeholder="120" />
+        <Text style={s.label}>{t('currentGlucose')} ({glucoseUnit === 'mgdl' ? 'mg/dL' : 'mmol/L'})</Text>
+        <View style={s.glucoseRow}>
+          <TextInput style={[s.glucoseInput, s.glucoseInputFlex]} value={currentGlucose} onChangeText={setCurrentGlucose} keyboardType="numeric" placeholder={glucoseUnit === 'mgdl' ? '120' : '6.7'} />
+          <View style={s.unitToggle}>
+            <TouchableOpacity style={[s.unitBtn, glucoseUnit === 'mgdl' && s.unitActive]} onPress={() => setGlucoseUnit('mgdl')} accessibilityLabel="mg/dL">
+              <Text style={[s.unitText, glucoseUnit === 'mgdl' && s.unitTextActive]}>mg/dL</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={[s.unitBtn, glucoseUnit === 'mmol' && s.unitActive]} onPress={() => setGlucoseUnit('mmol')} accessibilityLabel="mmol/L">
+              <Text style={[s.unitText, glucoseUnit === 'mmol' && s.unitTextActive]}>mmol/L</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
         <Text style={s.label}>Planned insulin dose (optional)</Text>
         <TextInput style={s.insulinInput} value={plannedInsulin} onChangeText={setPlannedInsulin} keyboardType="numeric" placeholder="Leave empty for suggestion" />
 
@@ -572,6 +591,13 @@ const s = StyleSheet.create({
   label: { fontSize: 14, fontFamily: FONT.semibold, fontWeight: '600', color: '#202124', marginTop: 16, marginBottom: 6 },
   glucoseInput: { backgroundColor: '#fff', borderRadius: 10, padding: 12, fontSize: 22, fontFamily: FONT.bold, fontWeight: '700', borderWidth: 1, borderColor: '#dadce0', textAlign: 'center' },
   insulinInput: { backgroundColor: '#fff', borderRadius: 10, padding: 12, fontSize: 16, fontFamily: FONT.regular, borderWidth: 1, borderColor: '#dadce0', textAlign: 'center' },
+  glucoseRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  glucoseInputFlex: { flex: 1, textAlign: 'center' },
+  unitToggle: { flexDirection: 'row', gap: 4, borderRadius: 8, backgroundColor: '#e8eaed', padding: 3 },
+  unitBtn: { borderRadius: 6, paddingHorizontal: 10, paddingVertical: 8 },
+  unitActive: { backgroundColor: '#1a73e8' },
+  unitText: { fontSize: 12, fontFamily: FONT.semibold, fontWeight: '600', color: '#3c4043' },
+  unitTextActive: { color: '#fff' },
   confirmBtn: { backgroundColor: '#1a73e8', marginTop: 24, marginBottom: 8 },
   smallNote: { fontSize: 11, fontFamily: FONT.regular, color: '#5f6368', textAlign: 'center', marginTop: 8 },
 

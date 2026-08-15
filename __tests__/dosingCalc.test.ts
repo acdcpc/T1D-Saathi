@@ -73,6 +73,27 @@ describe('calculateDosing (fail-closed)', () => {
     expect(r.icr).toBeCloseTo(9, 1);  // 450/50
     expect(r.isf).toBeCloseTo(30, 1); // 1500/50
   });
+
+  it('fails closed on a stale glucose reading (>15 min)', () => {
+    const stale = new Date(Date.now() - 16 * 60 * 1000).toISOString();
+    expect(() => calculateDosing(150, 50, { ...base, glucose_timestamp: stale }))
+      .toThrow(DosingValidationError);
+  });
+
+  it('accepts a fresh glucose reading (<=15 min)', () => {
+    const fresh = new Date(Date.now() - 5 * 60 * 1000).toISOString();
+    expect(() => calculateDosing(150, 50, { ...base, glucose_timestamp: fresh })).not.toThrow();
+  });
+
+  it('accepts a reading exactly at the 15-minute boundary', () => {
+    const boundary = new Date(Date.now() - 15 * 60 * 1000).toISOString();
+    expect(() => calculateDosing(150, 50, { ...base, glucose_timestamp: boundary })).not.toThrow();
+  });
+
+  it('fails closed on an invalid glucose timestamp', () => {
+    expect(() => calculateDosing(150, 50, { ...base, glucose_timestamp: 'not-a-date' }))
+      .toThrow(DosingValidationError);
+  });
 });
 
 describe('checkMealCoverage', () => {

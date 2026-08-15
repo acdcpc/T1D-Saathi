@@ -4,6 +4,14 @@
 
 export type GlucoseUnit = 'mgdl' | 'mmol';
 
+// Single source of truth for unit conversion across the app.
+// 1 mmol/L glucose = 18.0182 mg/dL (molecular weight 180.182 g/mol).
+export const MMOL_TO_MGDL = 18.0182;
+
+// Max age of a glucose reading that may be used for a correction dose.
+// TODO(clinician): confirm this window (currently 15 minutes).
+export const DEFAULT_MAX_GLUCOSE_AGE_MS = 15 * 60 * 1000;
+
 export interface DosingParams {
   tdd: number;
   icr_constant?: number;
@@ -11,6 +19,9 @@ export interface DosingParams {
   target_glucose: number;
   approved_by_clinician: boolean;
   regimen_id?: string;
+  /** ISO timestamp of when the glucose reading was taken. When provided,
+   *  a reading older than DEFAULT_MAX_GLUCOSE_AGE_MS fails closed. */
+  glucose_timestamp?: string;
 }
 
 export interface DosingResult {
@@ -38,7 +49,7 @@ export function glucoseToMgDl(value: number, unit: GlucoseUnit): number {
   if (!Number.isFinite(value) || value <= 0) {
     throw new DosingValidationError('Glucose must be a positive number.');
   }
-  const mgdl = unit === 'mmol' ? value * 18.0182 : value;
+  const mgdl = unit === 'mmol' ? value * MMOL_TO_MGDL : value;
   if (mgdl < 20 || mgdl > 1000) {
     throw new DosingValidationError('Glucose reading is outside the supported range.');
   }
@@ -49,7 +60,7 @@ export function mgDlToGlucose(value: number, unit: GlucoseUnit): number {
   if (!Number.isFinite(value) || value <= 0) {
     throw new DosingValidationError('Glucose must be a positive number.');
   }
-  return Math.round((unit === 'mmol' ? value / 18.0182 : value) * 10) / 10;
+  return Math.round((unit === 'mmol' ? value / MMOL_TO_MGDL : value) * 10) / 10;
 }
 
 export function calculateDosing(
@@ -74,6 +85,12 @@ export function calculateDosing(
   }
   if (!Number.isFinite(currentGlucose) || currentGlucose < 20 || currentGlucose > 1000) {
     throw new DosingValidationError('A current glucose reading is required for dose calculation.');
+  }
+  if (params.glucose_timestamp) {
+    const ageMs = Date.now() - new Date(params.glucose_timestamp).getTime();
+    if (!Number.isFinite(ageMs) || ageMs > DEFAULT_MAX_GLUCOSE_AGE_MS) {
+      throw new DosingValidationError('The glucose reading is too old. Take a fresh reading before calculating a dose.');
+    }
   }
   if (!Number.isFinite(mealCarbs) || mealCarbs < 0 || mealCarbs > 1000) {
     throw new DosingValidationError('Meal carbohydrates are missing or invalid.');

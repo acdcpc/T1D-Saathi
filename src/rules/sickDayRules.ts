@@ -3,6 +3,7 @@
 // All values in mg/dL for glucose, mmol/L for blood ketones.
 
 import type { SickDayRule } from '../types';
+import { MMOL_TO_MGDL } from '../utils/dosingCalc';
 
 export const DEFAULT_SICK_DAY_RULES: SickDayRule[] = [
   {
@@ -145,6 +146,6 @@ export function calculateCarbDose(carbs: number, carbRatio?: number, tdd?: numbe
 // Convert glucose between units
 export function convertGlucose(value: number, from: 'mgdl' | 'mmol', to: 'mgdl' | 'mmol'): number {
   if (from === to) return value;
-  if (from === 'mgdl' && to === 'mmol') return Math.round((value / 18.018) * 10) / 10;
-  return Math.round(value * 18.018);
+  if (from === 'mgdl' && to === 'mmol') return Math.round((value / MMOL_TO_MGDL) * 10) / 10;
+  return Math.round(value * MMOL_TO_MGDL);
 }

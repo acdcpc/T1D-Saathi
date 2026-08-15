@@ -1,4 +1,5 @@
 // src/theme.ts — Shared design tokens for T1D Saathi
+import { MMOL_TO_MGDL } from './utils/dosingCalc';
 // Aligned with Kapoori Ka design language (warm, earthy, accessible)
 // Import as: import { T, card, pill, section, primBtn, input } from '../theme';
 
@@ -127,7 +128,7 @@ export const avatar = {
 // ── Component presets ────────────────────────────────────────────
 
 export const glycemicBadge = (value: number, unit: 'mgdl' | 'mmol') => {
-  const mgdl = unit === 'mmol' ? value * 18.0182 : value;
+  const mgdl = unit === 'mmol' ? value * MMOL_TO_MGDL : value;
   if (mgdl < 54) return { bg: T.redLight, fg: T.redDark, label: 'Severe Low' };
   if (mgdl < 70) return { bg: T.amberLight, fg: T.amberDark, label: 'Low' };
   if (mgdl <= 180) return { bg: T.greenLight, fg: T.greenDark, label: 'In Range' };

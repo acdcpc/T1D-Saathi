@@ -1,7 +1,8 @@
 import type { GlucoseLog } from '../types';
+import { MMOL_TO_MGDL } from './dosingCalc';
 
 export function toMgdl(value: number, unit: 'mgdl' | 'mmol'): number {
-  return unit === 'mmol' ? Math.round(value * 18) : value;
+  return unit === 'mmol' ? Math.round(value * MMOL_TO_MGDL) : value;
 }
 
 export interface GlucoseStats {
