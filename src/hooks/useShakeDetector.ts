@@ -1,5 +1,6 @@
 // Shake-to-activate emergency (expo-sensors Accelerometer).
 import { useEffect, useRef } from 'react';
+import { Platform } from 'react-native';
 import { Accelerometer } from 'expo-sensors';
 import { useNavigation } from '@react-navigation/native';
 
@@ -12,6 +13,7 @@ export function useShakeDetector(enabled: boolean) {
 
   useEffect(() => {
     if (!enabled) return;
+    if (Platform.OS === 'web') return; // device-motion shake not reliable in browser
     let sub: { remove: () => void } | null = null;
 
     Accelerometer.setUpdateInterval(100);

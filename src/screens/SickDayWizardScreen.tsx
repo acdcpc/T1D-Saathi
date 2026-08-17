@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity, StyleSheet,
-  ScrollView, Alert, ActivityIndicator,
+  ScrollView, Alert, ActivityIndicator, Platform,
 } from 'react-native';
 import { useAuth } from '../context/AuthContext';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -119,6 +119,7 @@ export default function SickDayWizardScreen({ route, navigation }: any) {
   // Schedule ISPAD monitoring reminders from the matched rule
   const scheduleISPADReminders = async (rule: SickDayRule | null) => {
     if (!rule) return;
+    if (Platform.OS === 'web') return; // local notifications unsupported in browser
     const { status } = await Notifications.requestPermissionsAsync();
     if (status !== 'granted') return;
 

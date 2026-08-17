@@ -1,6 +1,6 @@
 // Barcode scanner for packaged foods → nutrition lookup via OpenFoodFacts (free, no key).
 import React, { useState, useCallback } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, ActivityIndicator, ScrollView } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, ActivityIndicator, ScrollView, TextInput, Platform } from 'react-native';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -20,11 +20,13 @@ export default function BarcodeScannerScreen({ navigation }: any) {
   const patient = usePatient();
   const { language } = useLanguage();
   const isNe = language === 'ne';
+  const isWeb = Platform.OS === 'web';
   const [permission, requestPermission] = useCameraPermissions();
   const [scanning, setScanning] = useState(true);
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<FoodResult | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [manualBarcode, setManualBarcode] = useState('');
 
   const lookup = useCallback(async (barcode: string) => {
     setLoading(true);
@@ -61,10 +63,10 @@ export default function BarcodeScannerScreen({ navigation }: any) {
     [scanning, lookup]
   );
 
-  if (!permission) {
+  if (!isWeb && !permission) {
     return <View style={styles.centered}><ActivityIndicator size="large" color={T.blue} /></View>;
   }
-  if (!permission.granted) {
+  if (!isWeb && !permission?.granted) {
     return (
       <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
         <View style={styles.centered}>
@@ -88,17 +90,42 @@ export default function BarcodeScannerScreen({ navigation }: any) {
         <View style={{ width: 30 }} />
       </View>
 
-      <View style={styles.cameraWrap}>
-        <CameraView
-          style={styles.camera}
-          facing="back"
-          barcodeScannerSettings={{ barcodeTypes: ['ean13', 'ean8', 'upc_a', 'upc_e'] }}
-          onBarcodeScanned={onScanned}
-        />
-        <View style={styles.overlay}>
-          <View style={styles.frame} />
+      {isWeb ? (
+        <View style={styles.manualWrap}>
+          <TextInput
+            style={styles.manualInput}
+            value={manualBarcode}
+            onChangeText={setManualBarcode}
+            placeholder={isNe ? 'बारकोड नम्बर लेख्नुहोस्' : 'Enter the barcode number'}
+            keyboardType="numeric"
+            placeholderTextColor={T.muted}
+            autoCapitalize="none"
+          />
+          <TouchableOpacity
+            style={styles.primaryBtn}
+            onPress={() => {
+              const b = manualBarcode.trim();
+              if (!b) return;
+              setScanning(false);
+              lookup(b);
+            }}
+          >
+            <Text style={styles.primaryText}>{isNe ? 'हेर्नुहोस्' : 'Look up'}</Text>
+          </TouchableOpacity>
         </View>
-      </View>
+      ) : (
+        <View style={styles.cameraWrap}>
+          <CameraView
+            style={styles.camera}
+            facing="back"
+            barcodeScannerSettings={{ barcodeTypes: ['ean13', 'ean8', 'upc_a', 'upc_e'] }}
+            onBarcodeScanned={onScanned}
+          />
+          <View style={styles.overlay}>
+            <View style={styles.frame} />
+          </View>
+        </View>
+      )}
 
       <ScrollView style={styles.results} contentContainerStyle={{ padding: 16 }}>
         {loading ? (
@@ -137,7 +164,9 @@ export default function BarcodeScannerScreen({ navigation }: any) {
           </View>
         ) : (
           <Text style={styles.hint}>
-            {isNe ? 'प्याकेजको बारकोडमा क्यामेरा देखाउनुहोस्।' : 'Point the camera at a packaged food barcode.'}
+            {isWeb
+              ? (isNe ? 'प्याकेजमा छापिएको बारकोड नम्बर लेख्नुहोस्।' : 'Enter the barcode number printed on the package.')
+              : (isNe ? 'प्याकेजको बारकोडमा क्यामेरा देखाउनुहोस्।' : 'Point the camera at a packaged food barcode.')}
           </Text>
         )}
       </ScrollView>
@@ -151,6 +180,8 @@ const styles = StyleSheet.create({
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 8 },
   title: { fontSize: 18, fontFamily: FONT.bold, fontWeight: '700', color: T.text },
   cameraWrap: { height: 260, marginHorizontal: 16, borderRadius: 16, overflow: 'hidden', backgroundColor: '#000' },
+  manualWrap: { marginHorizontal: 16, marginTop: 16 },
+  manualInput: { backgroundColor: '#fff', borderRadius: 12, borderWidth: 1, borderColor: '#dadce0', paddingHorizontal: 14, paddingVertical: 12, fontSize: 16, fontFamily: FONT.regular, color: T.text, marginBottom: 12 },
   camera: { flex: 1 },
   overlay: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, alignItems: 'center', justifyContent: 'center' },
   frame: { width: 220, height: 140, borderWidth: 3, borderColor: '#fff', borderRadius: 12 },

@@ -1,4 +1,5 @@
 import * as Notifications from 'expo-notifications';
+import { Platform } from 'react-native';
 
 export interface ReminderTimes {
   preMeal: boolean;   // 7am, 12pm, 7pm
@@ -28,6 +29,10 @@ async function scheduleDaily(id: string, title: string, body: string, hour: numb
 
 /** Schedules (or clears) pre-meal + bedtime glucose-check reminders. */
 export async function configureReminders(enabled: ReminderTimes): Promise<boolean> {
+  if (Platform.OS === 'web') {
+    console.info('[Reminders] Local notifications are not supported in the browser.');
+    return false;
+  }
   if (!enabled.preMeal && !enabled.bedtime) {
     for (const id of Object.values(REMINDER_IDS)) await Notifications.cancelScheduledNotificationAsync(id);
     return true;

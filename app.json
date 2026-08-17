@@ -33,7 +33,10 @@
       ]
     },
     "web": {
-      "favicon": "./assets/favicon.png"
+      "favicon": "./assets/favicon.png",
+      "lang": "en",
+      "themeColor": "#1a73e8",
+      "description": "T1D Saathi — Type 1 Diabetes management app for Nepali children and families."
     },
     "plugins": [
       "expo-secure-store",

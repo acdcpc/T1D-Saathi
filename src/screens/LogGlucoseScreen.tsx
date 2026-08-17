@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import {
-  View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Alert, ActivityIndicator,
+  View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Alert, ActivityIndicator, Platform,
 } from 'react-native';
 import * as Notifications from 'expo-notifications';
 import * as Haptics from 'expo-haptics';
@@ -47,6 +47,7 @@ export default function LogGlucoseScreen({ route, navigation }: any) {
   }, [patientId]);
 
   const scheduleHypoReminder = async () => {
+    if (Platform.OS === 'web') return; // local notifications unsupported in browser
     const { status } = await Notifications.requestPermissionsAsync();
     if (status !== 'granted') return;
     await Notifications.scheduleNotificationAsync({
