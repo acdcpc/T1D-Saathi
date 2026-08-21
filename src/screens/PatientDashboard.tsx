@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, ScrollView, RefreshControl } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useLanguage } from '../context/LanguageContext';
 import { usePatient } from '../context/PatientContext';
 import { supabase } from '../lib/supabase';
@@ -26,6 +26,7 @@ export default function PatientDashboard({ route, navigation }: any) {
   const { t, language } = useLanguage();
   const { theme: TH } = usePreferences();
   const isNe = language === 'ne';
+  const insets = useSafeAreaInsets();
   const [latestGlucose, setLatestGlucose] = useState<GlucoseLog | null>(null);
   const [history, setHistory] = useState<GlucoseLog[]>([]);
   const [activeSickDay, setActiveSickDay] = useState<SickDayEpisode | null>(null);
@@ -33,10 +34,12 @@ export default function PatientDashboard({ route, navigation }: any) {
 
   const fetchData = useCallback(async () => {
     const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
+    const glucoseFields = 'id,patient_id,user_id,value,unit,context,timestamp,carbs,insulin_given,notes';
+    const sickDayFields = 'id,patient_id,user_id,start_date,end_date,symptoms,outcome,escalated';
     const [{ data: latest }, { data: logs }, { data: sickDay }] = await Promise.all([
-      supabase.from('glucose_logs').select('*').eq('patient_id', patient.id).order('timestamp', { ascending: false }).limit(1),
-      supabase.from('glucose_logs').select('*').eq('patient_id', patient.id).gte('timestamp', thirtyDaysAgo).order('timestamp', { ascending: true }).limit(500),
-      supabase.from('sick_day_episodes').select('*').eq('patient_id', patient.id).is('end_date', null).order('start_date', { ascending: false }).limit(1),
+      supabase.from('glucose_logs').select(glucoseFields).eq('patient_id', patient.id).order('timestamp', { ascending: false }).limit(1),
+      supabase.from('glucose_logs').select(glucoseFields).eq('patient_id', patient.id).gte('timestamp', thirtyDaysAgo).order('timestamp', { ascending: true }).limit(500),
+      supabase.from('sick_day_episodes').select(sickDayFields).eq('patient_id', patient.id).is('end_date', null).order('start_date', { ascending: false }).limit(1),
     ]);
     setLatestGlucose(latest?.[0] || null);
     setHistory(logs || []);
@@ -69,7 +72,7 @@ export default function PatientDashboard({ route, navigation }: any) {
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: TH.bg }]} edges={['top', 'bottom']}>
       <ScrollView
-        contentContainerStyle={styles.content}
+        contentContainerStyle={[styles.content, { paddingBottom: 60 + insets.bottom }]}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={TH.blue} colors={[TH.blue]} progressBackgroundColor={TH.surface} />}
       >
         {/* Avatar header */}
@@ -169,6 +172,7 @@ export default function PatientDashboard({ route, navigation }: any) {
               accessibilityLabel={a.label}
               style={[styles.actionCard, { borderColor: a.border, borderWidth: a.border !== T.border ? 2 : 1 }]}
               onPress={() => navigation.navigate(a.route, { patientId: patient.id })}
+              accessibilityState={{ disabled: false }}
             >
               <Ionicons name={a.icon} size={26} color={a.color} style={{ marginBottom: 6 }} />
               <Text style={styles.actionText}>{a.label}</Text>

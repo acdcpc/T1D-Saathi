@@ -7,6 +7,9 @@ const files = {
   queue: await readFile('src/utils/offlineQueue.ts', 'utf8'),
   schema: await readFile('supabase_schema.sql', 'utf8'),
   hardening: await readFile('supabase/migrations/20260814000005_safety_hardening.sql', 'utf8'),
+  auditHardening: await readFile('supabase/migrations/20260821000007_audit_hardening.sql', 'utf8'),
+  home: await readFile('src/screens/HomeScreen.tsx', 'utf8'),
+  dashboard: await readFile('src/screens/PatientDashboard.tsx', 'utf8'),
 };
 
 const failures = [];
@@ -27,6 +30,14 @@ assert(files.schema.includes('approved_by_clinician'), 'Base schema lacks regime
 assert(files.schema.includes('client_event_id'), 'Base schema lacks offline idempotency metadata.');
 assert(files.hardening.includes('prevent_profile_role_change'), 'Role-protection trigger is missing.');
 assert(files.hardening.includes('patient_id IS NOT NULL'), 'Message policy does not require patient context.');
+assert(files.auditHardening.includes('ALTER TABLE public.care_team ENABLE ROW LEVEL SECURITY'), 'Care-team RLS hardening migration is missing.');
+assert(files.auditHardening.includes('REVOKE ALL ON TABLE public.care_team FROM anon'), 'Care-team anonymous access is not revoked.');
+assert(files.auditHardening.includes("auth.uid() = patient_id OR auth.uid() = clinician_id"), 'Care-team ownership policy is missing patient/clinician scoping.');
+assert(files.auditHardening.includes("'parent'"), 'Signup trigger does not force the parent role.');
+assert(!files.home.includes(".select('*')"), 'HomeScreen still broad-selects patient records.');
+assert(!files.dashboard.includes(".select('*')"), 'PatientDashboard still broad-selects health records.');
+assert(files.home.includes('insets.bottom'), 'HomeScreen lacks bottom safe-area spacing.');
+assert(files.dashboard.includes('insets.bottom'), 'PatientDashboard lacks bottom safe-area spacing.');
 
 if (failures.length) {
   console.error('Repository validation failed:');

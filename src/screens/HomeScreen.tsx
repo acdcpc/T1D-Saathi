@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { View, Text, FlatList, TouchableOpacity, StyleSheet, RefreshControl, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
@@ -22,6 +22,7 @@ export default function HomeScreen({ navigation }: any) {
   const { t, language } = useLanguage();
   const { theme: TH, scale } = usePreferences();
   const isNe = language === 'ne';
+  const insets = useSafeAreaInsets();
   const [patients, setPatients] = useState<PatientProfile[]>([]);
   const [refreshing, setRefreshing] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -37,7 +38,7 @@ export default function HomeScreen({ navigation }: any) {
     setLoading(true);
     const { data, error } = await supabase
       .from('patients')
-      .select('*')
+      .select('id,user_id,name,date_of_birth,sex,photo_uri,comorbid_conditions,medications,insulin_type,insulin_dose,insulin_frequency,insulin_delivery,diagnosis_date,dka_history,documents,created_at,updated_at')
       .eq('user_id', user.id)
       .order('created_at', { ascending: false });
     if (error) console.error('fetch error:', error);
@@ -200,7 +201,7 @@ export default function HomeScreen({ navigation }: any) {
           data={patients}
           keyExtractor={(item) => item.id}
           renderItem={renderPatient}
-          contentContainerStyle={styles.list}
+          contentContainerStyle={[styles.list, { paddingBottom: 112 + insets.bottom }]}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={TH.blue} colors={[TH.blue]} progressBackgroundColor={TH.surface} />}
           ListHeaderComponent={
             <Text style={styles.sectionLabel}>
@@ -214,7 +215,7 @@ export default function HomeScreen({ navigation }: any) {
       <TouchableOpacity
         accessibilityRole="button"
         accessibilityLabel={isNe ? 'बिरामी थप्नुहोस्' : 'Add patient'}
-        style={styles.fab}
+        style={[styles.fab, { bottom: 24 + insets.bottom }]}
         activeOpacity={0.85}
         onPress={() => navigation.navigate('AddPatient', {})}
       >
@@ -291,7 +292,7 @@ const styles = StyleSheet.create({
   patientMeta: { fontSize: 13, fontFamily: FONT.regular, color: T.muted, marginTop: 2 },
 
   // Empty state (Kapoori Ka pattern)
-  emptyState: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 40, paddingBottom: 180 },
+  emptyState: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 40, paddingBottom: 220 },
   emptyIconCircle: { width: 88, height: 88, borderRadius: 44, backgroundColor: T.blueLight, alignItems: 'center', justifyContent: 'center', marginBottom: 16 },
   emptyTitle: { fontSize: 18, fontFamily: FONT.bold, fontWeight: '700', color: T.text, textAlign: 'center' },
   emptyHint: { fontSize: 13, fontFamily: FONT.regular, color: T.blue, textAlign: 'center', marginTop: 8, fontStyle: 'italic' },
@@ -323,7 +324,7 @@ const styles = StyleSheet.create({
   // Clinician bar
   clinicianBar: {
     position: 'absolute',
-    bottom: 16,
+    bottom: 92,
     left: 16,
     right: 16,
     backgroundColor: T.blue,
