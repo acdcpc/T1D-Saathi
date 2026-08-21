@@ -28,4 +28,9 @@
 - [x] Improve UI safe areas, accessibility, and visual consistency
 - [x] Add developer-facing change log, security checklist, and migration guide
 - [x] Add or update automated validation for security and clinical safeguards
-- [ ] Commit and push the review branch without changing main
+- [x] Commit and push the review branch without changing main
+
+## Merge request: code only, no Supabase execution
+
+- [ ] Merge `agent/t1d-saathi-audit-fixes` into `main` without executing the Supabase migration
+- [ ] Verify `main` contains the migration file and document that live RLS remains pending
