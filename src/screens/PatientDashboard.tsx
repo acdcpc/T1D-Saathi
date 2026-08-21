@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, ScrollView, RefreshControl } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useLanguage } from '../context/LanguageContext';
 import { supabase } from '../lib/supabase';
 import { HYPO_THRESHOLD } from '../rules/sickDayRules';
@@ -13,14 +13,15 @@ export default function PatientDashboard({ route, navigation }: any) {
   const { patient }: { patient: PatientProfile } = route.params;
   const { t, language } = useLanguage();
   const isNe = language === 'ne';
+  const insets = useSafeAreaInsets();
   const [latestGlucose, setLatestGlucose] = useState<GlucoseLog | null>(null);
   const [activeSickDay, setActiveSickDay] = useState<SickDayEpisode | null>(null);
   const [refreshing, setRefreshing] = useState(false);
 
   const fetchData = useCallback(async () => {
     const [{ data: glucose }, { data: sickDay }] = await Promise.all([
-      supabase.from('glucose_logs').select('*').eq('patient_id', patient.id).order('timestamp', { ascending: false }).limit(1),
-      supabase.from('sick_day_episodes').select('*').eq('patient_id', patient.id).is('end_date', null).order('start_date', { ascending: false }).limit(1),
+      supabase.from('glucose_logs').select('id,patient_id,user_id,value,unit,context,timestamp,carbs,insulin_given,notes').eq('patient_id', patient.id).order('timestamp', { ascending: false }).limit(1),
+      supabase.from('sick_day_episodes').select('id,patient_id,user_id,start_date,end_date,symptoms,outcome,escalated').eq('patient_id', patient.id).is('end_date', null).order('start_date', { ascending: false }).limit(1),
     ]);
     setLatestGlucose(glucose?.[0] || null);
     setActiveSickDay(sickDay?.[0] || null);
@@ -49,7 +50,7 @@ export default function PatientDashboard({ route, navigation }: any) {
   return (
     <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
       <ScrollView
-        contentContainerStyle={styles.content}
+        contentContainerStyle={[styles.content, { paddingBottom: 60 + insets.bottom }]}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={T.blue} />}
       >
         {/* Avatar header — Kapoori Ka ChildDashboard pattern */}
@@ -119,6 +120,7 @@ export default function PatientDashboard({ route, navigation }: any) {
               accessibilityLabel={a.label}
               style={[styles.actionCard, { borderColor: a.border, borderWidth: a.border !== T.border ? 2 : 1 }]}
               onPress={() => navigation.navigate(a.route, { patientId: patient.id })}
+              accessibilityState={{ disabled: false }}
               activeOpacity={0.7}
             >
               <Text style={styles.actionIcon}>{a.icon}</Text>
