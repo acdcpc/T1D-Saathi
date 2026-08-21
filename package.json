@@ -65,7 +65,6 @@
     "web": "expo start --web",
     "test": "jest",
     "validate": "node scripts/validate-repo.mjs",
-    "test": "node scripts/validate-repo.mjs",
     "typecheck": "tsc --noEmit --pretty false"
   },
   "private": true,

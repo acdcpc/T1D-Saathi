@@ -114,14 +114,20 @@ Create a `.env` file with these variables (see `.env.example` for template):
 
 ### Database
 
-The Supabase database schema is in `supabase_schema.sql` and migration files in `supabase/migrations/`. Apply with:
+The Supabase database schema is in `supabase_schema.sql` and migration files in `supabase/migrations/`. For the live `t1d-heal` project, follow [`docs/SUPABASE_MANUAL_MIGRATION.md`](docs/SUPABASE_MANUAL_MIGRATION.md) before using the app with patient data. Apply with:
 
 ```bash
 supabase link --project-ref <your-ref>
 supabase db push
 ```
 
-### Building APK
+### Release documentation
+
+- [`docs/SUPABASE_MANUAL_MIGRATION.md`](docs/SUPABASE_MANUAL_MIGRATION.md) — SQL Editor steps, verification, negative RLS tests, and rollback guidance.
+- [`docs/RELEASE_NOTES.md`](docs/RELEASE_NOTES.md) — detailed security, clinical-safety, offline-sync, UI, dependency, and release notes.
+- [`docs/SECURITY_RELEASE_CHECKLIST.md`](docs/SECURITY_RELEASE_CHECKLIST.md) — pre-release checklist for code, database, clinical review, and mobile testing.
+
+## Building APK
 
 ```bash
 eas build --platform android --profile preview

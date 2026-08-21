@@ -32,5 +32,15 @@
 
 ## Merge request: code only, no Supabase execution
 
-- [ ] Merge `agent/t1d-saathi-audit-fixes` into `main` without executing the Supabase migration
-- [ ] Verify `main` contains the migration file and document that live RLS remains pending
+- [x] Merge `agent/t1d-saathi-audit-fixes` into `main` without executing the Supabase migration
+- [x] Verify `main` contains the migration file and document that live RLS remains pending
+
+## Repair request: migration guide, release notes, and TypeScript dependencies
+
+- [x] Create repair branch from current main
+- [x] Add manual Supabase SQL Editor migration guide
+- [x] Add detailed security and UI release notes
+- [x] Add missing Expo dependencies and compatible versions
+- [x] Add TensorFlow typings/dependencies or safe platform shims
+- [x] Fix all remaining TypeScript errors
+- [ ] Validate, commit, and push the repair branch
