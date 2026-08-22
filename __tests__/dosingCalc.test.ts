@@ -113,3 +113,32 @@ describe('checkMealCoverage', () => {
     expect(c.message).not.toBeNull();
   });
 });
+
+
+describe('additional clinical safety boundaries', () => {
+  const base = { tdd: 50, target_glucose: 120, approved_by_clinician: true };
+
+  it('fails closed when a dosing constant is zero, NaN, or infinite', () => {
+    expect(() => calculateDosing(150, 50, { ...base, icr_constant: 0 })).toThrow(DosingValidationError);
+    expect(() => calculateDosing(150, 50, { ...base, isf_constant: NaN })).toThrow(DosingValidationError);
+    expect(() => calculateDosing(150, 50, { ...base, icr_constant: Infinity })).toThrow(DosingValidationError);
+  });
+
+  it('fails closed for unsupported extreme glucose and carbohydrate values', () => {
+    expect(() => calculateDosing(19, 50, base)).toThrow(DosingValidationError);
+    expect(() => calculateDosing(1001, 50, base)).toThrow(DosingValidationError);
+    expect(() => calculateDosing(150, 1001, base)).toThrow(DosingValidationError);
+  });
+
+  it('does not accept a future-invalid glucose timestamp', () => {
+    expect(() => calculateDosing(150, 50, { ...base, glucose_timestamp: 'not-a-date' }))
+      .toThrow('The glucose reading is too old');
+  });
+
+  it('returns a non-negative correction and preserves the approved regimen identifier', () => {
+    const result = calculateDosing(100, 25, { ...base, regimen_id: 'regimen-42' });
+    expect(result.correctionDose).toBe(0);
+    expect(result.totalDose).toBeGreaterThanOrEqual(0);
+    expect(result.regimen_id).toBe('regimen-42');
+  });
+});

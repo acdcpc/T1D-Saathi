@@ -32,5 +32,27 @@
 
 ## Merge request: code only, no Supabase execution
 
-- [ ] Merge `agent/t1d-saathi-audit-fixes` into `main` without executing the Supabase migration
-- [ ] Verify `main` contains the migration file and document that live RLS remains pending
+- [x] Merge `agent/t1d-saathi-audit-fixes` into `main` without executing the Supabase migration
+- [x] Verify `main` contains the migration file and document that live RLS remains pending
+
+## Repair request: migration guide, release notes, and TypeScript dependencies
+
+- [x] Create repair branch from current main
+- [x] Add manual Supabase SQL Editor migration guide
+- [x] Add detailed security and UI release notes
+- [x] Add missing Expo dependencies and compatible versions
+- [x] Add TensorFlow typings/dependencies or safe platform shims
+- [x] Fix all remaining TypeScript errors
+- [x] Validate, commit, and push the repair branch
+
+- [x] Add deterministic offline-sync unit tests for account isolation, idempotency, retry classification, and sign-out cleanup.
+- [x] Expand clinical-safety tests for invalid constants, stale readings, extreme values, and fail-closed behavior.
+- [x] Validate dependency vulnerability scan and Supabase policy audit results.
+- [x] Finalize and validate the reusable t1d-saathi-security-release skill.
+- [x] Review GitHub pull request/branch mergeability and document whether conflicts remain.
+
+- [ ] Create a pull request from agent/t1d-typescript-and-docs into main.
+- [ ] Audit all 18 dependency vulnerabilities and document safe upgrade paths.
+- [ ] Add a production Supabase manual-migration verification checklist.
+- [ ] Validate the pull request and wait for explicit merge confirmation before merging to main.
+- [ ] Merge the approved pull request into main.
