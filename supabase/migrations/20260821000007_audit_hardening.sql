@@ -18,7 +18,7 @@ CREATE POLICY "care_team_patient_or_clinician_read"
   ON public.care_team
   FOR SELECT
   TO authenticated
-  USING (auth.uid() = patient_id OR auth.uid() = clinician_id);
+  USING (public.is_patient_parent(patient_id) OR clinician_id = auth.uid());
 
 -- Care-team assignments are administrative data. The mobile client cannot create,
 -- modify, or delete assignments through the table API.

@@ -43,4 +43,10 @@
 - [x] Add missing Expo dependencies and compatible versions
 - [x] Add TensorFlow typings/dependencies or safe platform shims
 - [x] Fix all remaining TypeScript errors
-- [ ] Validate, commit, and push the repair branch
+- [x] Validate, commit, and push the repair branch
+
+- [x] Add deterministic offline-sync unit tests for account isolation, idempotency, retry classification, and sign-out cleanup.
+- [x] Expand clinical-safety tests for invalid constants, stale readings, extreme values, and fail-closed behavior.
+- [x] Validate dependency vulnerability scan and Supabase policy audit results.
+- [x] Finalize and validate the reusable t1d-saathi-security-release skill.
+- [x] Review GitHub pull request/branch mergeability and document whether conflicts remain.

@@ -4,7 +4,7 @@ This guide applies to the **T1D-Saathi** Supabase project `t1d-heal` (`jwslcxgnw
 
 ## What this migration fixes
 
-Supabase Security Advisor reported that `public.care_team` was exposed through the API without effective Row-Level Security even though it contains the sensitive `patient_id` column. The migration enables RLS, removes anonymous and mobile-client write access, and permits reads only when the authenticated user is either the patient or the assigned clinician.
+Supabase Security Advisor reported that `public.care_team` was exposed through the API without effective Row-Level Security even though it contains the sensitive `patient_id` column. The migration enables RLS, removes anonymous and mobile-client write access, and permits reads only when the authenticated user owns the patient record or is the assigned clinician.
 
 The migration also makes new-account role assignment deterministic. Signup metadata cannot create a clinician account, and normal users cannot update their own profile role.
 
@@ -48,7 +48,7 @@ CREATE POLICY "care_team_patient_or_clinician_read"
   ON public.care_team
   FOR SELECT
   TO authenticated
-  USING (auth.uid() = patient_id OR auth.uid() = clinician_id);
+  USING (public.is_patient_parent(patient_id) OR clinician_id = auth.uid());
 
 REVOKE INSERT, UPDATE, DELETE ON TABLE public.care_team FROM anon, authenticated;
 
@@ -132,7 +132,7 @@ where schemaname = 'public'
   and tablename = 'care_team';
 ```
 
-The table must report `rowsecurity = true`. Anonymous access must not have table privileges. The authenticated role should have only `SELECT`, and the policy predicate must include `auth.uid() = patient_id OR auth.uid() = clinician_id`.
+The table must report `rowsecurity = true`. Anonymous access must not have table privileges. The authenticated role should have only `SELECT`, and the policy predicate must use `public.is_patient_parent(patient_id)` for parent ownership plus `clinician_id = auth.uid()` for assigned clinicians.
 
 ## Two-user negative test
 

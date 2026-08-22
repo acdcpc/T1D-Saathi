@@ -32,7 +32,11 @@ assert(files.hardening.includes('prevent_profile_role_change'), 'Role-protection
 assert(files.hardening.includes('patient_id IS NOT NULL'), 'Message policy does not require patient context.');
 assert(files.auditHardening.includes('ALTER TABLE public.care_team ENABLE ROW LEVEL SECURITY'), 'Care-team RLS hardening migration is missing.');
 assert(files.auditHardening.includes('REVOKE ALL ON TABLE public.care_team FROM anon'), 'Care-team anonymous access is not revoked.');
-assert(files.auditHardening.includes("auth.uid() = patient_id OR auth.uid() = clinician_id"), 'Care-team ownership policy is missing patient/clinician scoping.');
+assert(
+  files.auditHardening.includes('public.is_patient_parent(patient_id)') &&
+    files.auditHardening.includes('clinician_id = auth.uid()'),
+  'Care-team ownership policy is missing patient/clinician scoping.',
+);
 assert(files.auditHardening.includes("'parent'"), 'Signup trigger does not force the parent role.');
 assert(!files.home.includes(".select('*')"), 'HomeScreen still broad-selects patient records.');
 assert(!files.dashboard.includes(".select('*')"), 'PatientDashboard still broad-selects health records.');
