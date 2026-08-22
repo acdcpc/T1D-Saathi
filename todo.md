@@ -50,3 +50,9 @@
 - [x] Validate dependency vulnerability scan and Supabase policy audit results.
 - [x] Finalize and validate the reusable t1d-saathi-security-release skill.
 - [x] Review GitHub pull request/branch mergeability and document whether conflicts remain.
+
+- [ ] Create a pull request from agent/t1d-typescript-and-docs into main.
+- [ ] Audit all 18 dependency vulnerabilities and document safe upgrade paths.
+- [ ] Add a production Supabase manual-migration verification checklist.
+- [ ] Validate the pull request and wait for explicit merge confirmation before merging to main.
+- [ ] Merge the approved pull request into main.
