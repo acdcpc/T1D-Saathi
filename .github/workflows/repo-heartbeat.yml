@@ -1,0 +1,43 @@
+name: Repo heartbeat
+
+# WHY: GitHub disables *scheduled* workflows after 60 days without repo
+# activity. Workflow runs and page views do NOT count as activity - only
+# real events (commits, PRs, issues, releases) do. This workflow commits a
+# timestamp once a month, so the Supabase keep-alive workflow is never
+# disabled during quiet periods.
+# Chain: heartbeat commit -> repo stays active -> daily Supabase ping keeps
+# running -> the free-tier project never pauses.
+
+on:
+  schedule:
+    - cron: "5 3 1 * *" # 1st of month, 03:05 UTC
+  workflow_dispatch: {} # manual run button
+
+permissions:
+  contents: write
+
+concurrency:
+  group: repo-heartbeat
+  cancel-in-progress: false
+
+jobs:
+  heartbeat:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - name: Stamp timestamp
+        run: date -u +"%Y-%m-%d %H:%M UTC" > .github/heartbeat.txt
+      - name: Commit and push if changed
+        run: |
+          set -euo pipefail
+          git config user.name "t1d-saathi-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add .github/heartbeat.txt
+          if git diff --cached --quiet; then
+            echo "No change - nothing to commit"
+            exit 0
+          fi
+          git commit -m "chore(ops): repo heartbeat [skip ci]"
+          git push origin HEAD:main
