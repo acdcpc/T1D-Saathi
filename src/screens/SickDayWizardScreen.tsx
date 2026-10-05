@@ -11,6 +11,8 @@ import ISPADBadge from '../components/ISPADBadge';
 import { useLanguage } from '../context/LanguageContext';
 import { supabase } from '../lib/supabase';
 import { safeInsert } from '../utils/offlineQueue';
+import { saveGlucoseEntry } from '../utils/glucoseEntries';
+import { saveInsulinDose } from '../utils/insulinLogs';
 import { findSickDayRule, HYDRATION_THRESHOLD, HYPO_THRESHOLD, GLUCAGON_DOSE_TABLE } from '../rules/sickDayRules';
 import type { SickDayRule, SickDayEpisode, InsulinRegimen, PatientProfile } from '../types';
 import { FONT } from '../theme';
@@ -20,7 +22,7 @@ type WizardStep = 'symptoms' | 'ketone' | 'results';
 export default function SickDayWizardScreen({ route, navigation }: any) {
   const { patientId } = route.params;
   const { user } = useAuth();
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const insets = useSafeAreaInsets();
 
   const [step, setStep] = useState<WizardStep>('symptoms');
@@ -30,6 +32,7 @@ export default function SickDayWizardScreen({ route, navigation }: any) {
   const [diarrhea, setDiarrhea] = useState(false);
   const [ketoneValue, setKetoneValue] = useState('');
   const [ketoneMethod, setKetoneMethod] = useState<'blood' | 'urine' | 'unknown'>('blood');
+  const [doseSaved, setDoseSaved] = useState(false);
   const [matchedRule, setMatchedRule] = useState<SickDayRule | null>(null);
   const [regimen, setRegimen] = useState<InsulinRegimen | null>(null);
   const [patient, setPatient] = useState<PatientProfile | null>(null);
@@ -95,10 +98,11 @@ export default function SickDayWizardScreen({ route, navigation }: any) {
     await safeInsert('sick_day_episodes', episode);
 
     // Save glucose
-    await safeInsert('glucose_logs', {
+    await saveGlucoseEntry({
       patient_id: patientId, user_id: user?.id,
       value: parseFloat(glucose), unit: 'mgdl' as const,
       context: 'sick_day' as const,
+      source: 'sick_day',
       timestamp: new Date().toISOString(),
     });
 
@@ -259,6 +263,13 @@ export default function SickDayWizardScreen({ route, navigation }: any) {
     ? (regimen.tdd * Math.abs(matchedRule.supplemental_insulin_percent) / 100)
     : null;
 
+  const handleSaveDose = async () => {
+    if (!user?.id || suppDose === null || suppDose <= 0) return;
+    const res = await saveInsulinDose({ patient_id: patientId, user_id: user.id, units: suppDose, insulin_type: 'rapid', source: 'sick_day', notes: 'Sick-day supplemental' });
+    if (res.saved) setDoseSaved(true);
+    else Alert.alert(t('error'), res.message || 'The dose could not be saved.');
+  };
+
   return (
     <ScrollView style={styles.container} contentContainerStyle={[styles.content, { paddingTop: insets.top + 16, paddingBottom: insets.bottom + 40 }]}>
       <View style={styles.stepIndicator}>
@@ -300,6 +311,15 @@ export default function SickDayWizardScreen({ route, navigation }: any) {
                   <Text style={styles.doseText}>
                     {matchedRule.supplemental_insulin_percent > 0 ? '+' : ''}{suppDose.toFixed(1)} units from the clinician-approved TDD
                   </Text>
+                  {matchedRule.supplemental_insulin_percent > 0 && (
+                    doseSaved ? (
+                      <Text style={styles.doseSavedText}>✓ {language === 'ne' ? 'डोज रेकर्ड भयो' : 'Dose recorded'}</Text>
+                    ) : (
+                      <TouchableOpacity style={styles.saveDoseBtn} onPress={handleSaveDose}>
+                        <Text style={styles.saveDoseBtnText}>{language === 'ne' ? 'यो डोज रेकर्ड गर्नुहोस्' : 'Log this dose'}</Text>
+                      </TouchableOpacity>
+                    )
+                  )}
                 </>
               ) : (
                 <Text style={styles.guidanceText}>Supplemental insulin guidance is unavailable because the regimen is not clinician-approved. Contact the care team.</Text>
@@ -421,4 +441,7 @@ const styles = StyleSheet.create({
   ketonePromptBox: { backgroundColor: '#e8f0fe', borderRadius: 10, padding: 14, marginTop: 14, marginBottom: 14, borderWidth: 1, borderColor: '#1a73e8' },
   ketonePromptTitle: { fontSize: 15, fontFamily: FONT.bold, fontWeight: '700', color: '#1a73e8', marginBottom: 6 },
   ketonePromptText: { fontSize: 13, fontFamily: FONT.regular, color: '#1a73e8', lineHeight: 18 },
+  saveDoseBtn: { backgroundColor: '#1a73e8', borderRadius: 10, paddingHorizontal: 16, paddingVertical: 10, alignSelf: 'flex-start', marginTop: 8 },
+  saveDoseBtnText: { color: '#fff', fontSize: 13, fontFamily: FONT.semibold, fontWeight: '600' },
+  doseSavedText: { fontSize: 13, fontFamily: FONT.semibold, fontWeight: '600', color: '#0D9488', marginTop: 8 },
 });

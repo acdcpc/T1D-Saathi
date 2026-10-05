@@ -1,3 +1,4 @@
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Notifications from 'expo-notifications';
 import { Platform } from 'react-native';
 
@@ -35,6 +36,7 @@ export async function configureReminders(enabled: ReminderTimes): Promise<boolea
   }
   if (!enabled.preMeal && !enabled.bedtime) {
     for (const id of Object.values(REMINDER_IDS)) await Notifications.cancelScheduledNotificationAsync(id);
+    await saveReminderPrefs(enabled);
     return true;
   }
   const ok = await ensurePermission();
@@ -55,5 +57,45 @@ export async function configureReminders(enabled: ReminderTimes): Promise<boolea
   } else {
     await Notifications.cancelScheduledNotificationAsync(REMINDER_IDS.bedtime);
   }
+  await saveReminderPrefs(enabled);
   return true;
+}
+
+const PREFS_KEY = '@t1d_reminder_prefs_v1';
+
+export interface NextReminder {
+  key: 'breakfast' | 'lunch' | 'dinner' | 'bedtime';
+  hour: number;
+  minute: number;
+}
+
+/** Persisted reminder toggles (survive app restarts). */
+export async function loadReminderPrefs(): Promise<ReminderTimes> {
+  try {
+    const raw = await AsyncStorage.getItem(PREFS_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      return { preMeal: !!parsed.preMeal, bedtime: !!parsed.bedtime };
+    }
+  } catch { /* ignore */ }
+  return { preMeal: false, bedtime: false };
+}
+
+export async function saveReminderPrefs(prefs: ReminderTimes): Promise<void> {
+  try { await AsyncStorage.setItem(PREFS_KEY, JSON.stringify(prefs)); } catch { /* ignore */ }
+}
+
+/** Next scheduled reminder based on enabled toggles (times: 7/12/19/21). */
+export function getNextReminder(prefs: ReminderTimes, now = new Date()): NextReminder | null {
+  const candidates: NextReminder[] = [];
+  if (prefs.preMeal) {
+    candidates.push({ key: 'breakfast', hour: 7, minute: 0 });
+    candidates.push({ key: 'lunch', hour: 12, minute: 0 });
+    candidates.push({ key: 'dinner', hour: 19, minute: 0 });
+  }
+  if (prefs.bedtime) candidates.push({ key: 'bedtime', hour: 21, minute: 0 });
+  if (candidates.length === 0) return null;
+  const minutesNow = now.getHours() * 60 + now.getMinutes();
+  const sorted = [...candidates].sort((a, b) => (a.hour * 60 + a.minute) - (b.hour * 60 + b.minute));
+  return sorted.find((c) => c.hour * 60 + c.minute > minutesNow) ?? sorted[0];
 }

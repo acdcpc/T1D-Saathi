@@ -31,4 +31,19 @@ describe('computeGlucoseStats', () => {
     const s = computeGlucoseStats(logs);
     expect(s.eA1c).toBeCloseTo(7.0, 1);
   });
+
+  it('computes SD, CV, checks/day and LBGI/HBGI risk indices', () => {
+    const s = computeGlucoseStats([log(80), log(120)], 2);
+    expect(s.meanMgdl).toBe(100);
+    expect(s.sdMgdl).toBe(20);
+    expect(s.cvPct).toBe(20);
+    expect(s.checksPerDay).toBe(1);
+    expect(s.lbgi).toBeGreaterThan(0);
+  });
+
+  it('keeps HBGI positive and LBGI at zero for hyperglycemic values', () => {
+    const s = computeGlucoseStats([log(250), log(250)]);
+    expect(s.hbgi).toBeGreaterThan(0);
+    expect(s.lbgi).toBe(0);
+  });
 });

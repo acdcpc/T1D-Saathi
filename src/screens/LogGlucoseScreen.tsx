@@ -10,7 +10,8 @@ import { useLanguage } from '../context/LanguageContext';
 import { usePatient } from '../context/PatientContext';
 import { speak } from '../utils/speech';
 import { supabase } from '../lib/supabase';
-import { safeInsert } from '../utils/offlineQueue';
+import { saveGlucoseEntry } from '../utils/glucoseEntries';
+import { saveInsulinDose } from '../utils/insulinLogs';
 import { HYPO_THRESHOLD, HYPO_RECHECK_MINUTES, calculateCorrectionDose, calculateCarbDose, convertGlucose } from '../rules/sickDayRules';
 import type { InsulinRegimen, UnitSystem } from '../types';
 import { FONT, T } from '../theme';
@@ -31,6 +32,10 @@ export default function LogGlucoseScreen({ route, navigation }: any) {
   const [result, setResult] = useState<{ correction: number; carb: number; total: number } | null>(null);
   const [isHypo, setIsHypo] = useState(false);
   const [glucoseError, setGlucoseError] = useState<string | null>(null);
+  const [mood, setMood] = useState('');
+  const [activityType, setActivityType] = useState('');
+  const [activityMinutes, setActivityMinutes] = useState('');
+  const [longActing, setLongActing] = useState('');
 
   useEffect(() => {
     (async () => {
@@ -81,9 +86,19 @@ export default function LogGlucoseScreen({ route, navigation }: any) {
       timestamp: new Date().toISOString(),
       carbs: parseFloat(carbs) || 0,
       insulin_given: parseFloat(insulinGiven) || 0,
+      source: 'manual',
+      ...(mood ? { mood } : {}),
+      ...(activityType ? { activity_type: activityType } : {}),
+      ...(activityType && activityMinutes ? { activity_minutes: parseFloat(activityMinutes) || 0 } : {}),
     };
-    const { online, error } = await safeInsert('glucose_logs', logEntry);
+    const { online, error } = await saveGlucoseEntry(logEntry);
     if (error) return Alert.alert(t('error'), error instanceof Error ? error.message : 'The glucose record could not be saved.');
+
+    const longUnits = parseFloat(longActing);
+    if (Number.isFinite(longUnits) && longUnits > 0 && user?.id) {
+      const doseRes = await saveInsulinDose({ patient_id: patientId, user_id: user.id, units: longUnits, insulin_type: 'long', source: 'manual' });
+      if (!doseRes.saved && doseRes.message) Alert.alert(t('error'), doseRes.message);
+    }
 
     if (isLow) {
       setIsHypo(true);
@@ -130,6 +145,38 @@ export default function LogGlucoseScreen({ route, navigation }: any) {
       <Text style={styles.label}>{t('insulinGiven') || 'Insulin given (U)'} ({t('optional')})</Text>
       <TextInput style={styles.input} value={insulinGiven} onChangeText={setInsulinGiven} keyboardType="numeric" placeholder="0" />
 
+      <Text style={styles.label}>{language === 'ne' ? 'लामो-कार्य इन्सुलिन दिइयो (U)' : 'Long-acting insulin given (U)'} ({t('optional')})</Text>
+      <TextInput style={styles.input} value={longActing} onChangeText={setLongActing} keyboardType="numeric" placeholder="0" />
+
+      <Text style={styles.label}>{language === 'ne' ? 'कस्तो महसुस भयो?' : 'Feeling'} ({t('optional')})</Text>
+      <View style={styles.chipRow}>
+        {[
+          { id: 'good', label: language === 'ne' ? 'राम्रो महसुस' : 'Feeling good' },
+          { id: 'low', label: language === 'ne' ? 'कम महसुस' : 'Feeling low' },
+          { id: 'high', label: language === 'ne' ? 'उच्च महसुस' : 'Feeling high' },
+        ].map((m) => (
+          <TouchableOpacity key={m.id} style={[styles.chip, mood === m.id && styles.chipActive]} onPress={() => setMood(mood === m.id ? '' : m.id)} accessibilityRole="button">
+            <Text style={[styles.chipText, mood === m.id && styles.chipTextActive]}>{m.label}</Text>
+          </TouchableOpacity>
+        ))}
+      </View>
+
+      <Text style={styles.label}>{language === 'ne' ? 'शारीरिक गतिविधि' : 'Activity'} ({t('optional')})</Text>
+      <View style={styles.chipRow}>
+        {[
+          { id: 'walk', label: language === 'ne' ? 'हिँडाइ' : 'Walking' },
+          { id: 'play', label: language === 'ne' ? 'खेल' : 'Playing' },
+          { id: 'sport', label: language === 'ne' ? 'खेलकुद' : 'Sports' },
+        ].map((a) => (
+          <TouchableOpacity key={a.id} style={[styles.chip, activityType === a.id && styles.chipActive]} onPress={() => setActivityType(activityType === a.id ? '' : a.id)} accessibilityRole="button">
+            <Text style={[styles.chipText, activityType === a.id && styles.chipTextActive]}>{a.label}</Text>
+          </TouchableOpacity>
+        ))}
+      </View>
+      {activityType ? (
+        <TextInput style={styles.input} value={activityMinutes} onChangeText={setActivityMinutes} keyboardType="numeric" placeholder={language === 'ne' ? 'मिनेट (वैकल्पिक)' : 'Minutes (optional)'} />
+      ) : null}
+
       {regimen && (
         <View style={styles.regimenInfo}>
           <Text style={styles.regimenText}>{t('insulinType')}: {regimen.insulin_type}</Text>
@@ -172,6 +219,17 @@ export default function LogGlucoseScreen({ route, navigation }: any) {
           </View>
         </View>
       )}
+
+      {result !== null && regimen?.max_bolus && result.total > regimen.max_bolus ? (
+        <View style={styles.maxWarn}>
+          <Text style={styles.maxWarnTitle}>{language === 'ne' ? 'अधिकतम डोज भन्दा माथि' : 'Above maximum dose'}</Text>
+          <Text style={styles.maxWarnText}>
+            {language === 'ne'
+              ? `यो कुल मात्रा चिकित्सकले तोकेको अधिकतम बोलस (${regimen.max_bolus} U) भन्दा माथि छ। दिनु अघि चिकित्सकसँग सल्लाह गर्नुहोस्।`
+              : `This total is above the clinician-set maximum bolus (${regimen.max_bolus} U). Do not give without checking with your clinician.`}
+          </Text>
+        </View>
+      ) : null}
     </ScrollView>
   );
 }
@@ -208,4 +266,12 @@ const styles = StyleSheet.create({
   resultLabelBold: { fontSize: 17, fontFamily: FONT.bold, fontWeight: '700', color: '#202124' },
   resultValueBold: { fontSize: 17, fontFamily: FONT.bold, fontWeight: '700', color: '#1a73e8' },
   divider: { height: 1, backgroundColor: '#e8eaed', marginVertical: 8 },
+  chipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  chip: { borderRadius: 20, paddingHorizontal: 14, paddingVertical: 8, backgroundColor: '#e8eaed' },
+  chipActive: { backgroundColor: '#1a73e8' },
+  chipText: { fontSize: 13, fontFamily: FONT.regular, color: '#3c4043' },
+  chipTextActive: { color: '#fff' },
+  maxWarn: { backgroundColor: '#fce8e6', borderRadius: 12, padding: 16, marginTop: 16, borderWidth: 2, borderColor: '#ea4335' },
+  maxWarnTitle: { fontSize: 15, fontFamily: FONT.bold, fontWeight: '700', color: '#c5221f', marginBottom: 6 },
+  maxWarnText: { fontSize: 13, fontFamily: FONT.regular, color: '#202124', lineHeight: 19 },
 });

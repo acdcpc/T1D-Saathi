@@ -22,6 +22,8 @@ export interface DosingParams {
   /** ISO timestamp of when the glucose reading was taken. When provided,
    *  a reading older than DEFAULT_MAX_GLUCOSE_AGE_MS fails closed. */
   glucose_timestamp?: string;
+  /** Clinician-set maximum bolus; when provided the caller must surface large doses. */
+  max_bolus?: number;
 }
 
 export interface DosingResult {
@@ -33,6 +35,9 @@ export interface DosingResult {
   target_glucose: number;
   glucose_unit: 'mgdl';
   regimen_id?: string;
+  /** True when the total exceeds the clinician-set maximum bolus. */
+  exceedsMaxBolus?: boolean;
+  maxBolus?: number;
 }
 
 export class DosingValidationError extends Error {
@@ -61,6 +66,17 @@ export function mgDlToGlucose(value: number, unit: GlucoseUnit): number {
     throw new DosingValidationError('Glucose must be a positive number.');
   }
   return Math.round((unit === 'mmol' ? value / MMOL_TO_MGDL : value) * 10) / 10;
+}
+
+/** Compare a calculated dose against the clinician-set maximum bolus, when one exists. */
+export function checkMaxBolus(
+  totalDose: number,
+  maxBolus?: number,
+): { exceeds: boolean; maxBolus?: number } {
+  if (maxBolus === undefined || maxBolus === null || !Number.isFinite(maxBolus) || maxBolus <= 0) {
+    return { exceeds: false };
+  }
+  return { exceeds: totalDose > maxBolus, maxBolus };
 }
 
 export function calculateDosing(
@@ -103,15 +119,20 @@ export function calculateDosing(
     ? (currentGlucose - params.target_glucose) / isf
     : 0;
 
+  const totalDose = Math.round((mealBolus + correctionDose) * 10) / 10;
+  const maxCheck = checkMaxBolus(totalDose, params.max_bolus);
+
   return {
     icr: Math.round(icr * 10) / 10,
     isf: Math.round(isf * 10) / 10,
     mealBolus: Math.round(mealBolus * 10) / 10,
     correctionDose: Math.round(correctionDose * 10) / 10,
-    totalDose: Math.round((mealBolus + correctionDose) * 10) / 10,
+    totalDose,
     target_glucose: params.target_glucose,
     glucose_unit: 'mgdl',
     regimen_id: params.regimen_id,
+    exceedsMaxBolus: maxCheck.exceeds,
+    maxBolus: maxCheck.maxBolus,
   };
 }
 

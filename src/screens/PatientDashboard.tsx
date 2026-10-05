@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, ScrollView, RefreshControl } from 'react-native';
+import { Alert, View, Text, TouchableOpacity, StyleSheet, ScrollView, RefreshControl } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useLanguage } from '../context/LanguageContext';
@@ -10,6 +10,9 @@ import { toBSDateTimeDisplay } from '../utils/bsDateDisplay';
 import { computeGlucoseStats } from '../utils/glucoseStats';
 import { computeIOB } from '../utils/insulinOnBoard';
 import { generateGlucoseReport } from '../utils/pdfReport';
+import { exportPatientCsv } from '../utils/csvExport';
+import { fetchRecentInsulinDoses } from '../utils/insulinLogs';
+import { loadReminderPrefs, getNextReminder } from '../utils/reminders';
 import { glucoseToMgDl } from '../utils/dosingCalc';
 import ISPADBadge from '../components/ISPADBadge';
 import ChildAvatar from '../components/ChildAvatar';
@@ -19,7 +22,7 @@ import TirDonut from '../components/TirDonut';
 import AnimatedPressable from '../components/AnimatedPressable';
 import { usePreferences } from '../context/PreferencesContext';
 import { toDisplayNumber } from '../utils/nepaliNumber';
-import { FONT,  T, card, section, avatar } from '../theme';import type { PatientProfile, GlucoseLog, SickDayEpisode } from '../types';
+import { FONT,  T, card, section, avatar } from '../theme';import type { PatientProfile, GlucoseLog, SickDayEpisode, InsulinLog } from '../types';
 
 export default function PatientDashboard({ route, navigation }: any) {
   const patient: PatientProfile = usePatient() || (route.params as any)?.patient;
@@ -31,6 +34,9 @@ export default function PatientDashboard({ route, navigation }: any) {
   const [history, setHistory] = useState<GlucoseLog[]>([]);
   const [activeSickDay, setActiveSickDay] = useState<SickDayEpisode | null>(null);
   const [refreshing, setRefreshing] = useState(false);
+  const [rangeDays, setRangeDays] = useState<1 | 7 | 30>(30);
+  const [insulinLogs, setInsulinLogs] = useState<InsulinLog[]>([]);
+  const [nextReminder, setNextReminder] = useState<{ key: 'breakfast' | 'lunch' | 'dinner' | 'bedtime'; hour: number; minute: number } | null>(null);
 
   const fetchData = useCallback(async () => {
     const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
@@ -44,17 +50,42 @@ export default function PatientDashboard({ route, navigation }: any) {
     setLatestGlucose(latest?.[0] || null);
     setHistory(logs || []);
     setActiveSickDay(sickDay?.[0] || null);
+    setInsulinLogs(await fetchRecentInsulinDoses(patient.id, 24 * 30));
   }, [patient.id]);
 
   useEffect(() => { fetchData(); }, [fetchData]);
+  useEffect(() => {
+    (async () => {
+      const prefs = await loadReminderPrefs();
+      setNextReminder(getNextReminder(prefs));
+    })();
+  }, []);
   const onRefresh = async () => { setRefreshing(true); await fetchData(); setRefreshing(false); };
+
+  const handleCsvExport = async () => {
+    const res = await exportPatientCsv(patient);
+    if (!res.ok && res.message) Alert.alert(isNe ? 'निर्यात' : 'Export', res.message);
+  };
 
   const latestMgDl = latestGlucose
     ? (() => { try { return glucoseToMgDl(latestGlucose.value, latestGlucose.unit); } catch { return null; } })()
     : null;
   const isHypo = latestMgDl !== null && latestMgDl < HYPO_THRESHOLD;
-  const stats = computeGlucoseStats(history);
-  const iob = computeIOB(history);
+  const rangeMs = rangeDays * 24 * 60 * 60 * 1000;
+  const rangedLogs = history.filter((l) => Date.now() - new Date(l.timestamp).getTime() <= rangeMs);
+  const stats = computeGlucoseStats(rangedLogs, rangeDays);
+  const iob = computeIOB(history, insulinLogs);
+  const rangeLabel = rangeDays === 1
+    ? (isNe ? 'पछिल्लो २४ घण्टा' : 'Last 24 hours')
+    : rangeDays === 7
+      ? (isNe ? 'पछिल्लो ७ दिन' : 'Last 7 days')
+      : (isNe ? 'पछिल्लो ३० दिन' : 'Last 30 days');
+  const reminderLabels: Record<'breakfast' | 'lunch' | 'dinner' | 'bedtime', { en: string; ne: string }> = {
+    breakfast: { en: 'Breakfast check', ne: 'बिहानको जाँच' },
+    lunch: { en: 'Lunch check', ne: 'दिउँसोको जाँच' },
+    dinner: { en: 'Dinner check', ne: 'बेलुकाको जाँच' },
+    bedtime: { en: 'Bedtime check', ne: 'रातको जाँच' },
+  };
   const actions: { icon: keyof typeof Ionicons.glyphMap; color: string; label: string; route: string; border: string }[] = [
     { icon: 'water-outline', color: T.blue, label: isNe ? 'ग्लुकोज' : 'Log Glucose', route: 'Log', border: T.border },
     { icon: 'restaurant-outline', color: T.teal, label: isNe ? 'खाना र डोज' : 'Food & Dose', route: 'Food', border: T.teal },
@@ -132,10 +163,31 @@ export default function PatientDashboard({ route, navigation }: any) {
           </TouchableOpacity>
         )}
 
-        {/* 30-day trends + HbA1c */}
-        {history.length >= 2 && (
+        {/* Next reminder */}
+        {nextReminder && (
+          <View style={styles.reminderCard}>
+            <Ionicons name="alarm-outline" size={18} color={T.blue} />
+            <Text style={styles.reminderText}>
+              {isNe ? 'अर्को सम्झना' : 'Next reminder'}: {isNe ? reminderLabels[nextReminder.key].ne : reminderLabels[nextReminder.key].en} · {String(nextReminder.hour).padStart(2, '0')}:{String(nextReminder.minute).padStart(2, '0')}
+            </Text>
+          </View>
+        )}
+
+        {/* Trends + statistics (range-selectable) */}
+        {rangedLogs.length >= 2 && (
           <View style={styles.trendCard}>
-            <Text style={styles.cardLabel}>{isNe ? 'पछिल्लो ३० दिनको तथ्यांक' : 'Last 30 days'}</Text>
+            <View style={styles.rangeRow}>
+              {([
+                { d: 1 as const, en: 'Day', ne: 'दिन' },
+                { d: 7 as const, en: 'Week', ne: 'हप्ता' },
+                { d: 30 as const, en: 'Month', ne: 'महिना' },
+              ]).map((r) => (
+                <TouchableOpacity key={r.d} style={[styles.rangeChip, rangeDays === r.d && styles.rangeChipActive]} onPress={() => setRangeDays(r.d)}>
+                  <Text style={[styles.rangeChipText, rangeDays === r.d && styles.rangeChipTextActive]}>{isNe ? r.ne : r.en}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+            <Text style={styles.cardLabel}>{rangeLabel}</Text>
             <TirDonut pct={stats.timeInRangePct} color={TH.teal} label={isNe ? 'समय दायरामा (TIR)' : 'Time in Range'} />
             <View style={styles.statRow}>
               <View style={styles.statTile}>
@@ -151,13 +203,34 @@ export default function PatientDashboard({ route, navigation }: any) {
                 <Text style={styles.statLabel}>{isNe ? 'अनुमानित HbA1c' : 'Est. HbA1c'}</Text>
               </View>
             </View>
-            <GlucoseTrendChart logs={history} />
+            <View style={styles.statRow}>
+              <View style={styles.statTile}>
+                <Text style={styles.statValue}>{toDisplayNumber(stats.sdMgdl, isNe)}</Text>
+                <Text style={styles.statLabel}>{isNe ? 'मानक विचलन (SD)' : 'SD mg/dL'}</Text>
+              </View>
+              <View style={styles.statTile}>
+                <Text style={styles.statValue}>{toDisplayNumber(stats.cvPct, isNe)}%</Text>
+                <Text style={styles.statLabel}>{isNe ? 'भिन्नता गुणांक (CV)' : 'CV %'}</Text>
+              </View>
+              <View style={styles.statTile}>
+                <Text style={styles.statValue}>{toDisplayNumber(stats.checksPerDay, isNe)}</Text>
+                <Text style={styles.statLabel}>{isNe ? 'दैनिक जाँच संख्या' : 'Checks/day'}</Text>
+              </View>
+            </View>
+            <GlucoseTrendChart logs={rangedLogs} />
             <Text style={styles.provenance}>
               {isNe ? 'गणना: ISPAD 2022 दिशानिर्देश अनुसार' : 'Calculated per ISPAD 2022 target range (70–180 mg/dL)'}
+            </Text>
+            <Text style={styles.provenance}>
+              {isNe ? `जोखिम सूचकांक: LBGI ${stats.lbgi} · HBGI ${stats.hbgi}` : `Risk indices: LBGI ${stats.lbgi} · HBGI ${stats.hbgi}`}
             </Text>
             <TouchableOpacity style={styles.pdfBtn} onPress={() => generateGlucoseReport(patient, history)} activeOpacity={0.8}>
               <Ionicons name="document-text-outline" size={18} color="#fff" />
               <Text style={styles.pdfBtnText}>{isNe ? 'PDF रिपोर्ट निकाल्नुहोस्' : 'Export PDF Report'}</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.csvBtn} onPress={handleCsvExport} activeOpacity={0.8}>
+              <Ionicons name="download-outline" size={18} color={T.blue} />
+              <Text style={styles.csvBtnText}>{isNe ? 'CSV डाटा निकाल्नुहोस्' : 'Export CSV (records)'}</Text>
             </TouchableOpacity>
           </View>
         )}
@@ -259,4 +332,13 @@ const styles = StyleSheet.create({
     elevation: 1,
   },
   actionText: { fontSize: 11, fontFamily: FONT.semibold, fontWeight: '600', color: T.text, textAlign: 'center' },
+  rangeRow: { flexDirection: 'row', gap: 6, marginBottom: 10, alignSelf: 'flex-start' },
+  rangeChip: { borderRadius: 16, paddingHorizontal: 14, paddingVertical: 6, backgroundColor: T.blueLight },
+  rangeChipActive: { backgroundColor: T.blue },
+  rangeChipText: { fontSize: 12, fontFamily: FONT.semibold, fontWeight: '600', color: T.blueDark },
+  rangeChipTextActive: { color: '#fff' },
+  reminderCard: { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: T.surface, borderRadius: 12, padding: 14, borderWidth: 1, borderColor: T.border, marginBottom: 16 },
+  reminderText: { fontSize: 13, fontFamily: FONT.semibold, fontWeight: '600', color: T.text, flex: 1 },
+  csvBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: T.surface, borderRadius: 28, paddingVertical: 12, marginTop: 10, borderWidth: 1.5, borderColor: T.blue },
+  csvBtnText: { color: T.blue, fontSize: 15, fontFamily: FONT.bold, fontWeight: '700' },
 });

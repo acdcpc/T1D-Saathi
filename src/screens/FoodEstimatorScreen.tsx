@@ -13,6 +13,8 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useLanguage } from '../context/LanguageContext';
 import { supabase } from '../lib/supabase';
 import { safeInsert } from '../utils/offlineQueue';
+import { fetchRecentInsulinDoses, saveInsulinDose } from '../utils/insulinLogs';
+import { computeIOB } from '../utils/insulinOnBoard';
 import { searchNepaliFoods, NEPALI_FOODS } from '../data/nepaliFoods';
 import { classifyFoodPhoto, type ModelSuggestion, type ModelResult } from '../utils/foodModelClassifier';
 import { calculateDosing, checkMealCoverage, DosingValidationError, glucoseToMgDl } from '../utils/dosingCalc';
@@ -20,7 +22,7 @@ import {
   adjustItemPortion, recalculateTotals,
   validateCalories, type FoodItem, type MealEstimateResult,
 } from '../utils/visionEstimator';
-import type { InsulinRegimen } from '../types';
+import type { GlucoseLog, InsulinLog, InsulinRegimen } from '../types';
 import { FONT } from '../theme';
 
 type Step = 'photo' | 'identify' | 'dosing';
@@ -45,6 +47,12 @@ export default function FoodEstimatorScreen({ route }: any) {
   const [currentGlucose, setCurrentGlucose] = useState('');
   const [glucoseUnit, setGlucoseUnit] = useState<'mgdl' | 'mmol'>('mgdl');
   const [plannedInsulin, setPlannedInsulin] = useState('');
+  const [recentGlucose, setRecentGlucose] = useState<GlucoseLog[]>([]);
+  const [recentInsulin, setRecentInsulin] = useState<InsulinLog[]>([]);
+  const [stackingIob, setStackingIob] = useState(0);
+  const [doseToSave, setDoseToSave] = useState('');
+  const [savedDose, setSavedDose] = useState(false);
+  const [savingDose, setSavingDose] = useState(false);
 
   // Estimate state
   const [estimate, setEstimate] = useState<MealEstimateResult | null>(null);
@@ -74,6 +82,18 @@ export default function FoodEstimatorScreen({ route }: any) {
       ]);
       setRegimen(reg);
       setDosingSettings(ds);
+      setRecentInsulin(await fetchRecentInsulinDoses(patientId, 8));
+      try {
+        const since6h = new Date(Date.now() - 6 * 3600 * 1000).toISOString();
+        const { data: recentGlucoseLogs } = await supabase
+          .from('glucose_logs')
+          .select('id,patient_id,user_id,value,unit,context,timestamp,carbs,insulin_given,notes')
+          .eq('patient_id', patientId)
+          .gte('timestamp', since6h)
+          .order('timestamp', { ascending: true })
+          .limit(100);
+        setRecentGlucose(recentGlucoseLogs || []);
+      } catch { /* recent glucose is optional for stacking checks */ }
     })();
   }, [patientId]);
 
@@ -238,6 +258,7 @@ export default function FoodEstimatorScreen({ route }: any) {
         target_glucose: regimen.correction_target,
         approved_by_clinician: true,
         regimen_id: regimen.id,
+        max_bolus: regimen.max_bolus,
         glucose_timestamp: new Date().toISOString(),
       });
 
@@ -246,6 +267,9 @@ export default function FoodEstimatorScreen({ route }: any) {
 
       setDosingResult(dosing);
       setCoverageCheck(coverage);
+      setStackingIob(computeIOB(recentGlucose, recentInsulin));
+      setDoseToSave(String(dosing.totalDose));
+      setSavedDose(false);
 
       // Save meal log with confirmed data (corrected from estimate if edited)
     const confirmedData = {
@@ -292,6 +316,23 @@ export default function FoodEstimatorScreen({ route }: any) {
       const message = error instanceof DosingValidationError ? error.message : 'Dose calculation is unavailable. Please contact your clinician.';
       Alert.alert('Dose unavailable', message);
     }
+  };
+
+  const handleSaveDose = async () => {
+    if (!user || savingDose) return;
+    const units = parseFloat(doseToSave);
+    if (!Number.isFinite(units) || units <= 0) {
+      Alert.alert('Invalid dose', 'Enter the dose in units before saving.');
+      return;
+    }
+    setSavingDose(true);
+    const res = await saveInsulinDose({ patient_id: patientId, user_id: user.id, units, insulin_type: 'rapid', source: 'food_estimator' });
+    setSavingDose(false);
+    if (!res.saved) {
+      Alert.alert('Not saved', res.message || 'The dose could not be saved.');
+      return;
+    }
+    setSavedDose(true);
   };
 
   // ═══ RENDER: Step 1 — Photo ═══
@@ -490,6 +531,24 @@ export default function FoodEstimatorScreen({ route }: any) {
           <View style={s.resultRow}><Text style={s.rLabelBold}>Total Suggested</Text><Text style={s.rTotal}>{dosingResult.totalDose} units</Text></View>
         </View>
 
+        {dosingResult.exceedsMaxBolus && (
+          <View style={[s.warningCard, s.blockCard]}>
+            <Text style={[s.warningTitle, s.blockTitle]}>Exceeds maximum bolus</Text>
+            <Text style={s.warningText}>
+              This total is above the clinician-set maximum bolus ({dosingResult.maxBolus} U). Do not give this dose without checking with your clinician.
+            </Text>
+          </View>
+        )}
+
+        {stackingIob >= 0.1 && !dosingResult.exceedsMaxBolus && (
+          <View style={s.warningCard}>
+            <Text style={s.warningTitle}>Possible insulin stacking</Text>
+            <Text style={s.warningText}>
+              Active insulin from recent doses is about {stackingIob} U. Adding this dose soon may raise the risk of low glucose — follow your clinician-approved timing plan.
+            </Text>
+          </View>
+        )}
+
         {notApproved && (
           <View style={s.warningCard}>
             <Text style={s.warningTitle}>Not clinician-approved</Text>
@@ -517,6 +576,19 @@ export default function FoodEstimatorScreen({ route }: any) {
             Dosing is based on user-confirmed, corrected macros — not the raw photo estimate. Estimates are starting suggestions; ratios should be clinician-approved.
           </Text>
         </View>
+
+        {!dosingResult.exceedsMaxBolus && (
+          <View style={s.resultCard}>
+            <Text style={s.resultSection}>Save this dose</Text>
+            <Text style={s.saveDoseHint}>Confirm the dose you actually gave, so records and active-insulin estimates stay accurate.</Text>
+            <View style={s.saveDoseRow}>
+              <TextInput style={[s.insulinInput, s.saveDoseInput]} value={doseToSave} onChangeText={setDoseToSave} keyboardType="numeric" placeholder="0" />
+              <TouchableOpacity style={[s.saveDoseBtn, (savedDose || savingDose) && s.saveDoseBtnDone]} onPress={handleSaveDose} disabled={savedDose || savingDose}>
+                <Text style={s.saveDoseBtnText}>{savedDose ? '✓ Saved' : savingDose ? '…' : 'Save dose'}</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        )}
 
         <TouchableOpacity style={s.doneBtn} onPress={() => { setImageUri(null); setStep('photo'); setItems([]); setEstimate(null); }}>
           <Text style={s.doneBtnText}>Done — Log Another Meal</Text>
@@ -640,4 +712,12 @@ const s = StyleSheet.create({
   photoRefLabel: { fontSize: 12, fontFamily: FONT.semibold, color: '#1a73e8', fontWeight: '600' },
 suggestionsTitle: { fontSize: 14, fontFamily: FONT.bold, fontWeight: '700', color: '#5f6368', marginBottom: 8 },
 colorSwatch: { width: 20, height: 20, borderRadius: 10, borderWidth: 1, borderColor: '#c4c4c4' },
+  blockCard: { borderColor: '#ea4335', backgroundColor: '#fce8e6' },
+  blockTitle: { color: '#c5221f' },
+  saveDoseHint: { fontSize: 12, fontFamily: FONT.regular, color: '#5f6368', marginBottom: 8 },
+  saveDoseRow: { flexDirection: 'row', gap: 10, alignItems: 'center' },
+  saveDoseInput: { flex: 1 },
+  saveDoseBtn: { backgroundColor: '#1a73e8', borderRadius: 10, paddingHorizontal: 18, paddingVertical: 12 },
+  saveDoseBtnDone: { backgroundColor: '#0D9488' },
+  saveDoseBtnText: { color: '#fff', fontSize: 14, fontFamily: FONT.semibold, fontWeight: '600' },
 });

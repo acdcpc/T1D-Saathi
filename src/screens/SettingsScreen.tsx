@@ -6,7 +6,7 @@ import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
 import { usePreferences } from '../context/PreferencesContext';
 import { FONT, T, card, section, primBtn } from '../theme';
-import { configureReminders } from '../utils/reminders';
+import { configureReminders, loadReminderPrefs } from '../utils/reminders';
 import { isVoiceReadbackEnabled, setVoiceReadbackEnabled } from '../utils/speech';
 import type { Language } from '../types';
 
@@ -20,7 +20,12 @@ export default function SettingsScreen({ navigation }: any) {
   const [voice, setVoice] = useState(false);
 
   useEffect(() => {
-    (async () => setVoice(await isVoiceReadbackEnabled()))();
+    (async () => {
+      setVoice(await isVoiceReadbackEnabled());
+      const prefs = await loadReminderPrefs();
+      setPreMeal(prefs.preMeal);
+      setBedtime(prefs.bedtime);
+    })();
   }, []);
 
   const handleVoiceToggle = async (val: boolean) => {

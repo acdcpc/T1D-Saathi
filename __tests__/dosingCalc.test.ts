@@ -142,3 +142,25 @@ describe('additional clinical safety boundaries', () => {
     expect(result.regimen_id).toBe('regimen-42');
   });
 });
+
+describe('maximum bolus guard', () => {
+  const base = { tdd: 50, target_glucose: 120, approved_by_clinician: true };
+
+  it('flags a total above the clinician-set maximum bolus', () => {
+    const r = calculateDosing(150, 50, { ...base, max_bolus: 5 });
+    expect(r.totalDose).toBeCloseTo(5.8, 1);
+    expect(r.exceedsMaxBolus).toBe(true);
+    expect(r.maxBolus).toBe(5);
+  });
+
+  it('does not flag doses under the maximum', () => {
+    const r = calculateDosing(150, 50, { ...base, max_bolus: 10 });
+    expect(r.exceedsMaxBolus).toBe(false);
+  });
+
+  it('leaves the guard unset when no maximum is configured', () => {
+    const r = calculateDosing(150, 50, { ...base });
+    expect(r.exceedsMaxBolus).toBe(false);
+    expect(r.maxBolus).toBeUndefined();
+  });
+});

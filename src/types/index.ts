@@ -16,11 +16,19 @@ export interface InsulinRegimen {
   frequency: string; delivery_method: 'pen' | 'syringe' | 'pump';
   effective_date: string; isf?: number; carb_ratio?: number; tdd?: number;
   correction_target?: number; approved_by_clinician?: boolean; approved_at?: string; approved_by?: string;
+  max_bolus?: number;
+}
+export interface InsulinLog {
+  id: string; patient_id: string; user_id: string; units: number;
+  insulin_type: 'rapid' | 'long' | 'mixed' | 'other';
+  source: 'manual' | 'food_estimator' | 'sick_day' | 'other';
+  notes?: string; timestamp: string; client_event_id?: string;
 }
 export interface GlucoseLog {
   id: string; patient_id: string; user_id: string; value: number;
   unit: UnitSystem; context: 'routine' | 'sick_day'; timestamp: string;
   carbs?: number; insulin_given?: number; notes?: string;
+  source?: string; mood?: string; activity_type?: string; activity_minutes?: number;
 }
 export interface KetoneLog {
   id: string; patient_id: string; user_id: string; value?: number;

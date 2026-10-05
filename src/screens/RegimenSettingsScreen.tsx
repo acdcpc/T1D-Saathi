@@ -35,6 +35,7 @@ export default function RegimenSettingsScreen({ route, navigation }: any) {
   const [isf, setIsf] = useState('');
   const [carbRatio, setCarbRatio] = useState('');
   const [target, setTarget] = useState('');
+  const [maxBolus, setMaxBolus] = useState('');
 
   useEffect(() => {
     (async () => {
@@ -55,6 +56,7 @@ export default function RegimenSettingsScreen({ route, navigation }: any) {
         setIsf(data.isf ? String(data.isf) : '');
         setCarbRatio(data.carb_ratio ? String(data.carb_ratio) : '');
         setTarget(data.correction_target ? String(data.correction_target) : '');
+        setMaxBolus(data.max_bolus ? String(data.max_bolus) : '');
       }
       setLoading(false);
     })();
@@ -83,6 +85,7 @@ export default function RegimenSettingsScreen({ route, navigation }: any) {
       isf: parseFloat(isf) || autoIsf || null,
       carb_ratio: parseFloat(carbRatio) || autoIcr || null,
       correction_target: targetValue,
+      max_bolus: parseFloat(maxBolus) || null,
       approved_by_clinician: false,
       approved_at: null,
       approved_by: null,
@@ -164,6 +167,10 @@ export default function RegimenSettingsScreen({ route, navigation }: any) {
       <Text style={styles.label}>{t('correctionTarget')} (mg/dL)</Text>
       <TextInput style={styles.input} value={target} onChangeText={setTarget} keyboardType="numeric" />
 
+      <Text style={styles.label}>Maximum bolus (units) — optional</Text>
+      <TextInput style={styles.input} value={maxBolus} onChangeText={setMaxBolus} keyboardType="numeric" placeholder="e.g. 10" />
+      <Text style={styles.hintSmall}>Used to warn on unusually large doses. Set this together with your clinician.</Text>
+
       <TouchableOpacity style={styles.saveBtn} onPress={handleSave}>
         <Text style={styles.saveText}>{t('save')}</Text>
       </TouchableOpacity>
@@ -194,4 +201,5 @@ const styles = StyleSheet.create({
   autoNote: { fontSize: 11, fontFamily: FONT.regular, color: '#5f6368', marginTop: 10, fontStyle: 'italic' },
   saveBtn: { backgroundColor: '#1a73e8', borderRadius: 12, padding: 16, alignItems: 'center', marginTop: 24 },
   saveText: { color: '#fff', fontSize: 17, fontFamily: FONT.semibold, fontWeight: '600' },
+  hintSmall: { fontSize: 11, fontFamily: FONT.regular, color: '#5f6368', marginTop: 6, fontStyle: 'italic' },
 });
