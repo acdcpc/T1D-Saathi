@@ -23,9 +23,11 @@ import {
   validateCalories, type FoodItem, type MealEstimateResult,
 } from '../utils/visionEstimator';
 import type { GlucoseLog, InsulinLog, InsulinRegimen } from '../types';
-import { FONT } from '../theme';
+import { FONT, T } from '../theme';
 
 type Step = 'photo' | 'identify' | 'dosing';
+
+const contentCol = { width: '100%' as const, maxWidth: 640, alignSelf: 'center' as const };
 
 const PORTIONS = [0.25, 0.5, 0.75, 1, 1.25, 1.5, 2];
 const PORTION_LABELS: Record<number, string> = {
@@ -75,7 +77,7 @@ export default function FoodEstimatorScreen({ route }: any) {
       const [{ data: reg }, { data: ds }] = await Promise.all([
         supabase
           .from('insulin_regimens').select('*')
-          .eq('patient_id', patientId).order('effective_date', { ascending: false }).limit(1).single(),
+          .eq('patient_id', patientId).order('effective_date', { ascending: false }).limit(1).maybeSingle(),
         supabase
           .from('dosing_settings').select('*')
           .eq('patient_id', patientId).maybeSingle(),
@@ -338,7 +340,7 @@ export default function FoodEstimatorScreen({ route }: any) {
   // ═══ RENDER: Step 1 — Photo ═══
   if (step === 'photo') {
     return (
-      <ScrollView style={s.container} contentContainerStyle={[s.content, { paddingTop: insets.top + 16, paddingBottom: insets.bottom + 40 }]}>
+      <ScrollView style={s.container} contentContainerStyle={[s.content, contentCol, { paddingTop: insets.top + 16, paddingBottom: insets.bottom + 40 }]}>
         <Text style={s.title}>🍽️ Food Photo Estimator</Text>
         <Text style={s.hint}>Take a clear photo of the meal. For best results, center the plate and include the plate edge.</Text>
 
@@ -372,7 +374,7 @@ export default function FoodEstimatorScreen({ route }: any) {
   // ═══ RENDER: Step 2 — Identify foods from photo ═══
   if (step === 'identify') {
     return (
-      <ScrollView style={s.container} contentContainerStyle={[s.content, { paddingTop: insets.top + 16, paddingBottom: insets.bottom + 40 }]}>
+      <ScrollView style={s.container} contentContainerStyle={[s.content, contentCol, { paddingTop: insets.top + 16, paddingBottom: insets.bottom + 40 }]}>
         <Text style={s.title}>🍽️ What foods are on this plate?</Text>
         <ISPADBadge />
 
@@ -512,7 +514,7 @@ export default function FoodEstimatorScreen({ route }: any) {
   // ═══ RENDER: Step 3 — Dosing Results ═══
   if (step === 'dosing' && dosingResult) {
     return (
-      <ScrollView style={s.container} contentContainerStyle={[s.content, { paddingTop: insets.top + 16, paddingBottom: insets.bottom + 40 }]}>
+      <ScrollView style={s.container} contentContainerStyle={[s.content, contentCol, { paddingTop: insets.top + 16, paddingBottom: insets.bottom + 40 }]}>
         <Text style={s.title}>Dosing Results</Text>
         <ISPADBadge />
 
@@ -602,7 +604,7 @@ export default function FoodEstimatorScreen({ route }: any) {
 
 // ─── Styles ───
 const s = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#F0F7FF' },
+  container: { flex: 1, backgroundColor: T.bg },
   content: { padding: 20, paddingTop: 60 },
   centered: { justifyContent: 'center', alignItems: 'center' },
   title: { fontSize: 24, fontFamily: FONT.extrabold, fontWeight: '800', color: '#202124', marginBottom: 8 },

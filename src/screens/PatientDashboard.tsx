@@ -19,13 +19,15 @@ import { sendCaregiverAlert } from '../utils/caregiverAlert';
 import { glucoseToMgDl } from '../utils/dosingCalc';
 import ISPADBadge from '../components/ISPADBadge';
 import ChildAvatar from '../components/ChildAvatar';
-import DhakaDivider from '../components/DhakaDivider';
 import GlucoseTrendChart from '../components/GlucoseTrendChart';
 import TirDonut from '../components/TirDonut';
 import AnimatedPressable from '../components/AnimatedPressable';
 import { usePreferences } from '../context/PreferencesContext';
 import { toDisplayNumber } from '../utils/nepaliNumber';
 import { FONT,  T, card, section, avatar } from '../theme';import type { PatientProfile, GlucoseLog, SickDayEpisode, InsulinLog } from '../types';
+
+/** Centered content column — keeps the layout composed on tablet/desktop widths. */
+const contentCol = { width: '100%' as const, maxWidth: 640, alignSelf: 'center' as const };
 
 export default function PatientDashboard({ route, navigation }: any) {
   const patient: PatientProfile = usePatient() || (route.params as any)?.patient;
@@ -104,6 +106,11 @@ export default function PatientDashboard({ route, navigation }: any) {
     const { error } = await supabase.from('patients').update({ age_band: band }).eq('id', patient.id);
     if (error) Alert.alert(isNe ? 'त्रुटि' : 'Error', error.message);
   };
+
+  const statusInfo = latestMgDl === null ? null
+    : latestMgDl < HYPO_THRESHOLD ? { label: isNe ? 'कम' : 'Low', bg: '#FDECEA', fg: T.red }
+      : latestMgDl > 180 ? { label: isNe ? 'उच्च' : 'High', bg: '#FEF7E0', fg: '#B45309' }
+        : { label: isNe ? 'दायरामा' : 'In range', bg: '#E6F4EA', fg: '#0D652D' };
   const actions: { icon: keyof typeof Ionicons.glyphMap; color: string; label: string; route: string; border: string }[] = [
     { icon: 'water-outline', color: T.blue, label: isNe ? 'ग्लुकोज' : 'Log Glucose', route: 'Log', border: T.border },
     { icon: 'restaurant-outline', color: T.teal, label: isNe ? 'खाना र डोज' : 'Food & Dose', route: 'Food', border: T.teal },
@@ -122,7 +129,7 @@ export default function PatientDashboard({ route, navigation }: any) {
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: TH.bg }]} edges={['top', 'bottom']}>
       <ScrollView
-        contentContainerStyle={[styles.content, { paddingBottom: 60 + insets.bottom }]}
+        contentContainerStyle={[styles.content, contentCol, { paddingBottom: 60 + insets.bottom }]}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={TH.blue} colors={[TH.blue]} progressBackgroundColor={TH.surface} />}
       >
         {/* Avatar header */}
@@ -134,10 +141,6 @@ export default function PatientDashboard({ route, navigation }: any) {
               {patient.insulin_type || (isNe ? 'इन्सुलिन' : 'Insulin')} · {patient.sex}
             </Text>
           </View>
-        </View>
-
-        <View style={{ marginBottom: 16 }}>
-          <DhakaDivider />
         </View>
 
         {/* Age-band mode (guardian-changeable) */}
@@ -162,7 +165,14 @@ export default function PatientDashboard({ route, navigation }: any) {
                 {latestGlucose.value}
                 <Text style={styles.unit}> {latestGlucose.unit === 'mmol' ? 'mmol/L' : 'mg/dL'}</Text>
               </Text>
-              <Text style={styles.timestamp}>{toBSDateTimeDisplay(latestGlucose.timestamp)}</Text>
+              <View style={styles.statusRow}>
+                {statusInfo && (
+                  <View style={[styles.statusPill, { backgroundColor: statusInfo.bg }]}>
+                    <Text style={[styles.statusPillText, { color: statusInfo.fg }]}>{statusInfo.label}</Text>
+                  </View>
+                )}
+                <Text style={styles.timestamp}>{toBSDateTimeDisplay(latestGlucose.timestamp)}</Text>
+              </View>
               {iob > 0 && (
                 <Text style={styles.iobText}>{isNe ? 'सक्रिय इन्सुलिन' : 'Active insulin'}: {iob} U</Text>
               )}            </View>
@@ -307,13 +317,6 @@ export default function PatientDashboard({ route, navigation }: any) {
           ))}
         </View>
 
-        <View style={styles.cgmCard}>
-          <Ionicons name="bluetooth-outline" size={18} color={T.muted} />
-          <Text style={styles.cgmText}>
-            {isNe ? 'CGM जडान (Dexcom/Libre) — चाँडै आउँदैछ' : 'Connect CGM (Dexcom/Libre) — coming soon'}
-          </Text>
-        </View>
-
         <ISPADBadge />
         <View style={{ height: 60 }} />
       </ScrollView>
@@ -352,9 +355,9 @@ const styles = StyleSheet.create({
 
   trendCard: { ...card },
   statRow: { flexDirection: 'row', gap: 8, marginBottom: 8 },
-  statTile: { flex: 1, backgroundColor: T.blueLight, borderRadius: 12, paddingVertical: 12, alignItems: 'center' },
-  statValue: { fontSize: 20, fontFamily: FONT.extrabold, fontWeight: '800', color: T.blueDark },
-  statLabel: { fontSize: 10, fontFamily: FONT.semibold, color: T.blueDark, marginTop: 2, textAlign: 'center', fontWeight: '600' },
+  statTile: { flex: 1, backgroundColor: '#FFFFFF', borderRadius: 14, paddingVertical: 12, alignItems: 'center', borderWidth: 1, borderColor: T.border },
+  statValue: { fontSize: 20, fontFamily: FONT.extrabold, fontWeight: '800', color: T.text },
+  statLabel: { fontSize: 10, fontFamily: FONT.semibold, color: T.muted, marginTop: 2, textAlign: 'center', fontWeight: '600' },
   provenance: { fontSize: 10, fontFamily: FONT.regular, color: T.muted, textAlign: 'center', marginTop: 2, fontStyle: 'italic' },
   pdfBtn: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8,
@@ -362,19 +365,13 @@ const styles = StyleSheet.create({
   },
   pdfBtnText: { color: '#fff', fontSize: 15, fontFamily: FONT.bold, fontWeight: '700' },
 
-  cgmCard: {
-    flexDirection: 'row', alignItems: 'center', gap: 8,
-    backgroundColor: T.surface, borderRadius: 12, padding: 14,
-    borderWidth: 1, borderColor: T.border, marginTop: 16,
-  },
-  cgmText: { fontSize: 13, fontFamily: FONT.regular, color: T.muted },
   sectionLabel: { ...section, paddingHorizontal: 4 },
   actionGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
   actionCard: {
     width: '31%',
-    minHeight: 92,
-    backgroundColor: T.surface,
-    borderRadius: 12,
+    minHeight: 96,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
     padding: 14,
     alignItems: 'center',
     borderWidth: 1,
@@ -405,4 +402,7 @@ const styles = StyleSheet.create({
   streakText: { fontSize: 13, fontFamily: FONT.semibold, fontWeight: '600', color: '#92400E', flex: 1 },
   notifyBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: '#25D366', borderRadius: 10, paddingVertical: 10, marginTop: 10 },
   notifyBtnText: { color: '#fff', fontSize: 13, fontFamily: FONT.semibold, fontWeight: '600' },
+  statusRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 6 },
+  statusPill: { borderRadius: 999, paddingHorizontal: 10, paddingVertical: 3 },
+  statusPillText: { fontSize: 12, fontFamily: FONT.bold, fontWeight: '700' },
 });

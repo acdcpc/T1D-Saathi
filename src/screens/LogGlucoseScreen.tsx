@@ -19,6 +19,8 @@ import type { InsulinRegimen, UnitSystem } from '../types';
 import { FONT, T } from '../theme';
 import { usePreferences } from '../context/PreferencesContext';
 
+const contentCol = { width: '100%' as const, maxWidth: 640, alignSelf: 'center' as const };
+
 export default function LogGlucoseScreen({ route, navigation }: any) {
   const patientId = (route.params as any)?.patientId || usePatient()?.id || '';
   const { user } = useAuth();
@@ -47,7 +49,7 @@ export default function LogGlucoseScreen({ route, navigation }: any) {
         .eq('patient_id', patientId)
         .order('effective_date', { ascending: false })
         .limit(1)
-        .single();
+        .maybeSingle();
       setRegimen(data);
       setLoading(false);
     })();
@@ -125,7 +127,7 @@ export default function LogGlucoseScreen({ route, navigation }: any) {
   if (loading) return <View style={styles.centered}><ActivityIndicator size="large" color="#1a73e8" /></View>;
 
   return (
-    <ScrollView style={[styles.container, { backgroundColor: TH.bg }]} contentContainerStyle={styles.content}>
+    <ScrollView style={[styles.container, { backgroundColor: TH.bg }]} contentContainerStyle={[styles.content, contentCol]}>
       <Text style={styles.title}>{t('logGlucose')}</Text>
       <ISPADBadge />
 

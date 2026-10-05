@@ -12,6 +12,8 @@ import { isVoiceReadbackEnabled, setVoiceReadbackEnabled } from '../utils/speech
 import { isMotivationOptOut, setMotivationOptOut } from '../utils/motivation';
 import { supabase } from '../lib/supabase';
 import Dropdown from '../components/Dropdown';
+
+const contentCol = { width: '100%' as const, maxWidth: 640, alignSelf: 'center' as const };
 import type { Language } from '../types';
 
 export default function SettingsScreen({ navigation }: any) {
@@ -152,7 +154,7 @@ export default function SettingsScreen({ navigation }: any) {
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: TH.bg }]} edges={['top', 'bottom']}>
-      <ScrollView contentContainerStyle={styles.content}>
+      <ScrollView contentContainerStyle={[styles.content, contentCol]}>
         <View style={styles.headerRow}>
           <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
             <Ionicons name="arrow-back" size={22} color={T.text} />
@@ -352,7 +354,7 @@ const styles = StyleSheet.create({
   langRow: { flexDirection: 'row', gap: 12, marginBottom: 8 },
   langBtn: {
     flex: 1, borderRadius: 10, padding: 14, alignItems: 'center',
-    backgroundColor: T.surface, borderWidth: 1, borderColor: T.border,
+    backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: T.border,
   },
   langActive: { backgroundColor: T.blue, borderColor: T.blue },
   langText: { fontSize: 16, fontFamily: FONT.semibold, fontWeight: '600', color: T.text },
@@ -360,14 +362,14 @@ const styles = StyleSheet.create({
 
   infoCard: {
     flexDirection: 'row', alignItems: 'flex-start', gap: 10,
-    backgroundColor: T.surface, borderRadius: 12, padding: 14,
+    backgroundColor: '#FFFFFF', borderRadius: 12, padding: 14,
     borderWidth: 1, borderColor: T.border, marginBottom: 8,
   },
   infoText: { flex: 1, fontSize: 13, fontFamily: FONT.regular, color: T.muted, lineHeight: 18 },
 
   rowCard: {
     flexDirection: 'row', alignItems: 'center', gap: 12,
-    backgroundColor: T.surface, borderRadius: 12, padding: 14,
+    backgroundColor: '#FFFFFF', borderRadius: 12, padding: 14,
     borderWidth: 1, borderColor: T.border, marginBottom: 8,
   },
   rowTitle: { fontSize: 15, fontFamily: FONT.semibold, fontWeight: '600', color: T.text },
@@ -388,7 +390,7 @@ const styles = StyleSheet.create({
   },
   disclaimerTitle: { fontSize: 14, fontFamily: FONT.bold, fontWeight: '700', color: T.amberDark, marginBottom: 4 },
   disclaimerText: { fontSize: 13, fontFamily: FONT.regular, color: T.text, lineHeight: 18 },
-  customForm: { backgroundColor: T.surface, borderRadius: 12, padding: 14, borderWidth: 1, borderColor: T.border, marginBottom: 8 },
+  customForm: { backgroundColor: '#FFFFFF', borderRadius: 12, padding: 14, borderWidth: 1, borderColor: T.border, marginBottom: 8 },
   customInput: { backgroundColor: '#fff', borderRadius: 10, padding: 12, fontSize: 14, fontFamily: FONT.regular, borderWidth: 1, borderColor: '#dadce0' },
   dayRow: { flexDirection: 'row', gap: 6, marginTop: 12 },
   dayChip: { width: 34, height: 34, borderRadius: 17, backgroundColor: '#e8eaed', justifyContent: 'center', alignItems: 'center' },

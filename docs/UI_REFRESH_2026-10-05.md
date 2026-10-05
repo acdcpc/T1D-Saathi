@@ -29,3 +29,21 @@ Requested: bring the app's look closer to top diabetes apps (mySugr / One Drop p
 
 - Web only: a harmless 404 probe for `tflite_web_api_cc_simd.js` occurs on load (the classifier's wasm loads from `/wasm/` when the food screen is used — verify during food-screen testing).
 - Next UI passes: Patient Dashboard, Log Glucose, Food Estimator, Settings — same treatment (spacing, cards, hierarchy) pending review of this round.
+
+---
+
+# Round 2 — Dashboard, Log, Food, Settings (same day)
+
+Applied the same treatment across the core screens:
+
+- **Global cards** (`theme.ts`): white background, 18px radius, 1px warm border, softer shadow — consistent "clean card" look everywhere.
+- **Patient Dashboard**: centered column; status pill on the latest glucose card ("In range / Low / High"); stat tiles restyled (white, bordered); action tiles white/rounded; removed the decorative triangle divider and the outdated "CGM coming soon" chip.
+- **Log Glucose**: centered column, parchment background, consistent white inputs.
+- **Food Estimator**: parchment background + centered column.
+- **Settings**: centered column, white rows.
+- **Tab bar**: white with hairline top border.
+- **Robustness**: regimen fetches switched from `.single()` → `.maybeSingle()` (no more 406 console errors when no regimen exists).
+
+Verified again via headless Chrome (desktop + mobile). New screenshots in `docs/screenshots/2026-10-05/` (`dashboard-desktop`, `dashboard-mobile`, `log-desktop`, `food-desktop`).
+
+Still older-style (next rounds if wanted): Sick-Day Wizard, Emergency, Education/Quiz, Messages, Add Patient form, Regimen settings, Onboarding.

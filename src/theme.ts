@@ -34,13 +34,15 @@ export const T = {
 // ── Core building blocks (mirroring Kapoori Ka) ──────────────────
 
 export const card = {
-  backgroundColor: T.surface,
-  borderRadius: 16,
+  backgroundColor: '#FFFFFF',
+  borderRadius: 18,
   padding: 16,
+  borderWidth: 1,
+  borderColor: T.border,
   shadowColor: T.shadow,
-  shadowOpacity: 0.10,
-  shadowRadius: 8,
-  shadowOffset: { width: 0, height: 2 },
+  shadowOpacity: 0.08,
+  shadowRadius: 10,
+  shadowOffset: { width: 0, height: 3 },
   elevation: 2,
   marginBottom: 10,
 };

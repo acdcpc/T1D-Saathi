@@ -36,7 +36,7 @@ export default function ParentTabs({ route }: any) {
           tabBarActiveTintColor: T.blue,
           tabBarInactiveTintColor: T.muted,
           tabBarStyle: {
-            backgroundColor: T.surface,
+            backgroundColor: '#FFFFFF',
             borderTopColor: T.border,
             height: 64,
             paddingBottom: 8,
