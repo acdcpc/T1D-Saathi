@@ -18,11 +18,22 @@ export default function ClinicianPatientListScreen({ navigation }: any) {
   const fetchPatients = useCallback(async () => {
     if (!user) return;
     setLoading(true);
+    try {
+      const { data: adminFlag } = await supabase.rpc('is_app_admin', { p_user_id: user.id });
+      if (adminFlag === true) {
+        const { data } = await supabase.from('patients').select('*').order('name');
+        setPatients(data || []);
+        setLoading(false);
+        return;
+      }
+    } catch { /* fall back to assignments */ }
     const { data: careTeams } = await supabase.from('care_team').select('patient_id').eq('clinician_id', user.id);
     if (careTeams?.length) {
       const ids = careTeams.map(ct => ct.patient_id);
       const { data } = await supabase.from('patients').select('*').in('id', ids).order('name');
       setPatients(data || []);
+    } else {
+      setPatients([]);
     }
     setLoading(false);
   }, [user]);

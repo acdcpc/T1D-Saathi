@@ -1,0 +1,465 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>T1D Saathi — Clinician Portal</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  :root{--bg:#F7F1EB;--surface:#fff;--ink:#1A1A2E;--muted:#7A6E65;--blue:#1a73e8;--blue-l:#e8f0fe;--teal:#0D9488;--red:#ea4335;--red-l:#fce8e6;--amber:#e37400;--amber-l:#FEF7E0;--line:#e8eaed;--shadow:0 2px 10px rgba(60,50,40,.08)}
+  *{box-sizing:border-box} body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Noto Sans Devanagari",sans-serif;background:var(--bg);color:var(--ink)}
+  .hidden{display:none!important}
+  /* Login */
+  #login{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px}
+  .card{background:var(--surface);border-radius:16px;box-shadow:var(--shadow);padding:28px;max-width:420px;width:100%}
+  h1{font-size:22px;margin:0 0 4px} .sub{color:var(--muted);font-size:13px;margin-bottom:18px}
+  label{display:block;font-size:12px;font-weight:600;margin:12px 0 6px;color:var(--ink)}
+  input{width:100%;border:1.5px solid #dadce0;border-radius:10px;padding:12px;font-size:14px;outline:none}
+  input:focus{border-color:var(--blue)}
+  button{cursor:pointer;border:none;border-radius:10px;padding:12px 16px;font-size:14px;font-weight:600}
+  .btn{background:var(--blue);color:#fff;width:100%;margin-top:18px}
+  .btn:hover{filter:brightness(1.05)} .btn:disabled{opacity:.5;cursor:default}
+  .btn-sm{padding:8px 12px;font-size:13px}
+  .btn-ghost{background:transparent;color:var(--blue);border:1.5px solid var(--blue)}
+  .btn-danger{background:var(--red);color:#fff}
+  .btn-teal{background:var(--teal);color:#fff}
+  .err{color:var(--red);font-size:13px;margin-top:10px;white-space:pre-wrap}
+  .note{font-size:12px;color:var(--muted);margin-top:14px;line-height:1.5}
+  /* App shell */
+  #app{display:none;min-height:100vh}
+  .shell{display:flex;min-height:100vh}
+  .side{width:240px;background:var(--surface);border-right:1px solid var(--line);padding:20px;display:flex;flex-direction:column;gap:6px;position:sticky;top:0;height:100vh}
+  .logo{font-weight:800;font-size:18px;margin-bottom:2px} .logo small{display:block;font-weight:400;color:var(--muted);font-size:11px}
+  .nav{background:none;text-align:left;color:var(--ink);padding:10px 12px;border-radius:10px}
+  .nav.active{background:var(--blue-l);color:var(--blue)}
+  .spacer{flex:1}
+  .who{font-size:12px;color:var(--muted);word-break:break-all;padding:8px 4px}
+  .main{flex:1;padding:28px;max-width:1100px}
+  .topbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;gap:12px;flex-wrap:wrap}
+  .title{font-size:24px;font-weight:800} .crums{color:var(--muted);font-size:13px}
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px}
+  .pcard{background:var(--surface);border-radius:14px;box-shadow:var(--shadow);padding:18px;cursor:pointer;border:1px solid transparent}
+  .pcard:hover{border-color:var(--blue)}
+  .pname{font-size:17px;font-weight:700;margin-bottom:2px} .pmeta{font-size:12px;color:var(--muted)}
+  .row{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:10px}
+  .chip{font-size:11px;font-weight:700;padding:4px 10px;border-radius:999px;background:var(--blue-l);color:var(--blue)}
+  .chip.red{background:var(--red-l);color:var(--red)} .chip.amber{background:var(--amber-l);color:var(--amber)}
+  .chip.teal{background:#E6F4EA;color:#0d652d} .chip.gray{background:#f1f3f4;color:var(--muted)}
+  .panel{background:var(--surface);border-radius:14px;box-shadow:var(--shadow);padding:20px;margin-bottom:16px}
+  .panel h2{font-size:15px;margin:0 0 12px;color:var(--muted);text-transform:uppercase;letter-spacing:.4px}
+  table{width:100%;border-collapse:collapse;font-size:13px} td,th{padding:8px 10px;border-bottom:1px solid var(--line);text-align:left}
+  th{color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.4px}
+  .kv{display:flex;justify-content:space-between;padding:6px 0;font-size:14px;border-bottom:1px dashed var(--line)}
+  .kv b{font-weight:700}
+  .flag{font-size:13px;padding:2px 0}
+  .muted{color:var(--muted)} .small{font-size:12px}
+  .empty{color:var(--muted);font-size:13px;font-style:italic;padding:8px 0}
+  .banner{background:var(--amber-l);border:1px solid #f9ab00;border-radius:12px;padding:14px;font-size:13px;margin-bottom:16px;line-height:1.5}
+  .ok{color:var(--teal);font-weight:700}
+  dialog{border:none;border-radius:14px;padding:22px;max-width:480px;width:92%;box-shadow:var(--shadow)}
+  dialog::backdrop{background:rgba(0,0,0,.35)}
+  .modal-actions{display:flex;gap:8px;margin-top:16px;justify-content:flex-end}
+  @media (max-width:760px){.shell{flex-direction:column}.side{width:100%;height:auto;position:static;flex-direction:row;align-items:center;flex-wrap:wrap}.nav{padding:8px}.main{padding:16px}}
+</style>
+</head>
+<body>
+
+<div id="setup" class="hidden">
+  <div id="login">
+    <div class="card">
+      <h1>⚙️ Setup needed</h1>
+      <div class="sub">Portal configuration not found.</div>
+      <p class="note">Create <code>portal/config.js</code> (copy from <code>config.example.js</code>):<br><br>
+      <code>window.PORTAL_CONFIG = {<br>&nbsp;&nbsp;supabaseUrl: 'https://YOUR-PROJECT.supabase.co',<br>&nbsp;&nbsp;supabaseAnonKey: 'YOUR-ANON-KEY'<br>};</code><br><br>
+      Then reload this page.</p>
+    </div>
+  </div>
+</div>
+
+<div id="login" class="hidden">
+  <div class="card">
+    <h1>T1D Saathi</h1>
+    <div class="sub">Clinician Portal — sign in with your clinician account</div>
+    <label for="email">Email</label>
+    <input id="email" type="email" autocomplete="username" placeholder="you@example.com" />
+    <label for="password">Password</label>
+    <input id="password" type="password" autocomplete="current-password" placeholder="••••••••" />
+    <button id="signin" class="btn">Sign in</button>
+    <div id="login-err" class="err"></div>
+    <div class="note">Access is limited to clinician accounts. Parents use the mobile app. If you were invited as staff, sign up with your staff email — the clinician role is applied automatically.</div>
+  </div>
+</div>
+
+<div id="app">
+  <div class="shell">
+    <aside class="side">
+      <div class="logo">🩺 T1D Saathi<small>Clinician Portal</small></div>
+      <button class="nav active" id="nav-patients">Patients</button>
+      <button class="nav" id="nav-staff">Staff &amp; access</button>
+      <div class="spacer"></div>
+      <div class="who" id="whoami"></div>
+      <button class="nav" id="nav-refresh">↻ Refresh</button>
+      <button class="nav" id="nav-logout">Sign out</button>
+    </aside>
+    <main class="main" id="main"></main>
+  </div>
+</div>
+
+<dialog id="dlg">
+  <div id="dlg-body"></div>
+  <div class="modal-actions">
+    <button class="btn-ghost btn-sm" id="dlg-cancel">Close</button>
+    <button class="btn btn-sm hidden" id="dlg-ok">Confirm</button>
+  </div>
+</dialog>
+
+<script>
+(function () {
+  'use strict';
+  const $ = (id) => document.getElementById(id);
+  const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const fmt = (ts) => { try { return new Date(ts).toLocaleString(); } catch { return ts; } };
+  const day = (ts) => String(ts || '').slice(0, 10);
+
+  const cfg = window.PORTAL_CONFIG;
+  if (!cfg || !cfg.supabaseUrl || !cfg.supabaseAnonKey) { $('setup').classList.remove('hidden'); return; }
+  const sb = window.supabase.createClient(cfg.supabaseUrl, cfg.supabaseAnonKey);
+
+  let me = { id: null, email: '', role: '', admin: false };
+  let currentPatientId = null;
+
+  // ---------- auth ----------
+  $('signin').addEventListener('click', async () => {
+    $('login-err').textContent = '';
+    $('signin').disabled = true;
+    const { error } = await sb.auth.signInWithPassword({ email: $('email').value.trim(), password: $('password').value });
+    $('signin').disabled = false;
+    if (error) $('login-err').textContent = error.message;
+  });
+  $('password').addEventListener('keydown', (e) => { if (e.key === 'Enter') $('signin').click(); });
+
+  async function signOut() { await sb.auth.signOut(); location.reload(); }
+  $('nav-logout').addEventListener('click', signOut);
+  $('nav-refresh').addEventListener('click', () => (currentPatientId ? openPatient(currentPatientId) : showPatients()));
+
+  sb.auth.onAuthStateChange((_ev, session) => { if (!session) showLogin(); });
+  (async () => {
+    const { data } = await sb.auth.getSession();
+    if (data.session) enterApp(data.session); else showLogin();
+  })();
+
+  function showLogin() {
+    $('app').style.display = 'none'; $('login').classList.remove('hidden');
+  }
+
+  async function enterApp(session) {
+    $('login').classList.add('hidden'); $('app').style.display = 'block';
+    me.id = session.user.id; me.email = session.user.email || '';
+    const [{ data: prof }, { data: adminFlag }] = await Promise.all([
+      sb.from('profiles').select('role, full_name').eq('user_id', me.id).maybeSingle(),
+      sb.rpc('is_app_admin', { p_user_id: me.id }),
+    ]);
+    me.role = prof?.role || 'parent';
+    me.admin = adminFlag === true;
+    $('whoami').textContent = `${me.email}${me.admin ? ' · full access' : me.role === 'clinician' ? ' · clinician' : ''}`;
+    $('nav-staff').style.display = me.admin ? '' : 'none';
+    $('nav-patients').classList.add('active'); $('nav-staff').classList.remove('active');
+    showPatients();
+  }
+
+  $('nav-patients').addEventListener('click', () => { $('nav-patients').classList.add('active'); $('nav-staff').classList.remove('active'); showPatients(); });
+  $('nav-staff').addEventListener('click', () => { $('nav-staff').classList.add('active'); $('nav-patients').classList.remove('active'); showStaff(); });
+
+  // ---------- patient list ----------
+  async function loadPatientRows() {
+    if (me.admin) {
+      const { data, error } = await sb.from('patients').select('id,user_id,name,date_of_birth,sex,insulin_type,age_band,created_at').order('name');
+      if (error) throw error;
+      return data || [];
+    }
+    const { data: ct, error: ctErr } = await sb.from('care_team').select('patient_id').eq('clinician_id', me.id);
+    if (ctErr) throw ctErr;
+    const ids = (ct || []).map((r) => r.patient_id);
+    if (!ids.length) return [];
+    const { data, error } = await sb.from('patients').select('id,user_id,name,date_of_birth,sex,insulin_type,age_band,created_at').in('id', ids).order('name');
+    if (error) throw error;
+    return data || [];
+  }
+
+  async function showPatients() {
+    currentPatientId = null;
+    $('main').innerHTML = `<div class="topbar"><div><div class="title">Patients</div><div class="crums">${me.admin ? 'Full access — all patients' : 'Patients assigned to you'}</div></div></div><div class="empty">Loading…</div>`;
+    try {
+      const patients = await loadPatientRows();
+      if (!patients.length) {
+        $('main').innerHTML = `<div class="topbar"><div><div class="title">Patients</div><div class="crums">${me.admin ? 'Full access — all patients' : 'Patients assigned to you'}</div></div></div>
+          <div class="panel"><div class="empty">No patients yet. ${me.admin ? '' : 'Ask a parent for an invite code (mobile app → Invite Clinician), or ask an administrator to link you.'}</div></div>`;
+        return;
+      }
+      const cards = patients.map((p) => `
+        <div class="pcard" data-id="${esc(p.id)}">
+          <div class="pname">${esc(p.name)}</div>
+          <div class="pmeta">${esc(p.sex || '')} · ${esc(p.age_band === 'teen' ? 'Teen 10–17' : p.age_band === 'child' ? 'Child 6–9' : '—')} · ${esc(p.insulin_type || 'insulin')}</div>
+          <div class="row" id="flags-${esc(p.id)}"><span class="chip gray">…</span></div>
+        </div>`).join('');
+      $('main').innerHTML = `<div class="topbar"><div><div class="title">Patients</div><div class="crums">${me.admin ? 'Full access — all patients' : 'Patients assigned to you'}</div></div></div><div class="grid">${cards}</div>`;
+      document.querySelectorAll('.pcard').forEach((el) => el.addEventListener('click', () => openPatient(el.dataset.id)));
+      patients.forEach((p) => loadFlags(p.id));
+    } catch (e) {
+      $('main').innerHTML = `<div class="panel"><div class="err">${esc(e.message || e)}</div></div>`;
+    }
+  }
+
+  async function loadFlags(pid) {
+    const box = $('flags-' + pid);
+    if (!box) return;
+    try {
+      const since = new Date(Date.now() - 7 * 864e5).toISOString();
+      const [{ data: latest }, { data: lows }, { data: sick }, { data: reg }] = await Promise.all([
+        sb.from('glucose_logs').select('value,unit,timestamp').eq('patient_id', pid).order('timestamp', { ascending: false }).limit(1),
+        sb.from('glucose_logs').select('id,value,unit').eq('patient_id', pid).gte('timestamp', since).lt('value', 70),
+        sb.from('sick_day_episodes').select('id,escalated').eq('patient_id', pid).is('end_date', null).limit(1),
+        sb.from('insulin_regimens').select('id,approved_by_clinician').eq('patient_id', pid).order('effective_date', { ascending: false }).limit(1),
+      ]);
+      const chips = [];
+      if (latest && latest[0]) {
+        const v = latest[0].value; const unit = latest[0].unit === 'mmol' ? 'mmol/L' : 'mg/dL';
+        const mgdl = latest[0].unit === 'mmol' ? v * 18.0182 : v;
+        const cls = mgdl < 70 ? 'red' : mgdl > 180 ? 'amber' : 'teal';
+        chips.push(`<span class="chip ${cls}">Latest ${v} ${unit}</span>`);
+      } else chips.push('<span class="chip gray">No logs</span>');
+      if ((lows || []).length) chips.push(`<span class="chip red">${lows.length} low/7d</span>`);
+      if ((sick || []).length) chips.push(`<span class="chip ${sick[0].escalated ? 'red' : 'amber'}">${sick[0].escalated ? 'Sick day escalated' : 'Active sick day'}</span>`);
+      if (reg && reg[0] && !reg[0].approved_by_clinician) chips.push('<span class="chip amber">Approval pending</span>');
+      box.innerHTML = chips.join(' ');
+    } catch { box.innerHTML = ''; }
+  }
+
+  // ---------- patient detail ----------
+  async function openPatient(id) {
+    currentPatientId = id;
+    $('main').innerHTML = '<div class="empty">Loading patient…</div>';
+    try {
+      const since14 = new Date(Date.now() - 14 * 864e5).toISOString();
+      const [pRes, gRes, iRes, sRes, rRes, cRes, ctRes, tRes] = await Promise.all([
+        sb.from('patients').select('id,user_id,name,date_of_birth,sex,insulin_type,age_band,created_at').eq('id', id).maybeSingle(),
+        sb.from('glucose_logs').select('id,value,unit,context,timestamp,carbs,insulin_given,notes,mood,activity_type').eq('patient_id', id).order('timestamp', { ascending: false }).limit(30),
+        sb.from('insulin_logs').select('id,units,insulin_type,source,timestamp').eq('patient_id', id).order('timestamp', { ascending: false }).limit(20),
+        sb.from('sick_day_episodes').select('id,start_date,end_date,symptoms,outcome,escalated').eq('patient_id', id).order('start_date', { ascending: false }).limit(10),
+        sb.from('insulin_regimens').select('id,insulin_type,tdd,isf,carb_ratio,correction_target,max_bolus,approved_by_clinician,approved_at,effective_date').eq('patient_id', id).order('effective_date', { ascending: false }).limit(1),
+        sb.from('consents').select('guardian_consent,child_assent,created_at').eq('patient_id', id).order('created_at', { ascending: false }).limit(1),
+        sb.from('care_team').select('id,clinician_id,role').eq('patient_id', id),
+        sb.from('glucose_logs').select('value,unit,timestamp').eq('patient_id', id).gte('timestamp', since14).order('timestamp', { ascending: true }).limit(400),
+      ]);
+      const p = pRes.data; if (!p) throw new Error('Patient not found or access denied.');
+      const glucose = gRes.data || []; const insulin = iRes.data || []; const sick = sRes.data || [];
+      const regimen = (rRes.data || [])[0] || null; const consent = (cRes.data || [])[0] || null; const team = ctRes.data || [];
+      const trend = tRes.data || [];
+
+      const kpis = computeKpis(glucose, trend);
+      $('main').innerHTML = `
+        <div class="topbar">
+          <div><div class="crums"><button class="btn-ghost btn-sm" id="back">‹ All patients</button></div>
+          <div class="title">${esc(p.name)}</div>
+          <div class="crums">${esc(p.sex || '')} · ${esc(p.age_band === 'teen' ? 'Teen 10–17' : p.age_band === 'child' ? 'Child 6–9' : '—')} · added ${esc(day(p.created_at))}</div></div>
+          <div class="row">
+            <button class="btn-ghost btn-sm" id="csv">⬇ Export CSV</button>
+            ${me.admin ? '<button class="btn-ghost btn-sm" id="manage">👥 Manage clinicians</button>' : ''}
+          </div>
+        </div>
+
+        <div class="panel">
+          <h2>Flags</h2>
+          <div class="row">
+            ${kpis.latestText ? `<span class="chip ${kpis.latestClass}">Latest ${kpis.latestText}</span>` : '<span class="chip gray">No logs</span>'}
+            ${kpis.low7 ? `<span class="chip red">${kpis.low7} low (last 7d)</span>` : ''}
+            ${sick.some((s) => !s.end_date) ? `<span class="chip ${sick[0].escalated ? 'red' : 'amber'}">${sick[0].escalated ? 'Sick day escalated' : 'Active sick day'}</span>` : ''}
+            ${regimen && !regimen.approved_by_clinician ? '<span class="chip amber">Regimen approval pending</span>' : regimen ? '<span class="chip teal">Regimen approved</span>' : '<span class="chip gray">No regimen</span>'}
+            ${consent ? '<span class="chip teal">Consent on file</span>' : '<span class="chip amber">No consent record</span>'}
+          </div>
+          <div class="row" style="margin-top:14px">
+            <span class="chip">TIR ${kpis.tir}%</span><span class="chip">Mean ${kpis.mean} mg/dL</span>
+            <span class="chip">SD ${kpis.sd}</span><span class="chip">CV ${kpis.cv}%</span>
+            <span class="chip">Checks/day ${kpis.perDay}</span><span class="chip">Est. HbA1c ${kpis.ea1c}%</span>
+          </div>
+        </div>
+
+        <div class="panel">
+          <h2>14-day glucose trend (70–180 band)</h2>
+          ${sparkline(trend)}
+        </div>
+
+        <div class="panel">
+          <h2>Insulin regimen</h2>
+          ${regimen ? `
+          <div class="kv"><span>Type</span><b>${esc(regimen.insulin_type || '—')}</b></div>
+          <div class="kv"><span>TDD</span><b>${esc(regimen.tdd ?? '—')} U</b></div>
+          <div class="kv"><span>Correction target</span><b>${esc(regimen.correction_target ?? '—')} mg/dL</b></div>
+          <div class="kv"><span>ISF / ICR</span><b>${esc(regimen.isf ?? '—')} / 1:${esc(regimen.carb_ratio ?? '—')}</b></div>
+          <div class="kv"><span>Max bolus</span><b>${esc(regimen.max_bolus ?? '—')} U</b></div>
+          <div class="kv"><span>Status</span><b class="${regimen.approved_by_clinician ? 'ok' : ''}">${regimen.approved_by_clinician ? 'Approved ' + esc(day(regimen.approved_at)) : 'Pending approval'}</b></div>
+          ${!regimen.approved_by_clinician ? '<div class="row" style="margin-top:12px"><button class="btn-teal btn-sm" id="approve">✓ Approve regimen for dosing</button></div>' : ''}
+          ` : '<div class="empty">No regimen on file.</div>'}
+        </div>
+
+        <div class="panel">
+          <h2>Recent glucose (${glucose.length})</h2>
+          ${glucose.length ? `<table><tr><th>When</th><th>Value</th><th>Context</th><th>Carbs</th><th>Insulin</th><th>Notes</th></tr>
+            ${glucose.map((g) => `<tr><td>${esc(fmt(g.timestamp))}</td><td><b>${esc(g.value)} ${g.unit === 'mmol' ? 'mmol/L' : 'mg/dL'}</b></td><td>${esc(g.context || '')}</td><td>${esc(g.carbs ?? '')}</td><td>${esc(g.insulin_given ?? '')}</td><td>${esc(g.notes || '')}</td></tr>`).join('')}
+          </table>` : '<div class="empty">No glucose logs.</div>'}
+        </div>
+
+        <div class="panel">
+          <h2>Insulin doses (${insulin.length})</h2>
+          ${insulin.length ? `<table><tr><th>When</th><th>Dose</th><th>Type</th><th>Source</th></tr>
+            ${insulin.map((d) => `<tr><td>${esc(fmt(d.timestamp))}</td><td><b>${esc(d.units)} U</b></td><td>${esc(d.insulin_type)}</td><td>${esc(d.source)}</td></tr>`).join('')}
+          </table>` : '<div class="empty">No insulin doses logged.</div>'}
+        </div>
+
+        <div class="panel">
+          <h2>Sick-day episodes (${sick.length})</h2>
+          ${sick.length ? `<table><tr><th>Started</th><th>Ended</th><th>Escalated</th><th>Symptoms</th></tr>
+            ${sick.map((s) => `<tr><td>${esc(day(s.start_date))}</td><td>${esc(s.end_date ? day(s.end_date) : 'active')}</td><td>${s.escalated ? '⚠️ yes' : 'no'}</td><td>${esc(JSON.stringify(s.symptoms || {}))}</td></tr>`).join('')}
+          </table>` : '<div class="empty">No sick-day episodes.</div>'}
+        </div>
+
+        <div class="panel">
+          <h2>Care team (${team.length})</h2>
+          ${team.length ? team.map((t) => `<div class="kv"><span>${esc(t.clinician_id)}</span><b>${esc(t.role)}</b></div>`).join('') : '<div class="empty">No clinicians linked.</div>'}
+        </div>`;
+
+      $('back').addEventListener('click', showPatients);
+      $('csv').addEventListener('click', () => exportCsv(p, glucose, insulin));
+      if ($('approve')) $('approve').addEventListener('click', () => approveRegimen(regimen.id, p.name));
+      if ($('manage')) $('manage').addEventListener('click', () => manageClinicians(p.id, p.name));
+    } catch (e) {
+      $('main').innerHTML = `<div class="panel"><div class="err">${esc(e.message || e)}</div></div>`;
+    }
+  }
+
+  function computeKpis(glucose, trend) {
+    const toMg = (v, u) => (u === 'mmol' ? v * 18.0182 : v);
+    const vals = trend.map((g) => toMg(g.value, g.unit)).filter((v) => v > 0);
+    const n = vals.length;
+    const mean = n ? vals.reduce((a, b) => a + b, 0) / n : 0;
+    const sd = n ? Math.sqrt(vals.reduce((a, b) => a + (b - mean) ** 2, 0) / n) : 0;
+    const inR = vals.filter((v) => v >= 70 && v <= 180).length;
+    const low7 = glucose.filter((g) => toMg(g.value, g.unit) < 70 && Date.now() - new Date(g.timestamp).getTime() < 7 * 864e5).length;
+    const last = glucose[0];
+    const latestText = last ? `${last.value} ${last.unit === 'mmol' ? 'mmol/L' : 'mg/dL'}` : '';
+    let latestClass = 'teal';
+    if (last) { const m = toMg(last.value, last.unit); latestClass = m < 70 ? 'red' : m > 180 ? 'amber' : 'teal'; }
+    return {
+      latestText, latestClass, low7,
+      tir: n ? Math.round((inR / n) * 100) : 0,
+      mean: Math.round(mean), sd: n ? Math.round(sd) : 0,
+      cv: n && mean ? Math.round((sd / mean) * 100) : 0,
+      perDay: n ? Math.round((n / 14) * 10) / 10 : 0,
+      ea1c: n ? Math.round(((mean + 46.7) / 28.7) * 10) / 10 : 0,
+    };
+  }
+
+  function sparkline(logs) {
+    if (!logs.length) return '<div class="empty">Not enough data.</div>';
+    const W = 860, H = 140, PAD = 8;
+    const toMg = (v, u) => (u === 'mmol' ? v * 18.0182 : v);
+    const vals = logs.map((g) => toMg(g.value, g.unit));
+    const times = logs.map((g) => new Date(g.timestamp).getTime());
+    const t0 = Math.min(...times), t1 = Math.max(...times) || t0 + 1;
+    const clampY = (v) => PAD + (1 - (Math.min(320, Math.max(40, v)) - 40) / 280) * (H - 2 * PAD);
+    const x = (t) => PAD + ((t - t0) / (t1 - t0 || 1)) * (W - 2 * PAD);
+    const y70 = clampY(70), y180 = clampY(180);
+    const points = logs.map((g, i) => `${x(times[i]).toFixed(1)},${clampY(vals[i]).toFixed(1)}`).join(' ');
+    return `<svg viewBox="0 0 ${W} ${H}" width="100%" height="${H}" style="background:#FBF8F4;border-radius:10px">
+      <rect x="0" y="${y180.toFixed(1)}" width="${W}" height="${(y70 - y180).toFixed(1)}" fill="#E6F4EA" />
+      <polyline points="${points}" fill="none" stroke="#1a73e8" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round" />
+    </svg><div class="small muted" style="margin-top:6px">${logs.length} readings · green band = 70–180 mg/dL</div>`;
+  }
+
+  // ---------- actions ----------
+  function dlg(title, bodyHtml, okLabel, onOk) {
+    $('dlg-body').innerHTML = `<h2 style="margin-top:0">${esc(title)}</h2>${bodyHtml}`;
+    const ok = $('dlg-ok');
+    ok.textContent = okLabel || 'Confirm';
+    ok.classList.toggle('hidden', !onOk);
+    ok.onclick = null;
+    if (onOk) ok.onclick = async () => { ok.disabled = true; try { await onOk(); } finally { ok.disabled = false; } };
+    $('dlg').showModal();
+  }
+  $('dlg-cancel').addEventListener('click', () => $('dlg').close());
+
+  async function approveRegimen(regimenId, patientName) {
+    dlg('Approve regimen?', `<p class="small muted">Approving makes the regimen available to ${esc(patientName)}'s family for dosing support. This action is audited.</p>`, '✓ Approve', async () => {
+      const { data: { user } } = await sb.auth.getUser();
+      const { error } = await sb.from('insulin_regimens').update({
+        approved_by_clinician: true, approved_at: new Date().toISOString(), approved_by: user.id,
+      }).eq('id', regimenId);
+      if (error) { alert('Approval failed: ' + error.message); return; }
+      $('dlg').close(); openPatient(currentPatientId);
+    });
+  }
+
+  function exportCsv(p, glucose, insulin) {
+    const esc2 = (v) => { const s = v == null ? '' : String(v); return /[",\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s; };
+    const rows = [['record_type', 'timestamp', 'glucose_value', 'glucose_unit', 'context', 'carbs_g', 'insulin_given_u', 'insulin_type', 'insulin_units', 'source', 'notes']];
+    glucose.forEach((g) => rows.push(['glucose', g.timestamp, g.value, g.unit, g.context, g.carbs, g.insulin_given, '', '', 'manual', g.notes]));
+    insulin.forEach((d) => rows.push(['insulin', d.timestamp, '', '', '', '', '', d.insulin_type, d.units, d.source, '']));
+    const csv = rows.map((r) => r.map(esc2).join(',')).join('\n');
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 't1d_' + p.name.replace(/[^a-z0-9]+/gi, '_') + '_export.csv';
+    a.click(); URL.revokeObjectURL(a.href);
+  }
+
+  // ---------- staff ----------
+  async function showStaff() {
+    currentPatientId = null;
+    $('main').innerHTML = '<div class="empty">Loading staff…</div>';
+    try {
+      const { data, error } = await sb.rpc('admin_list_staff');
+      if (error) throw error;
+      const staff = data || [];
+      $('main').innerHTML = `
+        <div class="topbar"><div><div class="title">Staff &amp; access</div><div class="crums">Clinician accounts and full-access staff</div></div></div>
+        <div class="banner"><b>Full-access emails:</b> thisispratha@gmail.com · archananepal@pahs.edu.np<br>
+        Full-access accounts can see all patients and manage care-team links. Other clinicians see only patients assigned to them.<br>
+        To grant a clinician access to a patient: open the patient → “Manage clinicians” → add by email.</div>
+        <div class="panel"><h2>Staff (${staff.length})</h2>
+        <table><tr><th>Email</th><th>Name</th><th>Role</th><th>Access</th></tr>
+        ${staff.map((s) => `<tr><td>${esc(s.email)}</td><td>${esc(s.full_name || '—')}</td><td>${esc(s.role || '—')}</td><td>${s.full_access ? '<b class="ok">full</b>' : 'standard'}</td></tr>`).join('')}
+        </table></div>`;
+    } catch (e) {
+      $('main').innerHTML = `<div class="panel"><div class="err">${esc(e.message || e)}</div></div>`;
+    }
+  }
+
+  async function manageClinicians(patientId, patientName) {
+    const { data: team } = await sb.from('care_team').select('id,clinician_id,role').eq('patient_id', patientId);
+    const rows = (team || []).map((t) => `<div class="kv"><span>${esc(t.clinician_id)}</span><button class="btn-danger btn-sm" data-remove="${esc(t.clinician_id)}">Remove</button></div>`).join('');
+    dlg('Manage clinicians — ' + patientName, `
+      <div class="small muted" style="margin-bottom:10px">Linked clinicians:</div>
+      ${rows || '<div class="empty">None linked.</div>'}
+      <label for="link-email" style="margin-top:14px">Add clinician by email</label>
+      <input id="link-email" type="email" placeholder="clinician@example.com" />
+      <div class="row" style="margin-top:10px"><button class="btn-teal btn-sm" id="do-link">+ Link</button></div>
+      <div id="link-err" class="err"></div>`, null, null);
+    $('dlg-ok').classList.add('hidden');
+    $('dlg').querySelectorAll('[data-remove]').forEach((b) => b.addEventListener('click', async () => {
+      const { error } = await sb.rpc('admin_remove_care_team_member', { p_patient_id: patientId, p_clinician_id: b.dataset.remove });
+      if (error) { $('link-err').textContent = error.message; return; }
+      $('dlg').close(); manageClinicians(patientId, patientName);
+    }));
+    $('do-link').addEventListener('click', async () => {
+      const email = $('link-email').value.trim();
+      if (!email) return;
+      const { error } = await sb.rpc('admin_add_care_team_member', { p_patient_id: patientId, p_email: email });
+      if (error) { $('link-err').textContent = error.message; return; }
+      $('dlg').close(); manageClinicians(patientId, patientName);
+      if (currentPatientId === patientId) openPatient(patientId);
+    });
+  }
+})();
+</script>
+</body>
+</html>

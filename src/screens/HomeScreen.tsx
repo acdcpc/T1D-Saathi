@@ -7,6 +7,7 @@ import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
 import { supabase } from '../lib/supabase';
 import { getQueueLength, getConflictedEntries, retryConflictedEntry, discardConflictedEntry, QueuedEntry } from '../utils/offlineQueue';
+import { registerPushToken } from '../utils/pushAlerts';
 import { FONT, T, card, section, fab, avatar } from '../theme';
 import Skeleton from '../components/Skeleton';
 import ChildAvatar from '../components/ChildAvatar';
@@ -80,6 +81,13 @@ export default function HomeScreen({ navigation }: any) {
       } catch { /* ignore */ }
     })();
   }, [user, navigation]);
+
+  // Register this device for remote caregiver alerts (silent; only when notifications are already allowed).
+  useEffect(() => {
+    (async () => {
+      try { if (user) await registerPushToken(user.id); } catch { /* ignore */ }
+    })();
+  }, [user]);
   const onRefresh = async () => { setRefreshing(true); await fetchPatients(); setRefreshing(false); };
 
   const handleRetryConflict = async (id: string) => {

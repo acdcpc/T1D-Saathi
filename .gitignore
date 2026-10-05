@@ -47,3 +47,5 @@ T1D-Saathi-v1.0.0.apk
 *.apk
 *.aab
 *.ipa
+# clinician portal local config
+portal/config.js

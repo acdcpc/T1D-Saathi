@@ -13,6 +13,7 @@ import { supabase } from '../lib/supabase';
 import { saveGlucoseEntry } from '../utils/glucoseEntries';
 import { saveInsulinDose } from '../utils/insulinLogs';
 import { sendCaregiverAlert } from '../utils/caregiverAlert';
+import { sendPushAlertToCaregivers } from '../utils/pushAlerts';
 import { HYPO_THRESHOLD, HYPO_RECHECK_MINUTES, calculateCorrectionDose, calculateCarbDose, convertGlucose } from '../rules/sickDayRules';
 import type { InsulinRegimen, UnitSystem } from '../types';
 import { FONT, T } from '../theme';
@@ -104,6 +105,7 @@ export default function LogGlucoseScreen({ route, navigation }: any) {
     if (isLow) {
       setIsHypo(true);
       setResult(null);
+      void sendPushAlertToCaregivers(patientId, `${gVal} ${unit === 'mmol' ? 'mmol/L' : 'mg/dL'}`);
       scheduleHypoReminder();
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
       speak(language === 'ne' ? 'ग्लुकोज कम छ। तुरुन्त उपचार गर्नुहोस्।' : 'Low glucose. Treat hypoglycemia immediately.', language);
