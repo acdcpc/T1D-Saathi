@@ -104,9 +104,9 @@ export default function LoginScreen({ navigation }: any) {
   return (
     <KeyboardAvoidingView style={[styles.container, { backgroundColor: TH.bg }]} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
       <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
+        <View style={styles.cardCol}>
         <View style={styles.header}>
           <Text style={[styles.appTitle, { color: TH.text, fontSize: 26 * fontScale }]}>T1D साथी</Text>
-          <Text style={styles.appSubtitle}>T1D Saathi</Text>
           <Text style={styles.tagline}>{isNe ? 'तपाईंको मधुमेह सहयात्री' : 'Your Diabetes Companion'}</Text>
         </View>
         <View style={styles.form}>
@@ -164,6 +164,7 @@ export default function LoginScreen({ navigation }: any) {
             <Text style={styles.guestBtnText}>{isNe ? 'पाहुनाको रूपमा जारी राख्नुहोस्' : 'Continue as Guest'}</Text>
           </TouchableOpacity>
         </View>
+        </View>
         <Text style={styles.disclaimer}>{isNe ? 'यो एप चिकित्सकीय उपकरण होइन। प्रयोग गर्नुभन्दा पहिले चिकित्सकको सल्लाह लिनुहोस्।' : 'This app is not a medical device. Consult your clinician before use.'}</Text>
       </ScrollView>
     </KeyboardAvoidingView>
@@ -172,7 +173,13 @@ export default function LoginScreen({ navigation }: any) {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: T.bg },
-  scroll: { flexGrow: 1, justifyContent: 'center', padding: 24 },
+  scroll: { flexGrow: 1, justifyContent: 'center', alignItems: 'center', padding: 24 },
+  cardCol: {
+    width: '100%', maxWidth: 400, alignSelf: 'center',
+    backgroundColor: '#FFFFFF', borderRadius: 22, padding: 24,
+    borderWidth: 1, borderColor: T.border,
+    shadowColor: '#C9B8A6', shadowOpacity: 0.12, shadowRadius: 16, shadowOffset: { width: 0, height: 6 }, elevation: 3,
+  },
   header: { alignItems: 'center', marginBottom: 36 },
   appTitle: { fontWeight: '800', fontSize: 26, fontFamily: FONT.extrabold, color: T.text },
   appSubtitle: { fontSize: 14, fontFamily: FONT.regular, color: T.muted, marginTop: 2 },
@@ -201,5 +208,5 @@ const styles = StyleSheet.create({
   },
   guestBtnText: { color: T.blue, fontSize: 16, fontFamily: FONT.semibold, fontWeight: '600' },
 
-  disclaimer: { textAlign: 'center', color: T.muted, fontSize: 11, fontFamily: FONT.regular, marginTop: 28, paddingHorizontal: 20, lineHeight: 16 },
+  disclaimer: { textAlign: 'center', color: T.muted, fontSize: 11, fontFamily: FONT.regular, marginTop: 20, paddingHorizontal: 20, lineHeight: 16, maxWidth: 400, alignSelf: 'center' },
 });
