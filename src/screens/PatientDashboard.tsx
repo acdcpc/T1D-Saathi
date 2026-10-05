@@ -13,6 +13,9 @@ import { generateGlucoseReport } from '../utils/pdfReport';
 import { exportPatientCsv } from '../utils/csvExport';
 import { fetchRecentInsulinDoses } from '../utils/insulinLogs';
 import { loadReminderPrefs, getNextReminder } from '../utils/reminders';
+import { computeLoggingStreak } from '../utils/streak';
+import { isMotivationOptOut } from '../utils/motivation';
+import { sendCaregiverAlert } from '../utils/caregiverAlert';
 import { glucoseToMgDl } from '../utils/dosingCalc';
 import ISPADBadge from '../components/ISPADBadge';
 import ChildAvatar from '../components/ChildAvatar';
@@ -37,6 +40,8 @@ export default function PatientDashboard({ route, navigation }: any) {
   const [rangeDays, setRangeDays] = useState<1 | 7 | 30>(30);
   const [insulinLogs, setInsulinLogs] = useState<InsulinLog[]>([]);
   const [nextReminder, setNextReminder] = useState<{ key: 'breakfast' | 'lunch' | 'dinner' | 'bedtime'; hour: number; minute: number } | null>(null);
+  const [ageBand, setAgeBand] = useState<string | null>(null);
+  const [motivationOptOut, setMotivationOptOut] = useState(false);
 
   const fetchData = useCallback(async () => {
     const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
@@ -58,8 +63,13 @@ export default function PatientDashboard({ route, navigation }: any) {
     (async () => {
       const prefs = await loadReminderPrefs();
       setNextReminder(getNextReminder(prefs));
+      setMotivationOptOut(await isMotivationOptOut());
+      try {
+        const { data } = await supabase.from('patients').select('age_band').eq('id', patient.id).maybeSingle();
+        setAgeBand((data as { age_band?: string | null } | null)?.age_band ?? null);
+      } catch { /* age band is optional */ }
     })();
-  }, []);
+  }, [patient.id]);
   const onRefresh = async () => { setRefreshing(true); await fetchData(); setRefreshing(false); };
 
   const handleCsvExport = async () => {
@@ -86,6 +96,14 @@ export default function PatientDashboard({ route, navigation }: any) {
     dinner: { en: 'Dinner check', ne: 'बेलुकाको जाँच' },
     bedtime: { en: 'Bedtime check', ne: 'रातको जाँच' },
   };
+
+  const streak = computeLoggingStreak(history);
+  const isChildMode = ageBand === 'child';
+  const changeAgeBand = async (band: 'child' | 'teen') => {
+    setAgeBand(band);
+    const { error } = await supabase.from('patients').update({ age_band: band }).eq('id', patient.id);
+    if (error) Alert.alert(isNe ? 'त्रुटि' : 'Error', error.message);
+  };
   const actions: { icon: keyof typeof Ionicons.glyphMap; color: string; label: string; route: string; border: string }[] = [
     { icon: 'water-outline', color: T.blue, label: isNe ? 'ग्लुकोज' : 'Log Glucose', route: 'Log', border: T.border },
     { icon: 'restaurant-outline', color: T.teal, label: isNe ? 'खाना र डोज' : 'Food & Dose', route: 'Food', border: T.teal },
@@ -98,6 +116,7 @@ export default function PatientDashboard({ route, navigation }: any) {
     { icon: 'warning-outline', color: T.red, label: isNe ? 'आपतकाल' : 'Emergency', route: 'Emergency', border: T.red },
     { icon: 'barcode-outline', color: T.teal, label: isNe ? 'बारकोड' : 'Scan Barcode', route: 'BarcodeScanner', border: T.border },
     { icon: 'people-outline', color: T.blue, label: isNe ? 'समुदाय' : 'Community', route: 'Community', border: T.border },
+    { icon: 'person-add-outline', color: T.blue, label: isNe ? 'चिकित्सक आमन्त्रण' : 'Invite Clinician', route: 'InviteClinician', border: T.border },
   ];
 
   return (
@@ -119,6 +138,19 @@ export default function PatientDashboard({ route, navigation }: any) {
 
         <View style={{ marginBottom: 16 }}>
           <DhakaDivider />
+        </View>
+
+        {/* Age-band mode (guardian-changeable) */}
+        <View style={styles.modeRow}>
+          <Text style={styles.modeLabel}>{isNe ? 'मोड:' : 'Mode:'}</Text>
+          {([
+            { id: 'child' as const, label: isNe ? 'बालबालिका (६–९)' : 'Child (6–9)' },
+            { id: 'teen' as const, label: isNe ? 'किशोर (१०–१७)' : 'Teen (10–17)' },
+          ]).map((m) => (
+            <TouchableOpacity key={m.id} style={[styles.modeChip, ageBand === m.id && styles.modeChipActive]} onPress={() => changeAgeBand(m.id)}>
+              <Text style={[styles.modeChipText, ageBand === m.id && styles.modeChipTextActive]}>{m.label}</Text>
+            </TouchableOpacity>
+          ))}
         </View>
 
         {/* Glucose stat card */}
@@ -147,6 +179,17 @@ export default function PatientDashboard({ route, navigation }: any) {
             <Text style={styles.hypoStep}>2. {isNe ? '१५ मिनेट पर्खनुहोस्' : 'Wait 15 minutes'}</Text>
             <Text style={styles.hypoStep}>3. {isNe ? 'पुन: जाँच गर्नुहोस्' : 'Recheck glucose'}</Text>
             <Text style={styles.hypoStep}>4. {isNe ? 'आवश्यक परे ९८५१३५०८८३ मा फोन गर्नुहोस्' : 'Call 9851350883 if needed'}</Text>
+            <TouchableOpacity
+              style={styles.notifyBtn}
+              onPress={() => sendCaregiverAlert(
+                isNe
+                  ? `T1D साथी सूचना: ${patient.name} को ग्लुकोज ${latestGlucose?.value ?? ''} ${latestGlucose?.unit === 'mmol' ? 'mmol/L' : 'mg/dL'} — कम छ। कृपया जाँच गर्नुहोस्।`
+                  : `T1D Saathi alert: ${patient.name}'s glucose is ${latestGlucose?.value ?? ''} ${latestGlucose?.unit === 'mmol' ? 'mmol/L' : 'mg/dL'} (low). Please check on them.`
+              )}
+            >
+              <Ionicons name="logo-whatsapp" size={16} color="#fff" />
+              <Text style={styles.notifyBtnText}>{isNe ? 'WhatsApp मा जानकारी दिनुहोस्' : 'Notify caregiver (WhatsApp)'}</Text>
+            </TouchableOpacity>
           </View>
         )}
 
@@ -169,6 +212,15 @@ export default function PatientDashboard({ route, navigation }: any) {
             <Ionicons name="alarm-outline" size={18} color={T.blue} />
             <Text style={styles.reminderText}>
               {isNe ? 'अर्को सम्झना' : 'Next reminder'}: {isNe ? reminderLabels[nextReminder.key].ne : reminderLabels[nextReminder.key].en} · {String(nextReminder.hour).padStart(2, '0')}:{String(nextReminder.minute).padStart(2, '0')}
+            </Text>
+          </View>
+        )}
+
+        {!motivationOptOut && streak >= 2 && (
+          <View style={styles.streakCard}>
+            <Ionicons name="flame-outline" size={18} color={T.orange} />
+            <Text style={styles.streakText}>
+              {isNe ? `${streak} दिनको लग शृंखला — शाबास!` : `${streak}-day logging streak — keep it up!`}
             </Text>
           </View>
         )}
@@ -203,7 +255,7 @@ export default function PatientDashboard({ route, navigation }: any) {
                 <Text style={styles.statLabel}>{isNe ? 'अनुमानित HbA1c' : 'Est. HbA1c'}</Text>
               </View>
             </View>
-            <View style={styles.statRow}>
+            {!isChildMode && (<View style={styles.statRow}>
               <View style={styles.statTile}>
                 <Text style={styles.statValue}>{toDisplayNumber(stats.sdMgdl, isNe)}</Text>
                 <Text style={styles.statLabel}>{isNe ? 'मानक विचलन (SD)' : 'SD mg/dL'}</Text>
@@ -216,14 +268,16 @@ export default function PatientDashboard({ route, navigation }: any) {
                 <Text style={styles.statValue}>{toDisplayNumber(stats.checksPerDay, isNe)}</Text>
                 <Text style={styles.statLabel}>{isNe ? 'दैनिक जाँच संख्या' : 'Checks/day'}</Text>
               </View>
-            </View>
+            </View>)}
             <GlucoseTrendChart logs={rangedLogs} />
             <Text style={styles.provenance}>
               {isNe ? 'गणना: ISPAD 2022 दिशानिर्देश अनुसार' : 'Calculated per ISPAD 2022 target range (70–180 mg/dL)'}
             </Text>
+            {!isChildMode && (
             <Text style={styles.provenance}>
               {isNe ? `जोखिम सूचकांक: LBGI ${stats.lbgi} · HBGI ${stats.hbgi}` : `Risk indices: LBGI ${stats.lbgi} · HBGI ${stats.hbgi}`}
             </Text>
+            )}
             <TouchableOpacity style={styles.pdfBtn} onPress={() => generateGlucoseReport(patient, history)} activeOpacity={0.8}>
               <Ionicons name="document-text-outline" size={18} color="#fff" />
               <Text style={styles.pdfBtnText}>{isNe ? 'PDF रिपोर्ट निकाल्नुहोस्' : 'Export PDF Report'}</Text>
@@ -341,4 +395,14 @@ const styles = StyleSheet.create({
   reminderText: { fontSize: 13, fontFamily: FONT.semibold, fontWeight: '600', color: T.text, flex: 1 },
   csvBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: T.surface, borderRadius: 28, paddingVertical: 12, marginTop: 10, borderWidth: 1.5, borderColor: T.blue },
   csvBtnText: { color: T.blue, fontSize: 15, fontFamily: FONT.bold, fontWeight: '700' },
+  modeRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 14, flexWrap: 'wrap' },
+  modeLabel: { fontSize: 12, fontFamily: FONT.semibold, fontWeight: '600', color: T.muted },
+  modeChip: { borderRadius: 16, paddingHorizontal: 12, paddingVertical: 6, backgroundColor: T.surface, borderWidth: 1, borderColor: T.border },
+  modeChipActive: { backgroundColor: T.blue, borderColor: T.blue },
+  modeChipText: { fontSize: 12, fontFamily: FONT.semibold, fontWeight: '600', color: T.text },
+  modeChipTextActive: { color: '#fff' },
+  streakCard: { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: '#FEF7E0', borderRadius: 12, padding: 14, borderWidth: 1, borderColor: '#f9ab00', marginBottom: 16 },
+  streakText: { fontSize: 13, fontFamily: FONT.semibold, fontWeight: '600', color: '#92400E', flex: 1 },
+  notifyBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: '#25D366', borderRadius: 10, paddingVertical: 10, marginTop: 10 },
+  notifyBtnText: { color: '#fff', fontSize: 13, fontFamily: FONT.semibold, fontWeight: '600' },
 });

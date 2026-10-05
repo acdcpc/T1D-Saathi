@@ -30,6 +30,8 @@ import ClinicianPatientListScreen from './src/screens/ClinicianPatientListScreen
 import ClinicianPatientDetailScreen from './src/screens/ClinicianPatientDetailScreen';
 import BarcodeScannerScreen from './src/screens/BarcodeScannerScreen';
 import CommunityScreen from './src/screens/CommunityScreen';
+import ConsentScreen from './src/screens/ConsentScreen';
+import InviteClinicianScreen from './src/screens/InviteClinicianScreen';
 
 const Stack = createNativeStackNavigator();
 const navigationRef = createNavigationContainerRef<any>();
@@ -57,6 +59,7 @@ function AppNavigator() {
           <Stack.Screen name="ClinicianPatientDetail" component={ClinicianPatientDetailScreen} />
           <Stack.Screen name="HealthCenters" component={HealthCentersScreen} />
           <Stack.Screen name="Settings" component={SettingsScreen} />
+          <Stack.Screen name="Consent" component={ConsentScreen} />
         </>
       ) : (
         <>
@@ -73,6 +76,8 @@ function AppNavigator() {
           <Stack.Screen name="RegimenSettings" component={RegimenSettingsScreen} />
           <Stack.Screen name="BarcodeScanner" component={BarcodeScannerScreen} />
           <Stack.Screen name="Community" component={CommunityScreen} />
+          <Stack.Screen name="Consent" component={ConsentScreen} />
+          <Stack.Screen name="InviteClinician" component={InviteClinicianScreen} />
         </>
       )}
     </Stack.Navigator>

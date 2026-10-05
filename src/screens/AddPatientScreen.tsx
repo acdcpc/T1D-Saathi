@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView,
   Alert, ActivityIndicator, Modal, FlatList,
@@ -65,7 +65,7 @@ function Dropdown({ label, options, value, onChange, placeholder }: {
 
 export default function AddPatientScreen({ navigation }: any) {
   const { user } = useAuth();
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const insets = useSafeAreaInsets();
   const [loading, setLoading] = useState(false);
 
@@ -84,6 +84,7 @@ export default function AddPatientScreen({ navigation }: any) {
   const [nameError, setNameError] = useState<string | null>(null);
   const [insulinError, setInsulinError] = useState<string | null>(null);
   const [tddError, setTddError] = useState<string | null>(null);
+  const [ageBand, setAgeBand] = useState('');
 
   // ── Auto-calculated dosing (ISPAD rules) ──
   const tddNum = parseFloat(tdd);
@@ -94,6 +95,16 @@ export default function AddPatientScreen({ navigation }: any) {
   const toggleComorbid = (c: string) => {
     setComorbid(prev => prev.includes(c) ? prev.filter(x => x !== c) : [...prev, c]);
   };
+
+  // Suggest the age band from the date of birth (owner can still override).
+  useEffect(() => {
+    if (ageBand || !dob) return;
+    const d = new Date(dob);
+    if (Number.isNaN(d.getTime())) return;
+    const years = (Date.now() - d.getTime()) / (365.25 * 24 * 3600 * 1000);
+    if (years >= 6 && years <= 9) setAgeBand('Child (6–9)');
+    else if (years >= 10 && years <= 17) setAgeBand('Teen (10–17)');
+  }, [dob, ageBand]);
 
   const handleSave = async () => {
     if (!user) return Alert.alert(t('error'), 'Not logged in');
@@ -117,6 +128,7 @@ export default function AddPatientScreen({ navigation }: any) {
       insulin_delivery: delivery,
       diagnosis_date: diagnosisDate || null,
       dka_history: dkaDesc.trim() ? [{ date: new Date().toISOString(), description: dkaDesc.trim() }] : null,
+      age_band: ageBand === 'Child (6–9)' ? 'child' : ageBand === 'Teen (10–17)' ? 'teen' : null,
     };
 
     const { error } = await supabase.from('patients').insert(patientData);
@@ -171,6 +183,15 @@ export default function AddPatientScreen({ navigation }: any) {
         {SEX_OPTIONS.map(s => (
           <TouchableOpacity key={s} style={[styles.chip, sex === s && styles.chipActive]} onPress={() => setSex(s)}>
             <Text style={[styles.chipText, sex === s && styles.chipTextActive]}>{t(s as any)}</Text>
+          </TouchableOpacity>
+        ))}
+      </View>
+
+      <Text style={styles.label}>{language === 'ne' ? 'उमेर समूह' : 'Age band'}</Text>
+      <View style={styles.chipRow}>
+        {['Child (6–9)', 'Teen (10–17)'].map((b) => (
+          <TouchableOpacity key={b} style={[styles.chip, ageBand === b && styles.chipActive]} onPress={() => setAgeBand(b)}>
+            <Text style={[styles.chipText, ageBand === b && styles.chipTextActive]}>{b}</Text>
           </TouchableOpacity>
         ))}
       </View>

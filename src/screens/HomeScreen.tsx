@@ -69,6 +69,17 @@ export default function HomeScreen({ navigation }: any) {
     const timer = setInterval(checkQueue, 30000); // check every 30s
     return () => clearInterval(timer);
   }, []);
+
+  // First-run consent gate (never blocks the app on failure)
+  useEffect(() => {
+    (async () => {
+      try {
+        if (!user) return;
+        const { data } = await supabase.from('consents').select('id').eq('user_id', user.id).limit(1);
+        if (!data || data.length === 0) navigation.navigate('Consent', { firstRun: true });
+      } catch { /* ignore */ }
+    })();
+  }, [user, navigation]);
   const onRefresh = async () => { setRefreshing(true); await fetchPatients(); setRefreshing(false); };
 
   const handleRetryConflict = async (id: string) => {

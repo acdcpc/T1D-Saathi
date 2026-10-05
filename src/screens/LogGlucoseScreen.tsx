@@ -12,6 +12,7 @@ import { speak } from '../utils/speech';
 import { supabase } from '../lib/supabase';
 import { saveGlucoseEntry } from '../utils/glucoseEntries';
 import { saveInsulinDose } from '../utils/insulinLogs';
+import { sendCaregiverAlert } from '../utils/caregiverAlert';
 import { HYPO_THRESHOLD, HYPO_RECHECK_MINUTES, calculateCorrectionDose, calculateCarbDose, convertGlucose } from '../rules/sickDayRules';
 import type { InsulinRegimen, UnitSystem } from '../types';
 import { FONT, T } from '../theme';
@@ -198,6 +199,14 @@ export default function LogGlucoseScreen({ route, navigation }: any) {
           <Text style={styles.step}>{t('hypoStep2')}</Text>
           <Text style={styles.step}>{t('hypoStep3')}</Text>
           <Text style={styles.step}>{t('hypoStep4')}</Text>
+          <TouchableOpacity
+            style={styles.notifyBtn}
+            onPress={() => sendCaregiverAlert(language === 'ne'
+              ? `T1D साथी सूचना: कम ग्लुकोज (${glucose} ${unit === 'mmol' ? 'mmol/L' : 'mg/dL'}) रेकर्ड भयो। कृपया जाँच गर्नुहोस्।`
+              : `T1D Saathi alert: low glucose (${glucose} ${unit === 'mmol' ? 'mmol/L' : 'mg/dL'}) was logged. Please check on the child.`)}
+          >
+            <Text style={styles.notifyBtnText}>{language === 'ne' ? 'हेरचाहकर्तालाई जानकारी (WhatsApp)' : 'Notify caregiver (WhatsApp)'}</Text>
+          </TouchableOpacity>
         </View>
       )}
 
@@ -274,4 +283,6 @@ const styles = StyleSheet.create({
   maxWarn: { backgroundColor: '#fce8e6', borderRadius: 12, padding: 16, marginTop: 16, borderWidth: 2, borderColor: '#ea4335' },
   maxWarnTitle: { fontSize: 15, fontFamily: FONT.bold, fontWeight: '700', color: '#c5221f', marginBottom: 6 },
   maxWarnText: { fontSize: 13, fontFamily: FONT.regular, color: '#202124', lineHeight: 19 },
+  notifyBtn: { backgroundColor: '#25D366', borderRadius: 10, paddingVertical: 10, alignItems: 'center', marginTop: 10 },
+  notifyBtnText: { color: '#fff', fontSize: 13, fontFamily: FONT.semibold, fontWeight: '600' },
 });

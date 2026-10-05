@@ -7,8 +7,9 @@ Project: `t1d-heal` (`jwslcxgnwlsqbrtmmqvf`) · Operator: agent `type-1-diabetes
 1. `20261005000009_rls_helper_catchup.sql` — NEW catch-up: creates `is_patient_parent`, `is_assigned_clinician`, `is_care_team_clinician` (SECURITY DEFINER helpers); rewrites all remaining cross-table RLS policies to recursion-safe helper form; revokes trigger-function RPC execution.
 2. `20260821000007_audit_hardening.sql` — care_team RLS hardening (was outstanding from the Aug 22 audit).
 3. `20261005000008_batch1_features.sql` — insulin_logs diary, mood/activity/source fields, max_bolus.
+4. `20261005000010_batch2_features.sql` — age bands, consents, audit log + triggers, clinician invites + redeem function, patient deletion function.
 
-Migration history rows added to `supabase_migrations.schema_migrations` for versions `20260821000007`, `20261005000008`, `20261005000009`.
+Migration history rows added to `supabase_migrations.schema_migrations` for versions `20260821000007`, `20261005000008`, `20261005000009`, `20261005000010`.
 
 ## Why the catch-up was needed
 

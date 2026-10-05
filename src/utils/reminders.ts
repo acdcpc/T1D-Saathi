@@ -99,3 +99,55 @@ export function getNextReminder(prefs: ReminderTimes, now = new Date()): NextRem
   const sorted = [...candidates].sort((a, b) => (a.hour * 60 + a.minute) - (b.hour * 60 + b.minute));
   return sorted.find((c) => c.hour * 60 + c.minute > minutesNow) ?? sorted[0];
 }
+
+export interface CustomReminder {
+  id: string;
+  label: string;
+  hour: number;
+  minute: number;
+  weekdays: number[]; // 1=Sunday ... 7=Saturday
+}
+
+const CUSTOM_KEY = '@t1d_c…s_v1';
+
+export async function loadCustomReminders(): Promise<CustomReminder[]> {
+  try {
+    const raw = await AsyncStorage.getItem(CUSTOM_KEY);
+    const parsed = raw ? JSON.parse(raw) : [];
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
+
+export async function saveCustomReminders(list: CustomReminder[]): Promise<void> {
+  try { await AsyncStorage.setItem(CUSTOM_KEY, JSON.stringify(list)); } catch { /* ignore */ }
+}
+
+/** Re-schedule local notifications for the custom reminder list (weekly per weekday). */
+export async function syncCustomReminderNotifications(list: CustomReminder[]): Promise<boolean> {
+  if (Platform.OS === 'web') return false;
+  try {
+    const existing = await Notifications.getAllScheduledNotificationsAsync();
+    for (const n of existing) {
+      if (n.identifier.startsWith('t1d_custom_')) {
+        await Notifications.cancelScheduledNotificationAsync(n.identifier);
+      }
+    }
+    if (list.length === 0) return true;
+    const { status } = await Notifications.requestPermissionsAsync();
+    if (status !== 'granted') return false;
+    for (const r of list) {
+      for (const wd of r.weekdays) {
+        await Notifications.scheduleNotificationAsync({
+          identifier: `t1d_custom_${r.id}_${wd}`,
+          content: { title: r.label || 'Reminder', body: r.label || 'T1D Saathi reminder' },
+          trigger: { type: Notifications.SchedulableTriggerInputTypes.WEEKLY, weekday: wd, hour: r.hour, minute: r.minute } as any,
+        });
+      }
+    }
+    return true;
+  } catch {
+    return false;
+  }
+}

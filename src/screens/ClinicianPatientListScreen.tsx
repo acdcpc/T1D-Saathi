@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { View, Text, FlatList, TouchableOpacity, StyleSheet, RefreshControl } from 'react-native';
+import { View, Text, FlatList, TouchableOpacity, StyleSheet, RefreshControl, TextInput, Alert } from 'react-native';
 import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
 import { supabase } from '../lib/supabase';
@@ -12,6 +12,8 @@ export default function ClinicianPatientListScreen({ navigation }: any) {
   const [patients, setPatients] = useState<PatientProfile[]>([]);
   const [refreshing, setRefreshing] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [code, setCode] = useState('');
+  const [redeeming, setRedeeming] = useState(false);
 
   const fetchPatients = useCallback(async () => {
     if (!user) return;
@@ -27,9 +29,38 @@ export default function ClinicianPatientListScreen({ navigation }: any) {
 
   useEffect(() => { fetchPatients(); }, [fetchPatients]);
 
+  const redeemInvite = async () => {
+    if (!code.trim() || redeeming) return;
+    setRedeeming(true);
+    const { error } = await supabase.rpc('redeem_care_team_invite', { p_code: code.trim() });
+    setRedeeming(false);
+    if (error) {
+      Alert.alert('Could not add patient', error.message);
+      return;
+    }
+    setCode('');
+    Alert.alert('Patient linked', 'The patient is now in your list.');
+    fetchPatients();
+  };
+
   return (
     <View style={styles.container}>
       <Text style={styles.title}>{t('patientList')}</Text>
+      <View style={styles.redeemCard}>
+        <Text style={styles.redeemTitle}>Add patient with invite code</Text>
+        <View style={styles.redeemRow}>
+          <TextInput
+            style={styles.redeemInput}
+            value={code}
+            onChangeText={setCode}
+            placeholder="T1D-XXXXXX"
+            autoCapitalize="characters"
+          />
+          <TouchableOpacity style={styles.redeemBtn} onPress={redeemInvite} disabled={redeeming}>
+            <Text style={styles.redeemBtnText}>{redeeming ? '…' : 'Add'}</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
       <FlatList
         data={patients}
         keyExtractor={(item) => item.id}
@@ -63,4 +94,10 @@ const styles = StyleSheet.create({
   meta: { fontSize: 13, fontFamily: FONT.regular, color: '#5f6368', marginTop: 2 },
   chevron: { fontSize: 22, fontFamily: FONT.regular, color: '#dadce0' },
   empty: { textAlign: 'center', color: '#5f6368', fontSize: 14, fontFamily: FONT.regular, marginTop: 40 },
+  redeemCard: { marginHorizontal: 16, marginBottom: 6, backgroundColor: '#fff', borderRadius: 12, padding: 14, borderWidth: 1, borderColor: '#d2e3fc' },
+  redeemTitle: { fontSize: 14, fontFamily: FONT.semibold, fontWeight: '600', color: '#202124', marginBottom: 8 },
+  redeemRow: { flexDirection: 'row', gap: 8 },
+  redeemInput: { flex: 1, backgroundColor: '#F0F7FF', borderRadius: 10, padding: 12, fontSize: 15, fontFamily: FONT.regular, borderWidth: 1, borderColor: '#dadce0' },
+  redeemBtn: { backgroundColor: '#1a73e8', borderRadius: 10, paddingHorizontal: 20, justifyContent: 'center' },
+  redeemBtnText: { color: '#fff', fontSize: 14, fontFamily: FONT.semibold, fontWeight: '600' },
 });

@@ -1,13 +1,17 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Alert, Switch } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Alert, Switch } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
 import { usePreferences } from '../context/PreferencesContext';
 import { FONT, T, card, section, primBtn } from '../theme';
-import { configureReminders, loadReminderPrefs } from '../utils/reminders';
+import { configureReminders, loadReminderPrefs, loadCustomReminders, saveCustomReminders, syncCustomReminderNotifications } from '../utils/reminders';
+import type { CustomReminder } from '../utils/reminders';
 import { isVoiceReadbackEnabled, setVoiceReadbackEnabled } from '../utils/speech';
+import { isMotivationOptOut, setMotivationOptOut } from '../utils/motivation';
+import { supabase } from '../lib/supabase';
+import Dropdown from '../components/Dropdown';
 import type { Language } from '../types';
 
 export default function SettingsScreen({ navigation }: any) {
@@ -18,6 +22,13 @@ export default function SettingsScreen({ navigation }: any) {
   const [preMeal, setPreMeal] = useState(false);
   const [bedtime, setBedtime] = useState(false);
   const [voice, setVoice] = useState(false);
+  const [motivation, setMotivation] = useState(true);
+  const [customReminders, setCustomReminders] = useState<CustomReminder[]>([]);
+  const [newLabel, setNewLabel] = useState('');
+  const [newHour, setNewHour] = useState('08');
+  const [newMinute, setNewMinute] = useState('00');
+  const [newDays, setNewDays] = useState<number[]>([1, 2, 3, 4, 5, 6, 7]);
+  const [myPatients, setMyPatients] = useState<{ id: string; name: string }[]>([]);
 
   useEffect(() => {
     (async () => {
@@ -25,6 +36,15 @@ export default function SettingsScreen({ navigation }: any) {
       const prefs = await loadReminderPrefs();
       setPreMeal(prefs.preMeal);
       setBedtime(prefs.bedtime);
+      setMotivation(!(await isMotivationOptOut()));
+      setCustomReminders(await loadCustomReminders());
+      try {
+        const { data: { user: current } } = await supabase.auth.getUser();
+        if (current) {
+          const { data } = await supabase.from('patients').select('id,name').eq('user_id', current.id).order('name');
+          setMyPatients((data as { id: string; name: string }[]) || []);
+        }
+      } catch { /* patient list is optional */ }
     })();
   }, []);
 
@@ -44,6 +64,79 @@ export default function SettingsScreen({ navigation }: any) {
       );
       if (which === 'preMeal') setPreMeal(!val); else setBedtime(!val);
     }
+  };
+
+  const handleMotivationToggle = async (v: boolean) => {
+    setMotivation(v);
+    await setMotivationOptOut(!v);
+  };
+
+  const addCustomReminder = async () => {
+    if (!newLabel.trim() || newDays.length === 0) {
+      Alert.alert(isNe ? 'जानकारी' : 'Missing info', isNe ? 'लेबल र कम्तीमा एक दिन छान्नुहोस्।' : 'Add a label and pick at least one day.');
+      return;
+    }
+    const item: CustomReminder = {
+      id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+      label: newLabel.trim(),
+      hour: parseInt(newHour, 10),
+      minute: parseInt(newMinute, 10),
+      weekdays: [...newDays].sort((a, b) => a - b),
+    };
+    const next = [...customReminders, item];
+    setCustomReminders(next);
+    await saveCustomReminders(next);
+    const ok = await syncCustomReminderNotifications(next);
+    if (!ok) {
+      Alert.alert(isNe ? 'अनुमति आवश्यक' : 'Permission needed', isNe ? 'सूचना अनुमति दिनुहोस्।' : 'Please allow notifications to set reminders.');
+    }
+    setNewLabel('');
+  };
+
+  const removeCustomReminder = async (id: string) => {
+    const next = customReminders.filter((r) => r.id !== id);
+    setCustomReminders(next);
+    await saveCustomReminders(next);
+    await syncCustomReminderNotifications(next);
+  };
+
+  const toggleNewDay = (d: number) => {
+    setNewDays((prev) => (prev.includes(d) ? prev.filter((x) => x !== d) : [...prev, d]));
+  };
+
+  const deletePatient = (pat: { id: string; name: string }) => {
+    Alert.alert(
+      isNe ? 'डाटा मेट्ने?' : 'Delete data?',
+      isNe ? `${pat.name} का सबै रेकर्ड मेटिनेछ।` : `All records for ${pat.name} will be deleted.`,
+      [
+        { text: isNe ? 'रद्द' : 'Cancel', style: 'cancel' },
+        {
+          text: isNe ? 'मेट्नुहोस्' : 'Delete',
+          style: 'destructive',
+          onPress: () => {
+            Alert.alert(
+              isNe ? 'पक्का हुनुहुन्छ?' : 'Are you sure?',
+              isNe ? 'यो कार्य फिर्ता गर्न सकिँदैन।' : 'This cannot be undone.',
+              [
+                { text: isNe ? 'रद्द' : 'Cancel', style: 'cancel' },
+                {
+                  text: isNe ? 'स्थायी रूपमा मेट्नुहोस्' : 'Delete permanently',
+                  style: 'destructive',
+                  onPress: async () => {
+                    const { error } = await supabase.rpc('delete_patient_data', { p_patient_id: pat.id });
+                    if (error) Alert.alert(isNe ? 'त्रुटि' : 'Error', error.message);
+                    else {
+                      Alert.alert(isNe ? 'मेटियो' : 'Deleted', isNe ? 'रेकर्ड मेटियो।' : 'The records were deleted.');
+                      setMyPatients((prev) => prev.filter((x) => x.id !== pat.id));
+                    }
+                  },
+                },
+              ]
+            );
+          },
+        },
+      ]
+    );
   };
 
   const handleLogout = () => {
@@ -113,6 +206,49 @@ export default function SettingsScreen({ navigation }: any) {
           <Switch value={bedtime} onValueChange={(v) => handleReminderToggle('bedtime', v)} trackColor={{ true: T.blue }} />
         </View>
 
+        <Text style={styles.sectionLabel}>{isNe ? 'आफ्नै सम्झनाहरू' : 'Custom reminders'}</Text>
+        {customReminders.map((r) => (
+          <View key={r.id} style={styles.rowCard}>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.rowTitle}>{r.label}</Text>
+              <Text style={styles.rowSub}>
+                {String(r.hour).padStart(2, '0')}:{String(r.minute).padStart(2, '0')} · {r.weekdays.length === 7 ? (isNe ? 'हरेक दिन' : 'Every day') : r.weekdays.map((d) => (isNe ? ['आइत', 'सोम', 'मङ्गल', 'बुध', 'बिहि', 'शुक्र', 'शनि'][d - 1] : ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][d - 1])).join(', ')}
+              </Text>
+            </View>
+            <TouchableOpacity onPress={() => removeCustomReminder(r.id)} accessibilityLabel="Delete reminder">
+              <Ionicons name="trash-outline" size={18} color={T.red} />
+            </TouchableOpacity>
+          </View>
+        ))}
+        <View style={styles.customForm}>
+          <TextInput
+            style={styles.customInput}
+            value={newLabel}
+            onChangeText={setNewLabel}
+            placeholder={isNe ? 'लेबल (जस्तै: विद्यालय जाँच)' : 'Label (e.g. School check)'}
+          />
+          <View style={{ flexDirection: 'row', gap: 8, marginTop: 8 }}>
+            <View style={{ flex: 1 }}>
+              <Dropdown label={isNe ? 'घण्टा' : 'Hour'} options={Array.from({ length: 24 }, (_, i) => String(i).padStart(2, '0'))} value={newHour} onChange={setNewHour} />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Dropdown label={isNe ? 'मिनेट' : 'Minute'} options={['00', '15', '30', '45']} value={newMinute} onChange={setNewMinute} />
+            </View>
+          </View>
+          <View style={styles.dayRow}>
+            {[1, 2, 3, 4, 5, 6, 7].map((d) => (
+              <TouchableOpacity key={d} style={[styles.dayChip, newDays.includes(d) && styles.dayChipActive]} onPress={() => toggleNewDay(d)}>
+                <Text style={[styles.dayChipText, newDays.includes(d) && styles.dayChipTextActive]}>
+                  {(isNe ? ['आ', 'सो', 'मं', 'बु', 'बि', 'शु', 'श'] : ['S', 'M', 'T', 'W', 'T', 'F', 'S'])[d - 1]}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+          <TouchableOpacity style={styles.addRemBtn} onPress={addCustomReminder}>
+            <Text style={styles.addRemBtnText}>{isNe ? '+ सम्झना थप्नुहोस्' : '+ Add reminder'}</Text>
+          </TouchableOpacity>
+        </View>
+
         {/* Accessibility */}
         <Text style={styles.sectionLabel}>{isNe ? 'पहुँचयोग्यता' : 'Accessibility'}</Text>
         <View style={styles.rowCard}>
@@ -144,6 +280,41 @@ export default function SettingsScreen({ navigation }: any) {
           </View>
           <Switch value={fontScale >= 1.2} onValueChange={(v) => setFontScale(v ? 1.2 : 1)} trackColor={{ true: TH.blue }} />
         </View>
+
+        <Text style={styles.sectionLabel}>{isNe ? 'प्रेरणा' : 'Motivation'}</Text>
+        <View style={styles.rowCard}>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.rowTitle}>{isNe ? 'लगिङ शृंखला देखाउने' : 'Show logging streak'}</Text>
+            <Text style={styles.rowSub}>{isNe ? 'निरन्तर लग गरेको दिनहरू' : 'Consecutive days with a log'}</Text>
+          </View>
+          <Switch value={motivation} onValueChange={handleMotivationToggle} trackColor={{ true: T.blue }} />
+        </View>
+
+        <Text style={styles.sectionLabel}>{isNe ? 'सहमति र गोपनीयता' : 'Consent & privacy'}</Text>
+        <TouchableOpacity style={styles.rowCard} onPress={() => navigation.navigate('Consent')}>
+          <Ionicons name="shield-checkmark-outline" size={20} color={T.blue} />
+          <View style={{ flex: 1, marginLeft: 10 }}>
+            <Text style={styles.rowTitle}>{isNe ? 'सहमति हेर्नुहोस् / अद्यावधिक गर्नुहोस्' : 'View / update consent'}</Text>
+          </View>
+          <Ionicons name="chevron-forward" size={18} color={T.muted} />
+        </TouchableOpacity>
+
+        {myPatients.length > 0 && (
+          <>
+            <Text style={styles.sectionLabel}>{isNe ? 'तपाईंको डाटा' : 'Your data'}</Text>
+            {myPatients.map((pat) => (
+              <View key={pat.id} style={styles.rowCard}>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.rowTitle}>{pat.name}</Text>
+                  <Text style={styles.rowSub}>{isNe ? 'सबै रेकर्ड मेटाउनुहोस्' : 'Delete all records'}</Text>
+                </View>
+                <TouchableOpacity onPress={() => deletePatient(pat)} accessibilityLabel="Delete patient data">
+                  <Ionicons name="trash-outline" size={18} color={T.red} />
+                </TouchableOpacity>
+              </View>
+            ))}
+          </>
+        )}
 
         {/* Account */}
         <Text style={styles.sectionLabel}>{isNe ? 'खाता' : 'Account'}</Text>
@@ -217,4 +388,13 @@ const styles = StyleSheet.create({
   },
   disclaimerTitle: { fontSize: 14, fontFamily: FONT.bold, fontWeight: '700', color: T.amberDark, marginBottom: 4 },
   disclaimerText: { fontSize: 13, fontFamily: FONT.regular, color: T.text, lineHeight: 18 },
+  customForm: { backgroundColor: T.surface, borderRadius: 12, padding: 14, borderWidth: 1, borderColor: T.border, marginBottom: 8 },
+  customInput: { backgroundColor: '#fff', borderRadius: 10, padding: 12, fontSize: 14, fontFamily: FONT.regular, borderWidth: 1, borderColor: '#dadce0' },
+  dayRow: { flexDirection: 'row', gap: 6, marginTop: 12 },
+  dayChip: { width: 34, height: 34, borderRadius: 17, backgroundColor: '#e8eaed', justifyContent: 'center', alignItems: 'center' },
+  dayChipActive: { backgroundColor: T.blue },
+  dayChipText: { fontSize: 12, fontFamily: FONT.semibold, fontWeight: '600', color: T.text },
+  dayChipTextActive: { color: '#fff' },
+  addRemBtn: { marginTop: 12, borderWidth: 1.5, borderColor: T.blue, borderRadius: 10, paddingVertical: 10, alignItems: 'center' },
+  addRemBtnText: { color: T.blue, fontSize: 14, fontFamily: FONT.semibold, fontWeight: '600' },
 });
