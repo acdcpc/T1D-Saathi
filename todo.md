@@ -1,4 +1,3 @@
-
 ## Security audit: Supabase exposure review
 
 - [x] Audit all public tables for missing RLS and sensitive columns
@@ -51,8 +50,21 @@
 - [x] Finalize and validate the reusable t1d-saathi-security-release skill.
 - [x] Review GitHub pull request/branch mergeability and document whether conflicts remain.
 
-- [ ] Create a pull request from agent/t1d-typescript-and-docs into main.
-- [ ] Audit all 18 dependency vulnerabilities and document safe upgrade paths.
-- [ ] Add a production Supabase manual-migration verification checklist.
-- [ ] Validate the pull request and wait for explicit merge confirmation before merging to main.
-- [ ] Merge the approved pull request into main.
+- [x] Create a pull request from agent/t1d-typescript-and-docs into main. (PR #1 — created and merged 2026-08-22)
+- [x] Audit all 18 dependency vulnerabilities and document safe upgrade paths. (`docs/DEPENDENCY_VULNERABILITY_AUDIT_20260822.md`)
+- [x] Add a production Supabase manual-migration verification checklist. (`docs/SUPABASE_PRODUCTION_VERIFICATION_CHECKLIST.md`; migration applied + verified 2026-10-05)
+- [x] Validate the pull request and wait for explicit merge confirmation before merging to main.
+- [x] Merge the approved pull request into main.
+
+## Post-handover status (2026-10-05): batches 1–3 + portal + UI refresh
+
+- [x] Feature batches 1–3 implemented and validated (43 Jest tests; typecheck; repo validator). See `docs/FEATURE_BATCH1_2026-10-05.md`, `FEATURE_BATCH2`, `FEATURE_BATCH3`.
+- [x] All Supabase migrations applied to the live project + evidence recorded (`docs/SUPABASE_MIGRATION_EVIDENCE_2026-10-05.md`).
+- [x] UI refresh rounds 1–3 across main screens (+ screenshots in `docs/screenshots/2026-10-05/`). See `docs/UI_REFRESH_2026-10-05.md`.
+- [x] Clinician web portal built (`portal/`) and smoke-checked.
+- [ ] Pull request for `agent/features-batch1` → `main`: review + merge decision (owner).
+- [ ] EAS preview rebuild (Android APK) — build in progress.
+- [ ] Real-device verification: push delivery, notifications, iOS, small screens.
+- [ ] Two-user RLS negative tests with real accounts (`docs/RLS_TEST_PLAN.md`).
+- [ ] Clinician sign-off of clinical decisions (`docs/CLINICAL_SAFETY_LOG.md`).
+- [ ] Dependency maintenance branch (SDK 57–compatible pass; not a runtime release blocker per audit).
