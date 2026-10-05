@@ -10,6 +10,8 @@ import { supabase } from '../lib/supabase';
 import BSDatePicker from '../components/BSDatePicker';
 import { FONT,  T, input, section, primBtn } from '../theme';
 
+const contentCol = { width: '100%' as const, maxWidth: 640, alignSelf: 'center' as const };
+
 const COMORBID_OPTIONS = ['celiac', 'thyroid', 'downSyndrome'];
 const SEX_OPTIONS = ['male', 'female', 'other'] as const;
 const DELIVERY_OPTIONS = ['pen', 'syringe', 'pump'] as const;
@@ -166,7 +168,7 @@ export default function AddPatientScreen({ navigation }: any) {
   };
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={[styles.content, { paddingTop: insets.top + 16, paddingBottom: insets.bottom + 40 }]}>
+    <ScrollView style={styles.container} contentContainerStyle={[styles.content, contentCol, { paddingTop: insets.top + 16, paddingBottom: insets.bottom + 40 }]}>
       <Text style={styles.section}>{t('profileSetup')}</Text>
       <Text style={styles.label}>{t('childName')} *</Text>
       <TextInput style={[styles.input, nameError && styles.inputError]} value={name} onChangeText={(v) => { setName(v); if (nameError) setNameError(null); }} placeholder="Full name" />

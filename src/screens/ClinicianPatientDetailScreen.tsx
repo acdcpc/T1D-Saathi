@@ -5,7 +5,7 @@ import { useAuth } from '../context/AuthContext';
 import { supabase } from '../lib/supabase';
 import type { GlucoseLog, KetoneLog, SickDayEpisode, InsulinRegimen } from '../types';
 import { toBSDateTimeDisplay, toBSDisplay } from '../utils/bsDateDisplay';
-import { FONT } from '../theme';
+import { FONT, T } from '../theme';
 
 interface InsulinRow { id: string; units: number; insulin_type: string; source: string; timestamp: string; }
 
@@ -175,7 +175,7 @@ export default function ClinicianPatientDetailScreen({ route }: any) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#F0F7FF' },
+  container: { flex: 1, backgroundColor: T.bg },
   content: { padding: 20, paddingTop: 90, paddingBottom: 60 },
   centered: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   title: { fontSize: 24, fontFamily: FONT.extrabold, fontWeight: '800', color: '#202124', marginBottom: 20 },

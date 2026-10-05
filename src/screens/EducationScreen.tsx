@@ -4,8 +4,10 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons } from '@expo/vector-icons';
 import { useLanguage } from '../context/LanguageContext';
 import { usePatient } from '../context/PatientContext';
-import { FONT } from '../theme';
+import { FONT, T } from '../theme';
 import { toDisplayNumber } from '../utils/nepaliNumber';
+
+const contentCol = { width: '100%' as const, maxWidth: 640, alignSelf: 'center' as const };
 
 const TOPICS: { id: string; topic: string; topic_ne: string; icon: keyof typeof Ionicons.glyphMap; color: string; order: number; audience?: string }[] = [
   { id: '1', topic: 'Diagnosis & Pathophysiology', topic_ne: 'निदान र रोगविज्ञान', icon: 'flask-outline', color: '#1a73e8', order: 1 },
@@ -57,7 +59,7 @@ export default function EducationScreen({ route, navigation }: any) {
       <FlatList
         data={TOPICS}
         keyExtractor={(item) => item.id}
-        contentContainerStyle={styles.list}
+        contentContainerStyle={[styles.list, contentCol]}
         renderItem={({ item }) => {
           const done = completed.includes(item.id);
           return (
@@ -80,10 +82,13 @@ export default function EducationScreen({ route, navigation }: any) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#F0F7FF', padding: 20, paddingTop: 90 },
-  title: { fontSize: 24, fontFamily: FONT.extrabold, fontWeight: '800', color: '#202124', marginBottom: 4 },
-  subtitle: { fontSize: 13, fontFamily: FONT.regular, color: '#5f6368', marginBottom: 14 },
-  progressWrap: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 16 },
+  container: { flex: 1, backgroundColor: T.bg, padding: 20, paddingTop: 90 },
+  title: {
+    width: '100%', maxWidth: 640, alignSelf: 'center', fontSize: 24, fontFamily: FONT.extrabold, fontWeight: '800', color: '#202124', marginBottom: 4 },
+  subtitle: {
+    width: '100%', maxWidth: 640, alignSelf: 'center', fontSize: 13, fontFamily: FONT.regular, color: '#5f6368', marginBottom: 14 },
+  progressWrap: {
+    width: '100%', maxWidth: 640, alignSelf: 'center', flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 16 },
   progressBar: { flex: 1, height: 8, borderRadius: 4, backgroundColor: '#e8eaed', overflow: 'hidden' },
   progressFill: { height: '100%', borderRadius: 4, backgroundColor: '#0D9488' },
   progressText: { fontSize: 13, fontFamily: FONT.semibold, fontWeight: '600', color: '#5f6368' },

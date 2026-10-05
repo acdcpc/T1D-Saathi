@@ -7,7 +7,9 @@ import { useLanguage } from '../context/LanguageContext';
 import { supabase } from '../lib/supabase';
 import Dropdown from '../components/Dropdown';
 import type { InsulinRegimen } from '../types';
-import { FONT } from '../theme';
+import { FONT, T } from '../theme';
+
+const contentCol = { width: '100%' as const, maxWidth: 640, alignSelf: 'center' as const };
 
 const INSULIN_TYPE_OPTIONS = [
   'Rapid-acting', 'Short-acting', 'Intermediate-acting', 'Long-acting', 'Premixed',
@@ -104,7 +106,7 @@ export default function RegimenSettingsScreen({ route, navigation }: any) {
   return (
     <ScrollView
       style={styles.container}
-      contentContainerStyle={[styles.content, { paddingTop: insets.top + 16, paddingBottom: insets.bottom + 40 }]}
+      contentContainerStyle={[styles.content, contentCol, { paddingTop: insets.top + 16, paddingBottom: insets.bottom + 40 }]}
     >
       <Text style={styles.title}>{t('insulinRegimen')}</Text>
       <Text style={styles.notice}>New regimen settings remain unavailable for dosing until reviewed and approved by a clinician.</Text>
@@ -179,7 +181,7 @@ export default function RegimenSettingsScreen({ route, navigation }: any) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#F0F7FF' },
+  container: { flex: 1, backgroundColor: T.bg },
   content: { padding: 20 },
   centered: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   title: { fontSize: 24, fontFamily: FONT.extrabold, fontWeight: '800', color: '#202124', marginBottom: 20 },

@@ -47,3 +47,14 @@ Applied the same treatment across the core screens:
 Verified again via headless Chrome (desktop + mobile). New screenshots in `docs/screenshots/2026-10-05/` (`dashboard-desktop`, `dashboard-mobile`, `log-desktop`, `food-desktop`).
 
 Still older-style (next rounds if wanted): Sick-Day Wizard, Emergency, Education/Quiz, Messages, Add Patient form, Regimen settings, Onboarding.
+
+---
+
+# Round 3 — Sick-Day, Emergency, Add Patient, Regimen, Education/Quiz, Clinician screens (same day)
+
+- Replaced the remaining light-blue (`#F0F7FF`) screen backgrounds with the app's consistent parchment theme.
+- Added centered content columns (max 640px) to: Sick-Day Wizard, Regimen Settings, Add Patient, Emergency, Education, Quiz, plus clinician screens.
+- Education/Quiz headers aligned to the same centered column as their lists.
+- Verified with headless Chrome again (zero page errors). Screenshots: `docs/screenshots/2026-10-05/` (`onboarding`, `emergency`, `addpatient`, `sickday`, `regimen`, `education`).
+
+Remaining old-style touches (minor): Messages bubbles, Barcode scanner, Community, Onboarding slide art (functional, just simple).

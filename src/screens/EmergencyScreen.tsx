@@ -7,6 +7,8 @@ import ISPADBadge from '../components/ISPADBadge';
 import { useLanguage } from '../context/LanguageContext';
 import { FONT,  T, card, section } from '../theme';
 
+const contentCol = { width: '100%' as const, maxWidth: 640, alignSelf: 'center' as const };
+
 const HELPLINE = '9851350883';
 
 export default function EmergencyScreen({ navigation }: any) {
@@ -71,7 +73,7 @@ export default function EmergencyScreen({ navigation }: any) {
 
   return (
     <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
-      <ScrollView contentContainerStyle={styles.content}>
+      <ScrollView contentContainerStyle={[styles.content, contentCol]}>
         <View style={styles.headerRow}>
           <TouchableOpacity onPress={() => navigation.goBack()}>
             <Text style={styles.backArrow}>‹</Text>

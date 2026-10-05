@@ -13,9 +13,11 @@ import { supabase } from '../lib/supabase';
 import { safeInsert } from '../utils/offlineQueue';
 import { saveGlucoseEntry } from '../utils/glucoseEntries';
 import { saveInsulinDose } from '../utils/insulinLogs';
+
+const contentCol = { width: '100%' as const, maxWidth: 640, alignSelf: 'center' as const };
 import { findSickDayRule, HYDRATION_THRESHOLD, HYPO_THRESHOLD, GLUCAGON_DOSE_TABLE } from '../rules/sickDayRules';
 import type { SickDayRule, SickDayEpisode, InsulinRegimen, PatientProfile } from '../types';
-import { FONT } from '../theme';
+import { FONT, T } from '../theme';
 
 type WizardStep = 'symptoms' | 'ketone' | 'results';
 
@@ -166,7 +168,7 @@ export default function SickDayWizardScreen({ route, navigation }: any) {
   // Step 1: Symptoms
   if (step === 'symptoms') {
     return (
-      <ScrollView style={styles.container} contentContainerStyle={[styles.content, { paddingTop: insets.top + 16, paddingBottom: insets.bottom + 40 }]}>
+      <ScrollView style={styles.container} contentContainerStyle={[styles.content, contentCol, { paddingTop: insets.top + 16, paddingBottom: insets.bottom + 40 }]}>
         <View style={styles.stepIndicator}>
           <View style={styles.stepActive}><Text style={styles.stepNum}>1</Text></View>
           <View style={styles.stepLine} />
@@ -214,7 +216,7 @@ export default function SickDayWizardScreen({ route, navigation }: any) {
   // Step 2: Ketone Check
   if (step === 'ketone') {
     return (
-      <ScrollView style={styles.container} contentContainerStyle={[styles.content, { paddingTop: insets.top + 16, paddingBottom: insets.bottom + 40 }]}>
+      <ScrollView style={styles.container} contentContainerStyle={[styles.content, contentCol, { paddingTop: insets.top + 16, paddingBottom: insets.bottom + 40 }]}>
         <View style={styles.stepIndicator}>
           <View style={styles.stepDone}><Text style={styles.stepNum}>✓</Text></View>
           <View style={styles.stepLine} />
@@ -271,7 +273,7 @@ export default function SickDayWizardScreen({ route, navigation }: any) {
   };
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={[styles.content, { paddingTop: insets.top + 16, paddingBottom: insets.bottom + 40 }]}>
+    <ScrollView style={styles.container} contentContainerStyle={[styles.content, contentCol, { paddingTop: insets.top + 16, paddingBottom: insets.bottom + 40 }]}>
       <View style={styles.stepIndicator}>
         <View style={styles.stepDone}><Text style={styles.stepNum}>✓</Text></View>
         <View style={styles.stepLine} />
@@ -386,7 +388,7 @@ export default function SickDayWizardScreen({ route, navigation }: any) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#F0F7FF' },
+  container: { flex: 1, backgroundColor: T.bg },
   content: { padding: 20, paddingTop: 60 },
   centered: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   stepIndicator: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginBottom: 24 },
