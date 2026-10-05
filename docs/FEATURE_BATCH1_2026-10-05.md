@@ -24,14 +24,14 @@ Branch: `agent/features-batch1` (not merged to `main`).
 - `__tests__/dosingCalc.test.ts`, `__tests__/glucoseStats.test.ts`
 - `docs/CLINICAL_SAFETY_LOG.md`
 
-## Deployment requirements
+## Deployment requirements — UPDATED 2026-10-05
 
-1. Apply migrations in order on the live Supabase project (both still pending):
+1. ~~Apply migrations~~ **DONE — all migrations now applied to the live project:**
+   - `20261005000009_rls_helper_catchup.sql` (catch-up, applied first)
    - `20260821000007_audit_hardening.sql`
    - `20261005000008_batch1_features.sql`
-2. Rebuild the app (EAS preview) after migrations are applied.
-
-Read paths degrade gracefully if the migration is not yet applied (fallbacks in place), but new write features (insulin diary, mood/activity, max bolus) require the migration.
+   - Evidence: `docs/SUPABASE_MIGRATION_EVIDENCE_2026-10-05.md`
+2. Remaining deploy step: rebuild the app (EAS preview) — only when the owner asks.
 
 ## Validation performed
 
