@@ -8,6 +8,7 @@ import { supabase } from '../lib/supabase';
 import Dropdown from '../components/Dropdown';
 import type { InsulinRegimen } from '../types';
 import { FONT, T } from '../theme';
+import BackBar from '../components/BackBar';
 
 const contentCol = { width: '100%' as const, maxWidth: 640, alignSelf: 'center' as const };
 
@@ -108,6 +109,7 @@ export default function RegimenSettingsScreen({ route, navigation }: any) {
       style={styles.container}
       contentContainerStyle={[styles.content, contentCol, { paddingTop: insets.top + 16, paddingBottom: insets.bottom + 40 }]}
     >
+      <BackBar navigation={navigation} />
       <Text style={styles.title}>{t('insulinRegimen')}</Text>
       <Text style={styles.notice}>New regimen settings remain unavailable for dosing until reviewed and approved by a clinician.</Text>
 

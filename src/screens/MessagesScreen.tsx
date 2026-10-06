@@ -4,6 +4,9 @@ import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
 import { supabase } from '../lib/supabase';
 import type { Message } from '../types';
+import BackBar from '../components/BackBar';
+
+const contentCol = { width: '100%' as const, maxWidth: 640, alignSelf: 'center' as const };
 
 export default function MessagesScreen({ route }: any) {
   const { patientId } = route.params;
@@ -75,11 +78,12 @@ export default function MessagesScreen({ route }: any) {
 
   return (
     <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+      <BackBar navigation={navigation} />
       <Text style={styles.title}>{t('messages')}</Text>
       <FlatList
         data={messages}
         keyExtractor={(item) => item.id}
-        contentContainerStyle={styles.list}
+        contentContainerStyle={[styles.list, contentCol]}
         refreshing={loading}
         renderItem={({ item }) => (
           <View style={[styles.bubble, item.sender_id === user?.id ? styles.myBubble : styles.theirBubble]}>

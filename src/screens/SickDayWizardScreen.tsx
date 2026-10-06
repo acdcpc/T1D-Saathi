@@ -13,6 +13,7 @@ import { supabase } from '../lib/supabase';
 import { safeInsert } from '../utils/offlineQueue';
 import { saveGlucoseEntry } from '../utils/glucoseEntries';
 import { saveInsulinDose } from '../utils/insulinLogs';
+import BackBar from '../components/BackBar';
 
 const contentCol = { width: '100%' as const, maxWidth: 640, alignSelf: 'center' as const };
 import { findSickDayRule, HYDRATION_THRESHOLD, HYPO_THRESHOLD, GLUCAGON_DOSE_TABLE } from '../rules/sickDayRules';
@@ -169,6 +170,7 @@ export default function SickDayWizardScreen({ route, navigation }: any) {
   if (step === 'symptoms') {
     return (
       <ScrollView style={styles.container} contentContainerStyle={[styles.content, contentCol, { paddingTop: insets.top + 16, paddingBottom: insets.bottom + 40 }]}>
+      <BackBar navigation={navigation} />
         <View style={styles.stepIndicator}>
           <View style={styles.stepActive}><Text style={styles.stepNum}>1</Text></View>
           <View style={styles.stepLine} />
@@ -217,6 +219,7 @@ export default function SickDayWizardScreen({ route, navigation }: any) {
   if (step === 'ketone') {
     return (
       <ScrollView style={styles.container} contentContainerStyle={[styles.content, contentCol, { paddingTop: insets.top + 16, paddingBottom: insets.bottom + 40 }]}>
+      <BackBar navigation={navigation} />
         <View style={styles.stepIndicator}>
           <View style={styles.stepDone}><Text style={styles.stepNum}>✓</Text></View>
           <View style={styles.stepLine} />
@@ -274,6 +277,7 @@ export default function SickDayWizardScreen({ route, navigation }: any) {
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={[styles.content, contentCol, { paddingTop: insets.top + 16, paddingBottom: insets.bottom + 40 }]}>
+      <BackBar navigation={navigation} />
       <View style={styles.stepIndicator}>
         <View style={styles.stepDone}><Text style={styles.stepNum}>✓</Text></View>
         <View style={styles.stepLine} />

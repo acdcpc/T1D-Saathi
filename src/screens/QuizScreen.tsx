@@ -3,6 +3,7 @@ import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Alert } from 'rea
 import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
 import { FONT, T } from '../theme';
+import BackBar from '../components/BackBar';
 
 const contentCol = { width: '100%' as const, maxWidth: 640, alignSelf: 'center' as const };
 
@@ -56,6 +57,7 @@ export default function QuizScreen({ route, navigation }: any) {
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={[styles.content, contentCol]}>
+      <BackBar navigation={navigation} />
       <Text style={styles.title}>{phase === 'pre' ? t('preQuiz') : t('postQuiz')}</Text>
       <Text style={styles.progress}>Question {currentQ + 1} of {SAMPLE_QUESTIONS.length}</Text>
       <View style={styles.questionCard}>

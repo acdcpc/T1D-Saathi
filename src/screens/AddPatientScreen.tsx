@@ -9,6 +9,7 @@ import { useLanguage } from '../context/LanguageContext';
 import { supabase } from '../lib/supabase';
 import BSDatePicker from '../components/BSDatePicker';
 import { FONT,  T, input, section, primBtn } from '../theme';
+import BackBar from '../components/BackBar';
 
 const contentCol = { width: '100%' as const, maxWidth: 640, alignSelf: 'center' as const };
 
@@ -169,6 +170,7 @@ export default function AddPatientScreen({ navigation }: any) {
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={[styles.content, contentCol, { paddingTop: insets.top + 16, paddingBottom: insets.bottom + 40 }]}>
+      <BackBar navigation={navigation} />
       <Text style={styles.section}>{t('profileSetup')}</Text>
       <Text style={styles.label}>{t('childName')} *</Text>
       <TextInput style={[styles.input, nameError && styles.inputError]} value={name} onChangeText={(v) => { setName(v); if (nameError) setNameError(null); }} placeholder="Full name" />

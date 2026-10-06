@@ -8,6 +8,7 @@ import { cacheGet, cacheSet } from '../utils/cache';
 import EmptyState from '../components/EmptyState';
 import type { Hospital } from '../types';
 import { FONT, T } from '../theme';
+import BackBar from '../components/BackBar';
 
 const CACHE_KEY = '@t1d_hospitals';
 const CACHE_TTL_MS = 24 * 60 * 60 * 1000; // 24h
@@ -54,6 +55,7 @@ export default function HealthCentersScreen({ route }: any) {
 
   return (
     <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
+      <BackBar navigation={navigation} />
       <Text style={styles.title}>{isNe ? 'नजिकको स्वास्थ्य केन्द्र' : 'Find Care Near Me'}</Text>
 
       {patientId && (

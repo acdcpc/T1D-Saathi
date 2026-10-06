@@ -6,6 +6,7 @@ import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
 import { supabase } from '../lib/supabase';
 import { FONT, T } from '../theme';
+import BackBar from '../components/BackBar';
 
 const CODE_CHARS = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
 
@@ -70,6 +71,7 @@ export default function InviteClinicianScreen({ route }: any) {
 
   return (
     <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
+      <BackBar navigation={navigation} />
       <ScrollView contentContainerStyle={styles.content}>
         <Text style={styles.title}>{isNe ? 'चिकित्सकलाई आमन्त्रण' : 'Invite a clinician'}</Text>
         <Text style={styles.hint}>

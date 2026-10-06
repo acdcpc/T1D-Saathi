@@ -3,7 +3,7 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Ionicons } from '@expo/vector-icons';
 import { PatientProvider } from '../context/PatientContext';
 import { useLanguage } from '../context/LanguageContext';
-import { T } from '../theme';
+import { FONT, T } from '../theme';
 import PatientDashboard from '../screens/PatientDashboard';
 import LogGlucoseScreen from '../screens/LogGlucoseScreen';
 import FoodEstimatorScreen from '../screens/FoodEstimatorScreen';
@@ -12,16 +12,16 @@ import type { PatientProfile } from '../types';
 
 const Tab = createBottomTabNavigator();
 
-const ICONS: Record<string, keyof typeof Ionicons.glyphMap> = {
-  Dashboard: 'home-outline',
-  Log: 'water-outline',
-  Food: 'camera-outline',
-  Learn: 'book-outline',
+const ICONS: Record<string, { outline: keyof typeof Ionicons.glyphMap; filled: keyof typeof Ionicons.glyphMap }> = {
+  Dashboard: { outline: 'home-outline', filled: 'home' },
+  Log: { outline: 'water-outline', filled: 'water' },
+  Food: { outline: 'camera-outline', filled: 'camera' },
+  Learn: { outline: 'book-outline', filled: 'book' },
 };
 
 /**
- * Patient-scoped bottom tab navigation:
- * Home | Log | Food | Learn  (Emergency stays a global SOS FAB).
+ * Patient-scoped bottom tab navigation: Home | Glucose | Food | (Learn hidden for now).
+ * The Learn route stays registered (dashboard action still opens it) but has no tab button.
  */
 export default function ParentTabs({ route }: any) {
   const { patient } = route.params as { patient: PatientProfile };
@@ -38,20 +38,32 @@ export default function ParentTabs({ route }: any) {
           tabBarStyle: {
             backgroundColor: '#FFFFFF',
             borderTopColor: T.border,
-            height: 64,
-            paddingBottom: 8,
-            paddingTop: 6,
+            height: 68,
+            paddingBottom: 10,
+            paddingTop: 8,
           },
-          tabBarLabelStyle: { fontSize: 11, fontWeight: '600' },
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name={ICONS[route.name]} size={size} color={color} />
+          tabBarLabelStyle: { fontSize: 12, fontWeight: '700', fontFamily: FONT.semibold },
+          tabBarIcon: ({ color, size, focused }) => (
+            <Ionicons
+              name={focused ? ICONS[route.name].filled : ICONS[route.name].outline}
+              size={size + 2}
+              color={color}
+            />
           ),
         })}
       >
         <Tab.Screen name="Dashboard" component={PatientDashboard} options={{ tabBarLabel: isNe ? 'गृह' : 'Home' }} />
-        <Tab.Screen name="Log" component={LogGlucoseScreen} options={{ tabBarLabel: isNe ? 'लग' : 'Log' }} />
+        <Tab.Screen name="Log" component={LogGlucoseScreen} options={{ tabBarLabel: isNe ? 'ग्लुकोज' : 'Glucose' }} />
         <Tab.Screen name="Food" component={FoodEstimatorScreen} options={{ tabBarLabel: isNe ? 'खाना' : 'Food' }} />
-        <Tab.Screen name="Learn" component={EducationScreen} options={{ tabBarLabel: isNe ? 'सिकाइ' : 'Learn' }} />
+        <Tab.Screen
+          name="Learn"
+          component={EducationScreen}
+          options={{
+            tabBarLabel: isNe ? 'सिकाइ' : 'Learn',
+            tabBarButton: () => null,
+            tabBarItemStyle: { display: 'none' },
+          }}
+        />
       </Tab.Navigator>
     </PatientProvider>
   );

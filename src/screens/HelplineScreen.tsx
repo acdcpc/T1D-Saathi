@@ -5,6 +5,7 @@ import { useLanguage } from '../context/LanguageContext';
 import { supabase } from '../lib/supabase';
 import { FONT, T } from '../theme';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import BackBar from '../components/BackBar';
 
 interface Helpline {
   id: string;
@@ -38,6 +39,7 @@ export default function HelplineScreen() {
 
   return (
     <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
+      <BackBar navigation={navigation} />
       <Text style={styles.title}>{language === 'ne' ? 'सहयोग लाइन' : 'Helpline'}</Text>
       <Text style={styles.subtitle}>
         {language === 'ne'
