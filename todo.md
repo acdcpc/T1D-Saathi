@@ -61,6 +61,7 @@
 - [x] Feature batches 1–3 implemented and validated (43 Jest tests; typecheck; repo validator). See `docs/FEATURE_BATCH1_2026-10-05.md`, `FEATURE_BATCH2`, `FEATURE_BATCH3`.
 - [x] All Supabase migrations applied to the live project + evidence recorded (`docs/SUPABASE_MIGRATION_EVIDENCE_2026-10-05.md`).
 - [x] UI refresh rounds 1–3 across main screens (+ screenshots in `docs/screenshots/2026-10-05/`). See `docs/UI_REFRESH_2026-10-05.md`.
+- [x] UI round 4: back buttons on all pushed screens; clearer tabs (Glucose); Learn tab hidden (committed 2026-10-06).
 - [x] Clinician web portal built (`portal/`) and smoke-checked.
 - [ ] Pull request for `agent/features-batch1` → `main`: review + merge decision (owner).
 - [ ] EAS preview rebuild (Android APK) — build in progress.
