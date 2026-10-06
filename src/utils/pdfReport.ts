@@ -30,7 +30,7 @@ export async function generateGlucoseReport(patient: PatientProfile, logs: Gluco
   h1 { font-size: 20px; margin-bottom: 2px; }
   .sub { color: #7A6E65; font-size: 12px; margin-bottom: 16px; }
   .stats { display: flex; gap: 12px; margin-bottom: 20px; }
-  .stat { background: #E6F4FE; border-radius: 8px; padding: 10px 14px; }
+  .stat { background: #E5F4F1; border-radius: 8px; padding: 10px 14px; }
   .stat b { font-size: 18px; display: block; }
   table { border-collapse: collapse; width: 100%; font-size: 11px; }
   th, td { border: 1px solid #EDE0D4; padding: 6px 8px; text-align: left; }

@@ -18,7 +18,9 @@ function makeCode(): string {
 
 interface Invite { id: string; code: string; created_at: string; expires_at: string; used_at?: string | null; }
 
-export default function InviteClinicianScreen({ route }: any) {
+const contentCol = { width: '100%' as const, maxWidth: 640, alignSelf: 'center' as const };
+
+export default function InviteClinicianScreen({ route, navigation }: any) {
   const { patientId, patientName } = route.params;
   const { user } = useAuth();
   const { language } = useLanguage();
@@ -72,7 +74,7 @@ export default function InviteClinicianScreen({ route }: any) {
   return (
     <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
       <BackBar navigation={navigation} />
-      <ScrollView contentContainerStyle={styles.content}>
+      <ScrollView contentContainerStyle={[styles.content, contentCol]}>
         <Text style={styles.title}>{isNe ? 'चिकित्सकलाई आमन्त्रण' : 'Invite a clinician'}</Text>
         <Text style={styles.hint}>
           {isNe

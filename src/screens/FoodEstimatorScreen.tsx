@@ -382,7 +382,7 @@ export default function FoodEstimatorScreen({ route }: any) {
 
         {modelLoading && (
           <View style={s.modelLoadingRow}>
-            <ActivityIndicator size="small" color="#1a73e8" />
+            <ActivityIndicator size="small" color="#0D9488" />
             <Text style={s.modelLoadingText}>Analyzing photo…</Text>
           </View>
         )}
@@ -613,12 +613,12 @@ const s = StyleSheet.create({
   hint: { fontSize: 14, fontFamily: FONT.regular, color: '#5f6368', marginBottom: 20, lineHeight: 20 },
   preview: { width: '100%', height: 250, borderRadius: 12, marginBottom: 16, backgroundColor: '#e8eaed' },
   row: { flexDirection: 'row', gap: 12, marginBottom: 12 },
-  primaryBtn: { flex: 1, backgroundColor: '#1a73e8', borderRadius: 12, padding: 16, alignItems: 'center' },
+  primaryBtn: { flex: 1, backgroundColor: '#0D9488', borderRadius: 12, padding: 16, alignItems: 'center' },
   primaryText: { color: '#fff', fontSize: 16, fontFamily: FONT.semibold, fontWeight: '600' },
   secondaryBtn: { backgroundColor: '#e8eaed' },
   secondaryText: { color: '#3c4043', fontSize: 16, fontFamily: FONT.semibold, fontWeight: '600' },
   skipBtn: { paddingVertical: 14, alignItems: 'center' },
-  skipText: { color: '#1a73e8', fontSize: 14, fontFamily: FONT.regular },
+  skipText: { color: '#0D9488', fontSize: 14, fontFamily: FONT.regular },
   disclaimer: { fontSize: 11, fontFamily: FONT.regular, color: '#5f6368', textAlign: 'center', marginTop: 10 },
 
   // Review step
@@ -639,7 +639,7 @@ const s = StyleSheet.create({
   portionHint: { fontSize: 10, fontFamily: FONT.regular, color: '#5f6368', marginBottom: 6, fontStyle: 'italic' },
   portionRow: { flexDirection: 'row', gap: 6, marginBottom: 10 },
   portionChip: { backgroundColor: '#e8eaed', borderRadius: 8, paddingHorizontal: 10, paddingVertical: 5 },
-  portionActive: { backgroundColor: '#1a73e8' },
+  portionActive: { backgroundColor: '#0D9488' },
   portionChipText: { fontSize: 12, fontFamily: FONT.semibold, color: '#3c4043', fontWeight: '600' },
   portionChipActiveText: { color: '#fff' },
   itemMacros: { flexDirection: 'row', gap: 12 },
@@ -647,11 +647,11 @@ const s = StyleSheet.create({
   calWarning: { fontSize: 11, fontFamily: FONT.regular, color: '#ea4335', marginTop: 4, fontStyle: 'italic' },
 
   // Totals
-  totalsCard: { backgroundColor: '#e8f0fe', borderRadius: 12, padding: 16, marginVertical: 14, borderWidth: 1, borderColor: '#d2e3fc' },
-  totalsTitle: { fontSize: 16, fontFamily: FONT.bold, fontWeight: '700', color: '#1a73e8', marginBottom: 8 },
+  totalsCard: { backgroundColor: '#E5F4F1', borderRadius: 12, padding: 16, marginVertical: 14, borderWidth: 1, borderColor: '#B8E6DF' },
+  totalsTitle: { fontSize: 16, fontFamily: FONT.bold, fontWeight: '700', color: '#0D9488', marginBottom: 8 },
   macroGrid: { flexDirection: 'row', gap: 10 },
   macroBox: { flex: 1, backgroundColor: '#fff', borderRadius: 8, padding: 10, alignItems: 'center' },
-  macroValue: { fontSize: 20, fontFamily: FONT.bold, fontWeight: '700', color: '#1a73e8' },
+  macroValue: { fontSize: 20, fontFamily: FONT.bold, fontWeight: '700', color: '#0D9488' },
   macroLabel: { fontSize: 10, fontFamily: FONT.regular, color: '#5f6368', marginTop: 2 },
 
   // Search
@@ -660,7 +660,7 @@ const s = StyleSheet.create({
   searchItem: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#fff', borderRadius: 8, padding: 12, marginBottom: 6, borderWidth: 1, borderColor: '#e8eaed' },
   searchName: { fontSize: 14, fontFamily: FONT.semibold, fontWeight: '600', color: '#202124' },
   searchMeta: { fontSize: 11, fontFamily: FONT.regular, color: '#5f6368' },
-  searchCarbs: { fontSize: 14, fontFamily: FONT.semibold, fontWeight: '600', color: '#1a73e8' },
+  searchCarbs: { fontSize: 14, fontFamily: FONT.semibold, fontWeight: '600', color: '#0D9488' },
   plus: { color: '#80868b', fontSize: 14, fontFamily: FONT.regular },
 
   // Dosing inputs
@@ -671,49 +671,49 @@ const s = StyleSheet.create({
   glucoseInputFlex: { flex: 1, textAlign: 'center' },
   unitToggle: { flexDirection: 'row', gap: 4, borderRadius: 8, backgroundColor: '#e8eaed', padding: 3 },
   unitBtn: { borderRadius: 6, paddingHorizontal: 10, paddingVertical: 8 },
-  unitActive: { backgroundColor: '#1a73e8' },
+  unitActive: { backgroundColor: '#0D9488' },
   unitText: { fontSize: 12, fontFamily: FONT.semibold, fontWeight: '600', color: '#3c4043' },
   unitTextActive: { color: '#fff' },
-  confirmBtn: { backgroundColor: '#1a73e8', marginTop: 24, marginBottom: 8 },
+  confirmBtn: { backgroundColor: '#0D9488', marginTop: 24, marginBottom: 8 },
   smallNote: { fontSize: 11, fontFamily: FONT.regular, color: '#5f6368', textAlign: 'center', marginTop: 8 },
 
   // Results
   resultCard: { backgroundColor: '#fff', borderRadius: 12, padding: 16, marginBottom: 14, borderWidth: 1, borderColor: '#e8eaed' },
-  doseCard: { borderColor: '#1a73e8', borderWidth: 2 },
+  doseCard: { borderColor: '#0D9488', borderWidth: 2 },
   resultSection: { fontSize: 15, fontFamily: FONT.bold, fontWeight: '700', color: '#202124', marginBottom: 10 },
   resultRow: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 6 },
   rLabel: { fontSize: 14, fontFamily: FONT.regular, color: '#5f6368' },
   rLabelBold: { fontSize: 16, fontFamily: FONT.bold, fontWeight: '700', color: '#202124' },
   rValue: { fontSize: 14, fontFamily: FONT.semibold, fontWeight: '600', color: '#202124' },
-  rValueBold: { fontSize: 16, fontFamily: FONT.semibold, fontWeight: '600', color: '#1a73e8' },
-  rTotal: { fontSize: 22, fontFamily: FONT.extrabold, fontWeight: '800', color: '#1a73e8' },
+  rValueBold: { fontSize: 16, fontFamily: FONT.semibold, fontWeight: '600', color: '#0D9488' },
+  rTotal: { fontSize: 22, fontFamily: FONT.extrabold, fontWeight: '800', color: '#0D9488' },
   doseMeal: { fontSize: 13, fontFamily: FONT.regular, color: '#5f6368', marginBottom: 8 },
   divider: { height: 1, backgroundColor: '#e8eaed', marginVertical: 8 },
   warningCard: { backgroundColor: '#fef7e0', borderRadius: 12, padding: 16, marginBottom: 14, borderWidth: 1, borderColor: '#f9ab00' },
   warningTitle: { fontSize: 16, fontFamily: FONT.bold, fontWeight: '700', color: '#e37400', marginBottom: 8 },
   warningText: { fontSize: 13, fontFamily: FONT.regular, color: '#202124', lineHeight: 18 },
-  noteCard: { backgroundColor: '#e8f0fe', borderRadius: 10, padding: 12, marginBottom: 14, borderWidth: 1, borderColor: '#d2e3fc' },
-  noteTitle: { fontSize: 14, fontFamily: FONT.semibold, fontWeight: '600', color: '#1a73e8', marginBottom: 4 },
+  noteCard: { backgroundColor: '#E5F4F1', borderRadius: 10, padding: 12, marginBottom: 14, borderWidth: 1, borderColor: '#B8E6DF' },
+  noteTitle: { fontSize: 14, fontFamily: FONT.semibold, fontWeight: '600', color: '#0D9488', marginBottom: 4 },
   noteText: { fontSize: 12, fontFamily: FONT.regular, color: '#3c4043', lineHeight: 16 },
   doneBtn: { backgroundColor: '#34a853', borderRadius: 12, padding: 16, alignItems: 'center', marginTop: 10 },
   doneBtnText: { color: '#fff', fontSize: 17, fontFamily: FONT.semibold, fontWeight: '600' },
-  identifyBtn: { backgroundColor: '#1a73e8', marginBottom: 12 },
+  identifyBtn: { backgroundColor: '#0D9488', marginBottom: 12 },
   modelLoadingRow: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 10, marginBottom: 8 },
   modelLoadingText: { fontSize: 13, fontFamily: FONT.regular, color: '#5f6368', fontStyle: 'italic' },
   modelErrorRow: { backgroundColor: '#fef7e0', borderRadius: 8, padding: 10, marginBottom: 10, borderWidth: 1, borderColor: '#f9ab00' },
   modelErrorText: { fontSize: 12, fontFamily: FONT.regular, color: '#e37400' },
-  modelSuggestionsCard: { backgroundColor: '#f0f7ff', borderRadius: 12, padding: 14, marginBottom: 16, borderWidth: 1, borderColor: '#d2e3fc' },
-  modelSuggestionsTitle: { fontSize: 14, fontFamily: FONT.bold, fontWeight: '700', color: '#1a73e8', marginBottom: 2 },
+  modelSuggestionsCard: { backgroundColor: '#f0f7ff', borderRadius: 12, padding: 14, marginBottom: 16, borderWidth: 1, borderColor: '#B8E6DF' },
+  modelSuggestionsTitle: { fontSize: 14, fontFamily: FONT.bold, fontWeight: '700', color: '#0D9488', marginBottom: 2 },
   modelSuggestionsSubtitle: { fontSize: 11, fontFamily: FONT.regular, color: '#5f6368', marginBottom: 10, fontStyle: 'italic', lineHeight: 15 },
   modelChips: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
   modelChip: { borderRadius: 20, paddingHorizontal: 12, paddingVertical: 8, borderWidth: 1, flexDirection: 'row', alignItems: 'center', gap: 8 },
-  modelChipHigh: { backgroundColor: '#e8f0fe', borderColor: '#a8c8fa' },
+  modelChipHigh: { backgroundColor: '#E5F4F1', borderColor: '#a8c8fa' },
   modelChipMed: { backgroundColor: '#f1f3f4', borderColor: '#dadce0' },
   modelChipText: { fontSize: 13, fontFamily: FONT.semibold, fontWeight: '600', color: '#202124' },
   modelChipMeta: { fontSize: 11, fontFamily: FONT.regular, color: '#5f6368' },
-  photoRefCard: { backgroundColor: '#e8f0fe', borderRadius: 12, padding: 12, marginBottom: 14, borderWidth: 1, borderColor: '#d2e3fc', alignItems: 'center' },
+  photoRefCard: { backgroundColor: '#E5F4F1', borderRadius: 12, padding: 12, marginBottom: 14, borderWidth: 1, borderColor: '#B8E6DF', alignItems: 'center' },
   photoRefImg: { width: '100%', height: 160, borderRadius: 8, marginBottom: 8, backgroundColor: '#e8eaed' },
-  photoRefLabel: { fontSize: 12, fontFamily: FONT.semibold, color: '#1a73e8', fontWeight: '600' },
+  photoRefLabel: { fontSize: 12, fontFamily: FONT.semibold, color: '#0D9488', fontWeight: '600' },
 suggestionsTitle: { fontSize: 14, fontFamily: FONT.bold, fontWeight: '700', color: '#5f6368', marginBottom: 8 },
 colorSwatch: { width: 20, height: 20, borderRadius: 10, borderWidth: 1, borderColor: '#c4c4c4' },
   blockCard: { borderColor: '#ea4335', backgroundColor: '#fce8e6' },
@@ -721,7 +721,7 @@ colorSwatch: { width: 20, height: 20, borderRadius: 10, borderWidth: 1, borderCo
   saveDoseHint: { fontSize: 12, fontFamily: FONT.regular, color: '#5f6368', marginBottom: 8 },
   saveDoseRow: { flexDirection: 'row', gap: 10, alignItems: 'center' },
   saveDoseInput: { flex: 1 },
-  saveDoseBtn: { backgroundColor: '#1a73e8', borderRadius: 10, paddingHorizontal: 18, paddingVertical: 12 },
+  saveDoseBtn: { backgroundColor: '#0D9488', borderRadius: 10, paddingHorizontal: 18, paddingVertical: 12 },
   saveDoseBtnDone: { backgroundColor: '#0D9488' },
   saveDoseBtnText: { color: '#fff', fontSize: 14, fontFamily: FONT.semibold, fontWeight: '600' },
 });

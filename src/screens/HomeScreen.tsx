@@ -378,7 +378,7 @@ const styles = StyleSheet.create({
   heroWrap: { alignItems: 'center', justifyContent: 'center', marginBottom: 22 },
   heroOuter: {
     width: 132, height: 132, borderRadius: 66,
-    backgroundColor: '#EAF3FE', alignItems: 'center', justifyContent: 'center',
+    backgroundColor: '#E5F4F1', alignItems: 'center', justifyContent: 'center',
   },
   heroInner: {
     width: 92, height: 92, borderRadius: 46,
@@ -412,7 +412,7 @@ const styles = StyleSheet.create({
   featureRow: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 12 },
   featureIcon: {
     width: 38, height: 38, borderRadius: 19,
-    backgroundColor: '#EAF3FE', alignItems: 'center', justifyContent: 'center',
+    backgroundColor: '#E5F4F1', alignItems: 'center', justifyContent: 'center',
   },
   featureTitle: { fontSize: 14, fontFamily: FONT.semibold, fontWeight: '600', color: T.text },
   featureSub: { fontSize: 12, fontFamily: FONT.regular, color: T.muted, marginTop: 1 },

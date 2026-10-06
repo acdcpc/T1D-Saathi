@@ -7,8 +7,8 @@ import { getAccessibilitySettings, setAccessibilitySetting, AccessibilitySetting
 // High-contrast palette — pure white/black + darker accents for low-vision users.
 export const T_HC = {
   ...T,
-  blue: '#0B57D0',
-  blueLight: '#D3E3FD',
+  blue: '#0B5E58',
+  blueLight: '#D9F2ED',
   teal: '#0B6B5A',
   red: '#B3261E',
   orange: '#8A5300',
@@ -24,8 +24,8 @@ export const T_HC = {
   redDark: '#8C1D18',
   amberLight: '#FFF0C2',
   amberDark: '#6B4E00',
-  blueLightBg: '#D3E3FD',
-  blueDark: '#0B3D91',
+  blueLightBg: '#D9F2ED',
+  blueDark: '#073B36',
 };
 
 interface PreferencesValue {

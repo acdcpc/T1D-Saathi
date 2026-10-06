@@ -8,7 +8,7 @@ import BackBar from '../components/BackBar';
 
 const contentCol = { width: '100%' as const, maxWidth: 640, alignSelf: 'center' as const };
 
-export default function MessagesScreen({ route }: any) {
+export default function MessagesScreen({ route, navigation }: any) {
   const { patientId } = route.params;
   const { user } = useAuth();
   const { t } = useLanguage();
@@ -117,14 +117,14 @@ const styles = StyleSheet.create({
   list: { padding: 16, flexGrow: 1 },
   empty: { textAlign: 'center', color: '#7A6E65', fontSize: 14, marginTop: 40 },
   bubble: { maxWidth: '80%', borderRadius: 16, padding: 12, marginBottom: 8 },
-  myBubble: { alignSelf: 'flex-end', backgroundColor: '#1a73e8' },
+  myBubble: { alignSelf: 'flex-end', backgroundColor: '#0D9488' },
   theirBubble: { alignSelf: 'flex-start', backgroundColor: '#fff', borderWidth: 1, borderColor: '#D9CEC4' },
   bubbleText: { fontSize: 15, color: '#1A1A2E' },
   myBubbleText: { color: '#fff' },
   time: { fontSize: 10, color: '#7A6E65', marginTop: 4, textAlign: 'right' },
   inputRow: { flexDirection: 'row', padding: 12, borderTopWidth: 1, borderColor: '#D9CEC4', backgroundColor: '#fff', alignItems: 'flex-end' },
   input: { flex: 1, backgroundColor: '#F7F1EB', borderRadius: 20, paddingHorizontal: 16, paddingVertical: 10, fontSize: 15, marginRight: 8, maxHeight: 120 },
-  sendBtn: { backgroundColor: '#1a73e8', borderRadius: 20, paddingHorizontal: 20, paddingVertical: 10 },
+  sendBtn: { backgroundColor: '#0D9488', borderRadius: 20, paddingHorizontal: 20, paddingVertical: 10 },
   disabled: { opacity: 0.45 },
   sendText: { color: '#fff', fontWeight: '600' },
 });

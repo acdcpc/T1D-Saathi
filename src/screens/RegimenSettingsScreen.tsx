@@ -233,7 +233,7 @@ const styles = StyleSheet.create({
   autoValue: { fontSize: 17, fontFamily: FONT.extrabold, fontWeight: '800', color: '#202124' },
   autoFormula: { fontSize: 11, fontFamily: FONT.regular, color: '#0D9488', marginTop: 3 },
   autoNote: { fontSize: 11, fontFamily: FONT.regular, color: '#5f6368', marginTop: 10, fontStyle: 'italic' },
-  saveBtn: { backgroundColor: '#1a73e8', borderRadius: 12, padding: 16, alignItems: 'center', marginTop: 24 },
+  saveBtn: { backgroundColor: '#0D9488', borderRadius: 12, padding: 16, alignItems: 'center', marginTop: 24 },
   saveText: { color: '#fff', fontSize: 17, fontFamily: FONT.semibold, fontWeight: '600' },
   hintSmall: { fontSize: 11, fontFamily: FONT.regular, color: '#5f6368', marginTop: 6, fontStyle: 'italic' },
 });

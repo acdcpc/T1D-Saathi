@@ -12,7 +12,7 @@ import { toDisplayNumber } from '../utils/nepaliNumber';
 const contentCol = { width: '100%' as const, maxWidth: 640, alignSelf: 'center' as const };
 
 const TOPICS: { id: string; topic: string; topic_ne: string; icon: keyof typeof Ionicons.glyphMap; color: string; order: number; audience?: string }[] = [
-  { id: '1', topic: 'Diagnosis & Pathophysiology', topic_ne: 'निदान र रोगविज्ञान', icon: 'flask-outline', color: '#1a73e8', order: 1 },
+  { id: '1', topic: 'Diagnosis & Pathophysiology', topic_ne: 'निदान र रोगविज्ञान', icon: 'flask-outline', color: '#0D9488', order: 1 },
   { id: '2', topic: 'Dietary Guidance', topic_ne: 'आहार मार्गदर्शन', icon: 'nutrition-outline', color: '#0D9488', order: 2 },
   { id: '3', topic: 'Insulin Therapy & Management', topic_ne: 'इन्सुलिन थेरापी', icon: 'medical-outline', color: '#C0392B', order: 3 },
   { id: '4', topic: 'Psychosocial (Patient)', topic_ne: 'मनोसामाजिक (बिरामी)', icon: 'happy-outline', color: '#7C3AED', order: 4, audience: 'patient' },

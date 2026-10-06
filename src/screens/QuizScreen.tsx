@@ -80,14 +80,14 @@ const styles = StyleSheet.create({
   progress: { fontSize: 14, fontFamily: FONT.regular, color: '#5f6368', marginBottom: 20 },
   questionCard: { backgroundColor: '#fff', borderRadius: 12, padding: 18, borderWidth: 1, borderColor: '#e8eaed' },
   questionText: { fontSize: 17, fontFamily: FONT.semibold, fontWeight: '600', color: '#202124', marginBottom: 20, lineHeight: 24 },
-  optionBtn: { backgroundColor: '#e8f0fe', borderRadius: 10, padding: 16, marginBottom: 10 },
+  optionBtn: { backgroundColor: '#E5F4F1', borderRadius: 10, padding: 16, marginBottom: 10 },
   optionText: { fontSize: 15, fontFamily: FONT.regular, color: '#202124' },
   resultCard: {
     width: '100%', maxWidth: 640, alignSelf: 'center', backgroundColor: '#fff', borderRadius: 16, padding: 30, alignItems: 'center', borderWidth: 1, borderColor: '#e8eaed', marginTop: 20 },
   scoreLabel: { fontSize: 16, fontFamily: FONT.regular, color: '#5f6368' },
-  scoreValue: { fontSize: 56, fontFamily: FONT.extrabold, fontWeight: '800', color: '#1a73e8' },
+  scoreValue: { fontSize: 56, fontFamily: FONT.extrabold, fontWeight: '800', color: '#0D9488' },
   scoreDetail: { fontSize: 14, fontFamily: FONT.regular, color: '#5f6368', marginTop: 4 },
   doneBtn: {
-    width: '100%', maxWidth: 640, alignSelf: 'center', backgroundColor: '#1a73e8', borderRadius: 12, padding: 16, alignItems: 'center', marginTop: 20 },
+    width: '100%', maxWidth: 640, alignSelf: 'center', backgroundColor: '#0D9488', borderRadius: 12, padding: 16, alignItems: 'center', marginTop: 20 },
   doneText: { color: '#fff', fontSize: 17, fontFamily: FONT.semibold, fontWeight: '600' },
 });

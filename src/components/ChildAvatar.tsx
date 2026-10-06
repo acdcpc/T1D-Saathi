@@ -10,7 +10,7 @@ import { FONT } from '../theme';
  */
 export default function ChildAvatar({ name, sex, size = 48 }: { name: string; sex?: string; size?: number }) {
   const isGirl = sex === 'female';
-  const bg = isGirl ? '#FCE7F3' : '#E6F4FE';
+  const bg = isGirl ? '#FCE7F3' : '#E5F4F1';
   const fg = isGirl ? '#BE185D' : '#1d4ed8';
   const ring = isGirl ? '#F9A8D4' : '#93C5FD';
 

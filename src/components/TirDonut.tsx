@@ -21,7 +21,7 @@ export default function TirDonut({
   size = 120,
   strokeWidth = 14,
   color = '#0D9488',
-  trackColor = '#E6F4FE',
+  trackColor = '#E5F4F1',
   label = 'Time in Range',
   gradient,
 }: Props) {

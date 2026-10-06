@@ -11,7 +11,7 @@ export interface Insight { variant: InsightVariant; message: string; context?: s
 const TINTS: Record<InsightVariant, { bg: string; border: string; circle: string; icon: keyof typeof Ionicons.glyphMap; iconColor: string }> = {
   positive: { bg: '#F0FDFA', border: '#CCFBF1', circle: '#CCFBF1', icon: 'sparkles', iconColor: D2.teal },
   attention: { bg: '#FFFBEB', border: '#FDE68A', circle: '#FEF3C7', icon: 'bulb', iconColor: D2.marigoldDeep },
-  info: { bg: '#EFF6FF', border: '#E8F0FE', circle: '#E8F0FE', icon: 'information-circle', iconColor: '#1D4ED8' },
+  info: { bg: '#EFF6FF', border: '#E5F4F1', circle: '#E5F4F1', icon: 'information-circle', iconColor: '#1D4ED8' },
 };
 
 export default function InsightCard({ insight }: { insight: Insight | null }) {

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Linking, ActivityIndicator } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Linking, ActivityIndicator, ScrollView } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useLanguage } from '../context/LanguageContext';
 import { supabase } from '../lib/supabase';
@@ -18,7 +18,9 @@ interface Helpline {
   hours?: string;
 }
 
-export default function HelplineScreen() {
+const contentCol = { width: '100%' as const, maxWidth: 640, alignSelf: 'center' as const };
+
+export default function HelplineScreen({ navigation }: any) {
   const { t, language } = useLanguage();
   const [helplines, setHelplines] = useState<Helpline[]>([]);
   const [loading, setLoading] = useState(true);
@@ -35,10 +37,11 @@ export default function HelplineScreen() {
     Linking.openURL(`tel:${phone}`);
   };
 
-  if (loading) return <View style={styles.centered}><ActivityIndicator size="large" color="#ea4335" /></View>;
+  if (loading) return <View style={styles.centered}><ActivityIndicator size="large" color="#0D9488" /></View>;
 
   return (
     <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
+      <ScrollView contentContainerStyle={[contentCol, { paddingBottom: 24 }]}>
       <BackBar navigation={navigation} />
       <Text style={styles.title}>{language === 'ne' ? 'सहयोग लाइन' : 'Helpline'}</Text>
       <Text style={styles.subtitle}>
@@ -86,6 +89,7 @@ export default function HelplineScreen() {
             : 'This helpline does not replace local emergency services. In a true emergency, go to the nearest hospital or call an ambulance.'}
         </Text>
       </View>
+      </ScrollView>
     </SafeAreaView>
   );
 }

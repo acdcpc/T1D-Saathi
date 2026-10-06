@@ -250,7 +250,7 @@ export default function LogGlucoseScreen({ route, navigation }: any) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#F0F7FF' },
+  container: { flex: 1, backgroundColor: '#EFF9F7' },
   content: { padding: 20, paddingTop: 90, paddingBottom: 60 },
   centered: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   title: { fontSize: 24, fontFamily: FONT.extrabold, fontWeight: '800', color: '#202124', marginBottom: 20 },
@@ -265,7 +265,7 @@ const styles = StyleSheet.create({
   unitActive: { backgroundColor: '#0D9488' },
   unitText: { fontSize: 13, fontFamily: FONT.regular, color: '#3c4043' },
   unitTextActive: { color: '#fff' },
-  regimenInfo: { backgroundColor: '#e8f0fe', borderRadius: 10, padding: 14, marginTop: 14 },
+  regimenInfo: { backgroundColor: '#E5F4F1', borderRadius: 10, padding: 14, marginTop: 14 },
   regimenText: { fontSize: 13, fontFamily: FONT.regular, color: '#0D9488', paddingVertical: 1 },
   logBtn: { backgroundColor: '#0D9488', borderRadius: 12, padding: 16, alignItems: 'center', marginTop: 24 },
   logBtnText: { color: '#fff', fontSize: 17, fontFamily: FONT.semibold, fontWeight: '600' },
