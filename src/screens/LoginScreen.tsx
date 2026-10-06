@@ -3,6 +3,7 @@ import {
   View, Text, TextInput, TouchableOpacity, StyleSheet,
   Alert, ScrollView, KeyboardAvoidingView, Platform, ActivityIndicator,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
 import { usePreferences } from '../context/PreferencesContext';
@@ -12,6 +13,7 @@ import { D2 } from '../design/tokens';
 
 export default function LoginScreen({ navigation }: any) {
   const { signIn, signUp, signInWithGoogle, signInAsGuest } = useAuth();
+  const insets = useSafeAreaInsets();
   const { t, language } = useLanguage();
   const { theme: TH, fontScale } = usePreferences();
   const isNe = language === 'ne';
@@ -52,7 +54,15 @@ export default function LoginScreen({ navigation }: any) {
     try {
       if (isSignup) {
         const { data, error } = await signUp(email.trim(), password);
-        if (error) {
+        const dupByError = !!error && /already|registered|exists/i.test(error.message || '');
+        const dupByFake = !error && !!data?.user && Array.isArray(data.user.identities) && data.user.identities.length === 0;
+        if (dupByError || dupByFake) {
+          Alert.alert(
+            isNe ? 'खाता पहिले नै छ' : 'Account already exists',
+            isNe ? 'यो इमेलमा पहिले नै खाता छ। कृपया लग इन गर्नुहोस्।' : 'This email already has an account. Please log in instead.',
+            [{ text: isNe ? 'लग इन' : 'Log in', onPress: () => setIsSignup(false) }],
+          );
+        } else if (error) {
           Alert.alert(isNe ? 'त्रुटि' : 'Error', error.message);
         } else if (!data?.session) {
           // Email confirmation is enabled → user must verify before signing in
@@ -68,14 +78,22 @@ export default function LoginScreen({ navigation }: any) {
         const { error } = await signIn(email.trim(), password);
         if (error) {
           const msg = error.message || '';
-          const friendly = msg.includes('Invalid login credentials')
-            ? (isNe ? 'इमेल वा पासवर्ड गलत छ।' : 'Incorrect email or password.')
-            : msg;
+          const lower = msg.toLowerCase();
+          let friendly = msg;
+          if (msg.includes('Invalid login credentials')) {
+            friendly = isNe ? 'इमेल वा पासवर्ड गलत छ।' : 'Incorrect email or password.';
+          } else if (lower.includes('email not confirmed')) {
+            friendly = isNe
+              ? 'कृपया पहिले इमेल पुष्टि गर्नुहोस् — इनबक्समा लिङ्क हेर्नुहोस्।'
+              : 'Please confirm your email first — check your inbox for the link.';
+          } else if (lower.includes('rate limit') || lower.includes('too many')) {
+            friendly = isNe ? 'धेरै प्रयास भयो। एकछिन पछि फेरि प्रयास गर्नुहोस्।' : 'Too many attempts. Please try again in a little while.';
+          }
           Alert.alert(isNe ? 'त्रुटि' : 'Error', friendly);
         }
       }
     } catch (e: any) {
-      Alert.alert(isNe ? 'त्रुटि' : 'Error', e?.message || 'Something went wrong');
+      Alert.alert(isNe ? 'त्रुटि' : 'Error', e?.message || (isNe ? 'केही गलत भयो।' : 'Something went wrong'));
     } finally {
       setLoading(false);
     }
@@ -86,7 +104,7 @@ export default function LoginScreen({ navigation }: any) {
     try {
       await signInAsGuest();
     } catch (e: any) {
-      Alert.alert(isNe ? 'त्रुटि' : 'Error', e?.message || 'Guest sign-in failed');
+      Alert.alert(isNe ? 'त्रुटि' : 'Error', e?.message || (isNe ? 'पाहुना लग इन असफल भयो' : 'Guest sign-in failed'));
     } finally {
       setLoading(false);
     }
@@ -95,9 +113,16 @@ export default function LoginScreen({ navigation }: any) {
   const handleGoogle = async () => {
     setLoading(true);
     try {
-      await signInWithGoogle();
+      const outcome = await signInWithGoogle();
+      if (outcome === 'unavailable') {
+        Alert.alert(
+          isNe ? 'गुगल लग इन उपलब्ध छैन' : 'Google sign-in unavailable',
+          isNe ? 'गुगल लग इन अहिले उपलब्ध छैन। इमेल वा पाहुना विकल्प प्रयोग गर्नुहोस्।' : 'Google sign-in is unavailable right now. Try email or guest instead.',
+        );
+      }
+      // 'signed-in' → auth state drives navigation. 'cancelled' → stay silent.
     } catch (e: any) {
-      Alert.alert(isNe ? 'त्रुटि' : 'Error', e?.message || 'Google sign-in failed');
+      Alert.alert(isNe ? 'त्रुटि' : 'Error', e?.message || (isNe ? 'गुगल लग इन असफल भयो' : 'Google sign-in failed'));
     } finally {
       setLoading(false);
     }
@@ -105,7 +130,7 @@ export default function LoginScreen({ navigation }: any) {
 
   return (
     <KeyboardAvoidingView style={[styles.container, { backgroundColor: TH.bg }]} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
-      <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
+      <ScrollView contentContainerStyle={[styles.scroll, { paddingBottom: Math.max(insets.bottom ?? 0, 48) }]} keyboardShouldPersistTaps="handled">
         <View style={styles.cardCol}>
         <View style={styles.header}>
           <Text style={[styles.appTitle, { color: TH.text, fontSize: 26 * fontScale }]}>T1D साथी</Text>
@@ -134,7 +159,9 @@ export default function LoginScreen({ navigation }: any) {
             textContentType="password"
             returnKeyType="done"
             placeholderTextColor={TH.muted}          />
-          {passwordError ? <Text style={styles.errorText}>{passwordError}</Text> : null}
+          {passwordError ? <Text style={styles.errorText}>{passwordError}</Text> : (
+            isSignup ? <Text style={styles.hintText}>{isNe ? 'कम्तिमा ६ अक्षरको पासवर्ड' : 'At least 6 characters'}</Text> : null
+          )}
           <GradientButton
             label={isSignup ? (isNe ? 'खाता बनाउनुहोस्' : 'Create Account') : (isNe ? 'लग इन' : 'Log In')}
             onPress={handleSubmit}
@@ -166,6 +193,7 @@ export default function LoginScreen({ navigation }: any) {
 }
 
 const styles = StyleSheet.create({
+  hintText: { color: '#8A8F98', fontSize: 12, marginTop: 4 },
   container: { flex: 1, backgroundColor: T.bg },
   scroll: { flexGrow: 1, justifyContent: 'center', alignItems: 'center', padding: 24 },
   cardCol: {

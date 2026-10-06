@@ -56,6 +56,9 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
     autoRefreshToken: true,
     persistSession: true,
     detectSessionInUrl: Platform.OS === 'web',
+    // Explicit implicit flow: Google sign-in parses access_token/refresh_token from the redirect
+    // fragment (see AuthContext.parseTokensFromUrl). PKCE would return ?code= instead.
+    flowType: 'implicit',
   },
 });
 
