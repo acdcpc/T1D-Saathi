@@ -8,6 +8,7 @@ import PatientDashboard from '../screens/PatientDashboard';
 import LogGlucoseScreen from '../screens/LogGlucoseScreen';
 import FoodEstimatorScreen from '../screens/FoodEstimatorScreen';
 import EducationScreen from '../screens/EducationScreen';
+import FloatingTabBar from '../components/FloatingTabBar';
 import type { PatientProfile } from '../types';
 
 const Tab = createBottomTabNavigator();
@@ -33,37 +34,13 @@ export default function ParentTabs({ route }: any) {
       <Tab.Navigator
         screenOptions={({ route }) => ({
           headerShown: false,
-          tabBarActiveTintColor: T.blue,
-          tabBarInactiveTintColor: T.muted,
-          tabBarStyle: {
-            backgroundColor: '#FFFFFF',
-            borderTopColor: T.border,
-            height: 68,
-            paddingBottom: 10,
-            paddingTop: 8,
-          },
-          tabBarLabelStyle: { fontSize: 12, fontWeight: '700', fontFamily: FONT.semibold },
-          tabBarIcon: ({ color, size, focused }) => (
-            <Ionicons
-              name={focused ? ICONS[route.name].filled : ICONS[route.name].outline}
-              size={size + 2}
-              color={color}
-            />
-          ),
         })}
+        tabBar={(props) => <FloatingTabBar {...props} />}
       >
-        <Tab.Screen name="Dashboard" component={PatientDashboard} options={{ tabBarLabel: isNe ? 'गृह' : 'Home' }} />
-        <Tab.Screen name="Log" component={LogGlucoseScreen} options={{ tabBarLabel: isNe ? 'ग्लुकोज' : 'Glucose' }} />
-        <Tab.Screen name="Food" component={FoodEstimatorScreen} options={{ tabBarLabel: isNe ? 'खाना' : 'Food' }} />
-        <Tab.Screen
-          name="Learn"
-          component={EducationScreen}
-          options={{
-            tabBarLabel: isNe ? 'सिकाइ' : 'Learn',
-            tabBarButton: () => null,
-            tabBarItemStyle: { display: 'none' },
-          }}
-        />
+        <Tab.Screen name="Dashboard" component={PatientDashboard} />
+        <Tab.Screen name="Log" component={LogGlucoseScreen} />
+        <Tab.Screen name="Food" component={FoodEstimatorScreen} />
+        <Tab.Screen name="Learn" component={EducationScreen} options={{ tabBarButton: () => null }} />
       </Tab.Navigator>
     </PatientProvider>
   );

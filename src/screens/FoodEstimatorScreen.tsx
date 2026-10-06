@@ -15,6 +15,7 @@ import { supabase } from '../lib/supabase';
 import { safeInsert } from '../utils/offlineQueue';
 import { fetchRecentInsulinDoses, saveInsulinDose } from '../utils/insulinLogs';
 import { computeIOB } from '../utils/insulinOnBoard';
+import { useTabBarSpace } from '../design/useTabBarSpace';
 import { searchNepaliFoods, NEPALI_FOODS } from '../data/nepaliFoods';
 import { classifyFoodPhoto, type ModelSuggestion, type ModelResult } from '../utils/foodModelClassifier';
 import { calculateDosing, checkMealCoverage, DosingValidationError, glucoseToMgDl } from '../utils/dosingCalc';
@@ -39,6 +40,7 @@ export default function FoodEstimatorScreen({ route }: any) {
   const { user } = useAuth();
   const { t, language } = useLanguage();
   const insets = useSafeAreaInsets();
+  const tabSpace = useTabBarSpace();
 
   const [step, setStep] = useState<Step>('photo');
   const [imageUri, setImageUri] = useState<string | null>(null);
@@ -340,7 +342,7 @@ export default function FoodEstimatorScreen({ route }: any) {
   // ═══ RENDER: Step 1 — Photo ═══
   if (step === 'photo') {
     return (
-      <ScrollView style={s.container} contentContainerStyle={[s.content, contentCol, { paddingTop: insets.top + 16, paddingBottom: insets.bottom + 40 }]}>
+      <ScrollView style={s.container} contentContainerStyle={[s.content, contentCol, { paddingTop: insets.top + 16, paddingBottom: tabSpace.contentPaddingBottom + 24 }]}>
         <Text style={s.title}>🍽️ Food Photo Estimator</Text>
         <Text style={s.hint}>Take a clear photo of the meal. For best results, center the plate and include the plate edge.</Text>
 
@@ -374,7 +376,7 @@ export default function FoodEstimatorScreen({ route }: any) {
   // ═══ RENDER: Step 2 — Identify foods from photo ═══
   if (step === 'identify') {
     return (
-      <ScrollView style={s.container} contentContainerStyle={[s.content, contentCol, { paddingTop: insets.top + 16, paddingBottom: insets.bottom + 40 }]}>
+      <ScrollView style={s.container} contentContainerStyle={[s.content, contentCol, { paddingTop: insets.top + 16, paddingBottom: tabSpace.contentPaddingBottom + 24 }]}>
         <Text style={s.title}>🍽️ What foods are on this plate?</Text>
         <ISPADBadge />
 
@@ -514,7 +516,7 @@ export default function FoodEstimatorScreen({ route }: any) {
   // ═══ RENDER: Step 3 — Dosing Results ═══
   if (step === 'dosing' && dosingResult) {
     return (
-      <ScrollView style={s.container} contentContainerStyle={[s.content, contentCol, { paddingTop: insets.top + 16, paddingBottom: insets.bottom + 40 }]}>
+      <ScrollView style={s.container} contentContainerStyle={[s.content, contentCol, { paddingTop: insets.top + 16, paddingBottom: tabSpace.contentPaddingBottom + 24 }]}>
         <Text style={s.title}>Dosing Results</Text>
         <ISPADBadge />
 

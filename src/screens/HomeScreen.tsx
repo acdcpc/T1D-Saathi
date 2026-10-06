@@ -11,6 +11,9 @@ import { registerPushToken } from '../utils/pushAlerts';
 import { FONT, T } from '../theme';
 import Skeleton from '../components/Skeleton';
 import ChildAvatar from '../components/ChildAvatar';
+import EmptyArt from '../components/EmptyArt';
+import GradientButton from '../components/GradientButton';
+import { D2 } from '../design/tokens';
 import ConflictDialog from '../components/ConflictDialog';
 import AnimatedPressable from '../components/AnimatedPressable';
 import { usePreferences } from '../context/PreferencesContext';
@@ -148,7 +151,7 @@ export default function HomeScreen({ navigation }: any) {
           </View>
         </View>
         <View style={styles.chevronCircle}>
-          <Ionicons name="chevron-forward" size={16} color={T.blue} />
+          <Ionicons name="chevron-forward" size={16} color={D2.teal} />
         </View>
         </View>
       </AnimatedPressable>
@@ -231,16 +234,7 @@ export default function HomeScreen({ navigation }: any) {
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={TH.blue} colors={[TH.blue]} progressBackgroundColor={TH.surface} />}
           ListHeaderComponent={
             <View style={styles.emptyWrap}>
-              <View style={styles.heroWrap}>
-                <View style={styles.heroOuter}>
-                  <View style={styles.heroInner}>
-                    <Ionicons name="water" size={42} color={T.blue} />
-                  </View>
-                </View>
-                <View style={[styles.spark, styles.sparkA]} />
-                <View style={[styles.spark, styles.sparkB]} />
-                <View style={[styles.spark, styles.sparkC]} />
-              </View>
+              <View style={{ marginBottom: 22 }}><EmptyArt /></View>
 
               <Text style={styles.emptyTitle}>{isNe ? 'सुरु गरौं!' : "Let's get started"}</Text>
               <Text style={styles.emptySub}>
@@ -249,16 +243,12 @@ export default function HomeScreen({ navigation }: any) {
                   : "Add your child's profile to start tracking glucose, meals and insulin."}
               </Text>
 
-              <TouchableOpacity
-                accessibilityRole="button"
-                accessibilityLabel={isNe ? 'बच्चाको प्रोफाइल थप्नुहोस्' : "Add your child's profile"}
-                style={styles.primaryCta}
+              <GradientButton
+                label={isNe ? 'बच्चाको प्रोफाइल थप्नुहोस्' : 'Add your child'}
+                icon="add"
                 onPress={() => navigation.navigate('AddPatient', {})}
-                activeOpacity={0.85}
-              >
-                <Ionicons name="add" size={22} color="#fff" />
-                <Text style={styles.primaryCtaText}>{isNe ? 'बच्चाको प्रोफाइल थप्नुहोस्' : 'Add your child'}</Text>
-              </TouchableOpacity>
+                style={{ alignSelf: 'center', width: '100%', maxWidth: 420, marginTop: 24 }}
+              />
 
               <View style={styles.featureList}>
                 {[
@@ -268,7 +258,7 @@ export default function HomeScreen({ navigation }: any) {
                 ].map((f, i) => (
                   <View key={i} style={styles.featureRow}>
                     <View style={styles.featureIcon}>
-                      <Ionicons name={f.icon as any} size={20} color={T.blue} />
+                      <Ionicons name={f.icon as any} size={20} color={D2.teal} />
                     </View>
                     <View style={{ flex: 1 }}>
                       <Text style={styles.featureTitle}>{f.title}</Text>
@@ -344,7 +334,7 @@ const styles = StyleSheet.create({
   headerRow: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between' },
   headerLeft: { flex: 1 },
   brandRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  brandDot: { width: 10, height: 10, borderRadius: 5, backgroundColor: T.blue },
+  brandDot: { width: 10, height: 10, borderRadius: 5, backgroundColor: D2.teal },
   headerTitle: { fontWeight: '800', fontSize: 23, fontFamily: FONT.extrabold },
   headerSubtitle: { fontSize: 13, fontFamily: FONT.regular, color: T.muted, marginTop: 3 },
   headerRight: { flexDirection: 'row', alignItems: 'center', gap: 10 },
@@ -405,10 +395,10 @@ const styles = StyleSheet.create({
   emptySub: { fontSize: 14, fontFamily: FONT.regular, color: T.muted, textAlign: 'center', marginTop: 10, lineHeight: 21, maxWidth: 380 },
   primaryCta: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8,
-    backgroundColor: T.blue, borderRadius: 999,
+    backgroundColor: D2.teal, borderRadius: 999,
     paddingVertical: 15, paddingHorizontal: 28,
     marginTop: 24,
-    shadowColor: T.blue, shadowOpacity: 0.3, shadowRadius: 14, shadowOffset: { width: 0, height: 6 }, elevation: 5,
+    shadowColor: D2.teal, shadowOpacity: 0.3, shadowRadius: 14, shadowOffset: { width: 0, height: 6 }, elevation: 5,
   },
   primaryCtaText: { color: '#fff', fontSize: 16, fontFamily: FONT.bold, fontWeight: '700' },
 
@@ -431,8 +421,8 @@ const styles = StyleSheet.create({
   list: { paddingHorizontal: 16, paddingTop: 4 },
   listHeaderRow: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 6, paddingTop: 12, paddingBottom: 10 },
   sectionLabel: { fontSize: 13, fontFamily: FONT.bold, fontWeight: '700', color: T.muted, letterSpacing: 0.6, textTransform: 'uppercase' },
-  countPill: { backgroundColor: '#EAF3FE', borderRadius: 999, paddingHorizontal: 9, paddingVertical: 2 },
-  countPillText: { fontSize: 12, fontFamily: FONT.bold, fontWeight: '700', color: T.blue },
+  countPill: { backgroundColor: D2.tealTint, borderRadius: 999, paddingHorizontal: 9, paddingVertical: 2 },
+  countPillText: { fontSize: 12, fontFamily: FONT.bold, fontWeight: '700', color: D2.tealDeep },
 
   patientCard: {
     flexDirection: 'row', alignItems: 'center',
@@ -446,15 +436,15 @@ const styles = StyleSheet.create({
   metaRow: { flexDirection: 'row', gap: 6, marginTop: 5, flexWrap: 'wrap' },
   metaChip: { backgroundColor: '#F4EFE8', borderRadius: 999, paddingHorizontal: 9, paddingVertical: 3 },
   metaChipText: { fontSize: 11, fontFamily: FONT.semibold, fontWeight: '600', color: T.muted },
-  chevronCircle: { width: 30, height: 30, borderRadius: 15, backgroundColor: '#EAF3FE', alignItems: 'center', justifyContent: 'center' },
+  chevronCircle: { width: 30, height: 30, borderRadius: 15, backgroundColor: D2.tealTint, alignItems: 'center', justifyContent: 'center' },
 
   // ── FAB ──
   fab: {
     position: 'absolute', bottom: 28, right: 20,
     width: 58, height: 58, borderRadius: 29,
-    backgroundColor: T.blue,
+    backgroundColor: D2.teal,
     alignItems: 'center', justifyContent: 'center',
-    shadowColor: T.blue, shadowOffset: { width: 0, height: 5 }, shadowOpacity: 0.35, shadowRadius: 14, elevation: 8,
+    shadowColor: D2.teal, shadowOffset: { width: 0, height: 5 }, shadowOpacity: 0.35, shadowRadius: 14, elevation: 8,
   },
 
   // ── Clinician bar ──
@@ -463,7 +453,7 @@ const styles = StyleSheet.create({
     bottom: 96,
     left: 16,
     right: 16,
-    backgroundColor: T.blue,
+    backgroundColor: D2.teal,
     borderRadius: 14,
     padding: 14,
     flexDirection: 'row',

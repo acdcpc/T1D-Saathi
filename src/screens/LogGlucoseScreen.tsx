@@ -18,11 +18,13 @@ import { HYPO_THRESHOLD, HYPO_RECHECK_MINUTES, calculateCorrectionDose, calculat
 import type { InsulinRegimen, UnitSystem } from '../types';
 import { FONT, T } from '../theme';
 import { usePreferences } from '../context/PreferencesContext';
+import { useTabBarSpace } from '../design/useTabBarSpace';
 
 const contentCol = { width: '100%' as const, maxWidth: 640, alignSelf: 'center' as const };
 
 export default function LogGlucoseScreen({ route, navigation }: any) {
   const patientId = (route.params as any)?.patientId || usePatient()?.id || '';
+  const tabSpace = useTabBarSpace();
   const { user } = useAuth();
   const { t, language } = useLanguage();
   const { theme: TH, fontScale } = usePreferences();
@@ -124,10 +126,10 @@ export default function LogGlucoseScreen({ route, navigation }: any) {
     const syncMsg = online ? '' : ' (saved offline)'; Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success); Alert.alert(t('success'), `Glucose logged: ${gVal} ${unit === 'mgdl' ? 'mg/dL' : 'mmol/L'}${syncMsg}`);
   };
 
-  if (loading) return <View style={styles.centered}><ActivityIndicator size="large" color="#1a73e8" /></View>;
+  if (loading) return <View style={styles.centered}><ActivityIndicator size="large" color="#0D9488" /></View>;
 
   return (
-    <ScrollView style={[styles.container, { backgroundColor: TH.bg }]} contentContainerStyle={[styles.content, contentCol]}>
+    <ScrollView style={[styles.container, { backgroundColor: TH.bg }]} contentContainerStyle={[styles.content, contentCol, { paddingBottom: tabSpace.contentPaddingBottom }]}>
       <Text style={styles.title}>{t('logGlucose')}</Text>
       <ISPADBadge />
 
@@ -260,12 +262,12 @@ const styles = StyleSheet.create({
   glucoseInput: { flex: 1, backgroundColor: '#fff', borderRadius: 10, padding: 14, fontSize: 32, fontFamily: FONT.bold, fontWeight: '700', borderWidth: 1, borderColor: '#dadce0', textAlign: 'center' },
   unitToggle: { flexDirection: 'row', gap: 4 },
   unitBtn: { borderRadius: 8, paddingHorizontal: 12, paddingVertical: 10, backgroundColor: '#e8eaed' },
-  unitActive: { backgroundColor: '#1a73e8' },
+  unitActive: { backgroundColor: '#0D9488' },
   unitText: { fontSize: 13, fontFamily: FONT.regular, color: '#3c4043' },
   unitTextActive: { color: '#fff' },
   regimenInfo: { backgroundColor: '#e8f0fe', borderRadius: 10, padding: 14, marginTop: 14 },
-  regimenText: { fontSize: 13, fontFamily: FONT.regular, color: '#1a73e8', paddingVertical: 1 },
-  logBtn: { backgroundColor: '#1a73e8', borderRadius: 12, padding: 16, alignItems: 'center', marginTop: 24 },
+  regimenText: { fontSize: 13, fontFamily: FONT.regular, color: '#0D9488', paddingVertical: 1 },
+  logBtn: { backgroundColor: '#0D9488', borderRadius: 12, padding: 16, alignItems: 'center', marginTop: 24 },
   logBtnText: { color: '#fff', fontSize: 17, fontFamily: FONT.semibold, fontWeight: '600' },
   hypoAlert: { backgroundColor: '#fce8e6', borderRadius: 12, padding: 16, marginTop: 20, borderWidth: 2, borderColor: '#ea4335' },
   hypoTitle: { fontSize: 18, fontFamily: FONT.bold, fontWeight: '700', color: '#ea4335', marginBottom: 8 },
@@ -277,11 +279,11 @@ const styles = StyleSheet.create({
   resultLabel: { fontSize: 15, fontFamily: FONT.regular, color: '#5f6368' },
   resultValue: { fontSize: 15, fontFamily: FONT.semibold, fontWeight: '600', color: '#202124' },
   resultLabelBold: { fontSize: 17, fontFamily: FONT.bold, fontWeight: '700', color: '#202124' },
-  resultValueBold: { fontSize: 17, fontFamily: FONT.bold, fontWeight: '700', color: '#1a73e8' },
+  resultValueBold: { fontSize: 17, fontFamily: FONT.bold, fontWeight: '700', color: '#0D9488' },
   divider: { height: 1, backgroundColor: '#e8eaed', marginVertical: 8 },
   chipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   chip: { borderRadius: 20, paddingHorizontal: 14, paddingVertical: 8, backgroundColor: '#e8eaed' },
-  chipActive: { backgroundColor: '#1a73e8' },
+  chipActive: { backgroundColor: '#0D9488' },
   chipText: { fontSize: 13, fontFamily: FONT.regular, color: '#3c4043' },
   chipTextActive: { color: '#fff' },
   maxWarn: { backgroundColor: '#fce8e6', borderRadius: 12, padding: 16, marginTop: 16, borderWidth: 2, borderColor: '#ea4335' },

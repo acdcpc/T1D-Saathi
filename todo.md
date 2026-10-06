@@ -62,6 +62,7 @@
 - [x] All Supabase migrations applied to the live project + evidence recorded (`docs/SUPABASE_MIGRATION_EVIDENCE_2026-10-05.md`).
 - [x] UI refresh rounds 1–3 across main screens (+ screenshots in `docs/screenshots/2026-10-05/`). See `docs/UI_REFRESH_2026-10-05.md`.
 - [x] UI round 4: back buttons on all pushed screens; clearer tabs (Glucose); Learn tab hidden (committed 2026-10-06).
+- [x] UI design v2 "Warm Dawn": gradient glucose hero, coral CTAs, floating tab bar, quick actions, insight card; teal accent system across Dashboard/Home/Login/Log (committed 2026-10-06). See `docs/UI_DESIGN_V2.md` + `docs/screenshots/2026-10-06/`.
 - [x] Clinician web portal built (`portal/`) and smoke-checked.
 - [ ] Pull request for `agent/features-batch1` → `main`: review + merge decision (owner).
 - [ ] EAS preview rebuild (Android APK) — build in progress.

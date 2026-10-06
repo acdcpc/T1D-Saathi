@@ -7,6 +7,8 @@ import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
 import { usePreferences } from '../context/PreferencesContext';
 import { FONT,  T, primBtn, input } from '../theme';
+import GradientButton from '../components/GradientButton';
+import { D2 } from '../design/tokens';
 
 export default function LoginScreen({ navigation }: any) {
   const { signIn, signUp, signInWithGoogle, signInAsGuest } = useAuth();
@@ -133,19 +135,11 @@ export default function LoginScreen({ navigation }: any) {
             returnKeyType="done"
             placeholderTextColor={TH.muted}          />
           {passwordError ? <Text style={styles.errorText}>{passwordError}</Text> : null}
-          <TouchableOpacity
-            accessibilityRole="button"
-            accessibilityLabel={isSignup ? (isNe ? 'खाता बनाउनुहोस्' : 'Create account') : (isNe ? 'लग इन' : 'Log in')}
-            style={[primBtn, loading && { opacity: 0.7 }]}
+          <GradientButton
+            label={isSignup ? (isNe ? 'खाता बनाउनुहोस्' : 'Create Account') : (isNe ? 'लग इन' : 'Log In')}
             onPress={handleSubmit}
-            disabled={loading}
-          >
-            {loading ? (
-              <ActivityIndicator color="#fff" />
-            ) : (
-              <Text style={styles.btnText}>{isSignup ? (isNe ? 'खाता बनाउनुहोस्' : 'Create Account') : (isNe ? 'लग इन' : 'Log In')}</Text>
-            )}
-          </TouchableOpacity>
+            loading={loading}
+          />
           <TouchableOpacity onPress={() => setIsSignup(!isSignup)}>
             <Text style={styles.switchText}>
               {isSignup
@@ -183,7 +177,7 @@ const styles = StyleSheet.create({
   header: { alignItems: 'center', marginBottom: 36 },
   appTitle: { fontWeight: '800', fontSize: 26, fontFamily: FONT.extrabold, color: T.text },
   appSubtitle: { fontSize: 14, fontFamily: FONT.regular, color: T.muted, marginTop: 2 },
-  tagline: { fontSize: 14, fontFamily: FONT.semibold, color: T.blue, marginTop: 10, fontWeight: '600' },
+  tagline: { fontSize: 14, fontFamily: FONT.semibold, color: D2.teal, marginTop: 10, fontWeight: '600' },
 
   form: { gap: 14 },
   field: { ...input },
@@ -191,7 +185,7 @@ const styles = StyleSheet.create({
   errorText: { color: T.red, fontSize: 12, fontFamily: FONT.regular, marginTop: -6 },
   btnText: { color: '#fff', fontSize: 16, fontFamily: FONT.semibold, fontWeight: '600' },
 
-  switchText: { color: T.blue, textAlign: 'center', fontSize: 14, fontFamily: FONT.regular, paddingVertical: 8 },
+  switchText: { color: D2.tealDeep, textAlign: 'center', fontSize: 14, fontFamily: FONT.regular, paddingVertical: 8 },
 
   divider: { flexDirection: 'row', alignItems: 'center', marginVertical: 8 },
   line: { flex: 1, height: 1, backgroundColor: T.border },
@@ -204,9 +198,9 @@ const styles = StyleSheet.create({
   outlineBtnText: { color: T.text, fontSize: 16, fontFamily: FONT.semibold, fontWeight: '600' },
 
   guestBtn: {
-    borderRadius: 28, paddingVertical: 13, alignItems: 'center', backgroundColor: T.blueLight,
+    borderRadius: 28, paddingVertical: 13, alignItems: 'center', backgroundColor: D2.tealTint,
   },
-  guestBtnText: { color: T.blue, fontSize: 16, fontFamily: FONT.semibold, fontWeight: '600' },
+  guestBtnText: { color: D2.tealDeep, fontSize: 16, fontFamily: FONT.semibold, fontWeight: '600' },
 
   disclaimer: { textAlign: 'center', color: T.muted, fontSize: 11, fontFamily: FONT.regular, marginTop: 20, paddingHorizontal: 20, lineHeight: 16, maxWidth: 400, alignSelf: 'center' },
 });

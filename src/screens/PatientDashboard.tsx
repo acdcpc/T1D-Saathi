@@ -7,7 +7,7 @@ import { usePatient } from '../context/PatientContext';
 import { supabase } from '../lib/supabase';
 import { HYPO_THRESHOLD } from '../rules/sickDayRules';
 import { toBSDateTimeDisplay } from '../utils/bsDateDisplay';
-import { computeGlucoseStats } from '../utils/glucoseStats';
+import { computeGlucoseStats, toMgdl } from '../utils/glucoseStats';
 import { computeIOB } from '../utils/insulinOnBoard';
 import { generateGlucoseReport } from '../utils/pdfReport';
 import { exportPatientCsv } from '../utils/csvExport';
@@ -24,6 +24,11 @@ import TirDonut from '../components/TirDonut';
 import AnimatedPressable from '../components/AnimatedPressable';
 import { usePreferences } from '../context/PreferencesContext';
 import { toDisplayNumber } from '../utils/nepaliNumber';
+import GlucoseHero from '../components/GlucoseHero';
+import QuickActions from '../components/QuickActions';
+import InsightCard, { buildInsight } from '../components/InsightCard';
+import { D2, RD, statusForMgdl } from '../design/tokens';
+import { useTabBarSpace } from '../design/useTabBarSpace';
 import { FONT,  T, card, section, avatar } from '../theme';import type { PatientProfile, GlucoseLog, SickDayEpisode, InsulinLog } from '../types';
 
 /** Centered content column — keeps the layout composed on tablet/desktop widths. */
@@ -35,6 +40,7 @@ export default function PatientDashboard({ route, navigation }: any) {
   const { theme: TH } = usePreferences();
   const isNe = language === 'ne';
   const insets = useSafeAreaInsets();
+  const tabSpace = useTabBarSpace();
   const [latestGlucose, setLatestGlucose] = useState<GlucoseLog | null>(null);
   const [history, setHistory] = useState<GlucoseLog[]>([]);
   const [activeSickDay, setActiveSickDay] = useState<SickDayEpisode | null>(null);
@@ -107,29 +113,28 @@ export default function PatientDashboard({ route, navigation }: any) {
     if (error) Alert.alert(isNe ? 'त्रुटि' : 'Error', error.message);
   };
 
-  const statusInfo = latestMgDl === null ? null
-    : latestMgDl < HYPO_THRESHOLD ? { label: isNe ? 'कम' : 'Low', bg: '#FDECEA', fg: T.red }
-      : latestMgDl > 180 ? { label: isNe ? 'उच्च' : 'High', bg: '#FEF7E0', fg: '#B45309' }
-        : { label: isNe ? 'दायरामा' : 'In range', bg: '#E6F4EA', fg: '#0D652D' };
+  const heroStatus = statusForMgdl(latestMgDl);
+  const lowCount7d = history.filter((l) => {
+    try {
+      return toMgdl(l.value, l.unit) < HYPO_THRESHOLD && Date.now() - new Date(l.timestamp).getTime() < 7 * 864e5;
+    } catch { return false; }
+  }).length;
+  const insight = buildInsight(stats, lowCount7d, isNe);
   const actions: { icon: keyof typeof Ionicons.glyphMap; color: string; label: string; route: string; border: string }[] = [
-    { icon: 'water-outline', color: T.blue, label: isNe ? 'ग्लुकोज' : 'Log Glucose', route: 'Log', border: T.border },
-    { icon: 'restaurant-outline', color: T.teal, label: isNe ? 'खाना र डोज' : 'Food & Dose', route: 'Food', border: T.teal },
-    { icon: 'thermometer-outline', color: T.orange, label: isNe ? 'बिमारी दिन' : 'Sick Day', route: 'SickDayWizard', border: T.orange },
-    { icon: 'medical-outline', color: T.purple, label: isNe ? 'इन्सुलिन' : 'Regimen', route: 'RegimenSettings', border: T.border },
-    { icon: 'book-outline', color: T.blue, label: isNe ? 'शिक्षा' : 'Education', route: 'Learn', border: T.border },
-    { icon: 'medkit-outline', color: T.blue, label: isNe ? 'स्वास्थ्य केन्द्र' : 'Nearby Care', route: 'HealthCenters', border: T.border },
+    { icon: 'book-outline', color: D2.teal, label: isNe ? 'शिक्षा' : 'Education', route: 'Learn', border: T.border },
+    { icon: 'medkit-outline', color: D2.teal, label: isNe ? 'स्वास्थ्य केन्द्र' : 'Nearby Care', route: 'HealthCenters', border: T.border },
     { icon: 'call-outline', color: T.red, label: isNe ? 'हेल्पलाइन' : 'Helpline', route: 'Helpline', border: T.red },
-    { icon: 'chatbubble-ellipses-outline', color: T.blue, label: isNe ? 'सन्देश' : 'Messages', route: 'Messages', border: T.border },
+    { icon: 'chatbubble-ellipses-outline', color: D2.teal, label: isNe ? 'सन्देश' : 'Messages', route: 'Messages', border: T.border },
     { icon: 'warning-outline', color: T.red, label: isNe ? 'आपतकाल' : 'Emergency', route: 'Emergency', border: T.red },
     { icon: 'barcode-outline', color: T.teal, label: isNe ? 'बारकोड' : 'Scan Barcode', route: 'BarcodeScanner', border: T.border },
-    { icon: 'people-outline', color: T.blue, label: isNe ? 'समुदाय' : 'Community', route: 'Community', border: T.border },
-    { icon: 'person-add-outline', color: T.blue, label: isNe ? 'चिकित्सक आमन्त्रण' : 'Invite Clinician', route: 'InviteClinician', border: T.border },
+    { icon: 'people-outline', color: D2.teal, label: isNe ? 'समुदाय' : 'Community', route: 'Community', border: T.border },
+    { icon: 'person-add-outline', color: D2.teal, label: isNe ? 'चिकित्सक आमन्त्रण' : 'Invite Clinician', route: 'InviteClinician', border: T.border },
   ];
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: TH.bg }]} edges={['top', 'bottom']}>
       <ScrollView
-        contentContainerStyle={[styles.content, contentCol, { paddingBottom: 60 + insets.bottom }]}
+        contentContainerStyle={[styles.content, contentCol, { paddingBottom: Math.max(tabSpace.contentPaddingBottom, 60 + insets.bottom) + 24 }]}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={TH.blue} colors={[TH.blue]} progressBackgroundColor={TH.surface} />}
       >
         {/* Avatar header */}
@@ -156,30 +161,28 @@ export default function PatientDashboard({ route, navigation }: any) {
           ))}
         </View>
 
-        {/* Glucose stat card */}
-        <View style={[styles.glucoseCard, isHypo && styles.hypoCard]}>
-          <Text style={styles.cardLabel}>{isNe ? 'पछिल्लो ग्लुकोज' : 'Latest Glucose'}</Text>
-          {latestGlucose ? (
-            <View>
-              <Text style={[styles.glucoseValue, isHypo && styles.hypoText]}>
-                {latestGlucose.value}
-                <Text style={styles.unit}> {latestGlucose.unit === 'mmol' ? 'mmol/L' : 'mg/dL'}</Text>
-              </Text>
-              <View style={styles.statusRow}>
-                {statusInfo && (
-                  <View style={[styles.statusPill, { backgroundColor: statusInfo.bg }]}>
-                    <Text style={[styles.statusPillText, { color: statusInfo.fg }]}>{statusInfo.label}</Text>
-                  </View>
-                )}
-                <Text style={styles.timestamp}>{toBSDateTimeDisplay(latestGlucose.timestamp)}</Text>
-              </View>
-              {iob > 0 && (
-                <Text style={styles.iobText}>{isNe ? 'सक्रिय इन्सुलिन' : 'Active insulin'}: {iob} U</Text>
-              )}            </View>
-          ) : (
-            <Text style={styles.noData}>{isNe ? 'कुनै लग छैन' : t('noLogsYet')}</Text>
-          )}
-        </View>
+        {/* Warm Dawn glucose hero */}
+        <GlucoseHero
+          valueText={latestGlucose
+            ? (latestGlucose.unit === 'mmol' ? String(Math.round(latestGlucose.value * 10) / 10) : String(Math.round(latestGlucose.value)))
+            : null}
+          unitLabel={latestGlucose?.unit === 'mmol' ? 'mmol/L' : 'mg/dL'}
+          status={heroStatus}
+          updatedText={latestGlucose ? toBSDateTimeDisplay(latestGlucose.timestamp) : undefined}
+          activeInsulinU={iob > 0 ? iob : undefined}
+          onPress={() => navigation.navigate('Log', { patientId: patient.id })}
+          onLogPress={() => navigation.navigate('Log', { patientId: patient.id })}
+        />
+
+        {/* Quick actions */}
+        <QuickActions
+          actions={[
+            { key: 'log', label: 'Log', labelNe: 'लग', icon: 'add', circleBg: D2.tealTint, iconColor: D2.teal, onPress: () => navigation.navigate('Log', { patientId: patient.id }) },
+            { key: 'food', label: 'Food', labelNe: 'खाना', icon: 'fast-food', circleBg: D2.coralTint, iconColor: D2.coral, onPress: () => navigation.navigate('Food', { patientId: patient.id }) },
+            { key: 'sick', label: 'Sick Day', labelNe: 'बिमारी दिन', icon: 'thermometer', circleBg: D2.marigoldTint, iconColor: D2.marigoldDeep, onPress: () => navigation.navigate('SickDayWizard', { patientId: patient.id }) },
+            { key: 'insulin', label: 'Insulin', labelNe: 'इन्सुलिन', icon: 'eyedrop', circleBg: D2.purpleTint, iconColor: D2.purple, onPress: () => navigation.navigate('RegimenSettings', { patientId: patient.id }) },
+          ]}
+        />
 
         {/* Hypo alert */}
         {isHypo && (
@@ -219,7 +222,7 @@ export default function PatientDashboard({ route, navigation }: any) {
         {/* Next reminder */}
         {nextReminder && (
           <View style={styles.reminderCard}>
-            <Ionicons name="alarm-outline" size={18} color={T.blue} />
+            <Ionicons name="alarm-outline" size={18} color={D2.teal} />
             <Text style={styles.reminderText}>
               {isNe ? 'अर्को सम्झना' : 'Next reminder'}: {isNe ? reminderLabels[nextReminder.key].ne : reminderLabels[nextReminder.key].en} · {String(nextReminder.hour).padStart(2, '0')}:{String(nextReminder.minute).padStart(2, '0')}
             </Text>
@@ -234,6 +237,8 @@ export default function PatientDashboard({ route, navigation }: any) {
             </Text>
           </View>
         )}
+
+        <InsightCard insight={insight} />
 
         {/* Trends + statistics (range-selectable) */}
         {rangedLogs.length >= 2 && (
@@ -250,7 +255,7 @@ export default function PatientDashboard({ route, navigation }: any) {
               ))}
             </View>
             <Text style={styles.cardLabel}>{rangeLabel}</Text>
-            <TirDonut pct={stats.timeInRangePct} color={TH.teal} label={isNe ? 'समय दायरामा (TIR)' : 'Time in Range'} />
+            <TirDonut pct={stats.timeInRangePct} gradient={[D2.tealBright, D2.teal, D2.tealDeep]} size={tabSpace.isWide ? 176 : 156} strokeWidth={tabSpace.isWide ? 18 : 14} label={isNe ? 'समय दायरामा (TIR)' : 'Time in Range'} />
             <View style={styles.statRow}>
               <View style={styles.statTile}>
                 <Text style={styles.statValue}>{toDisplayNumber(stats.timeInRangePct, isNe)}%</Text>
@@ -293,14 +298,14 @@ export default function PatientDashboard({ route, navigation }: any) {
               <Text style={styles.pdfBtnText}>{isNe ? 'PDF रिपोर्ट निकाल्नुहोस्' : 'Export PDF Report'}</Text>
             </TouchableOpacity>
             <TouchableOpacity style={styles.csvBtn} onPress={handleCsvExport} activeOpacity={0.8}>
-              <Ionicons name="download-outline" size={18} color={T.blue} />
+              <Ionicons name="download-outline" size={18} color={D2.teal} />
               <Text style={styles.csvBtnText}>{isNe ? 'CSV डाटा निकाल्नुहोस्' : 'Export CSV (records)'}</Text>
             </TouchableOpacity>
           </View>
         )}
 
         {/* Action grid */}
-        <Text style={styles.sectionLabel}>{isNe ? 'द्रुत कार्यहरू' : t('quickLog')}</Text>
+        <Text style={styles.sectionLabel}>{isNe ? 'अन्य' : 'More'}</Text>
         <View style={styles.actionGrid}>
           {actions.map((a, i) => (
             <AnimatedPressable
@@ -329,8 +334,8 @@ const styles = StyleSheet.create({
   content: { padding: 16, paddingTop: 10 },
 
   profileHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 20 },
-  profileAv: { ...avatar, width: 56, height: 56, borderRadius: 28, backgroundColor: T.blueLight },
-  profileAvText: { fontSize: 26, fontFamily: FONT.bold, fontWeight: '700', color: T.blue },
+  profileAv: { ...avatar, width: 56, height: 56, borderRadius: 28, backgroundColor: D2.tealTint },
+  profileAvText: { fontSize: 26, fontFamily: FONT.bold, fontWeight: '700', color: D2.teal },
   profileInfo: { flex: 1 },
   name: { fontSize: 22, fontFamily: FONT.extrabold, fontWeight: '800', color: T.text },
   subtitle: { fontSize: 14, fontFamily: FONT.regular, color: T.muted, marginTop: 2 },
@@ -361,7 +366,7 @@ const styles = StyleSheet.create({
   provenance: { fontSize: 10, fontFamily: FONT.regular, color: T.muted, textAlign: 'center', marginTop: 2, fontStyle: 'italic' },
   pdfBtn: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8,
-    backgroundColor: T.blue, borderRadius: 28, paddingVertical: 12, marginTop: 12,
+    backgroundColor: D2.teal, borderRadius: 28, paddingVertical: 12, marginTop: 12,
   },
   pdfBtnText: { color: '#fff', fontSize: 15, fontFamily: FONT.bold, fontWeight: '700' },
 
@@ -384,18 +389,18 @@ const styles = StyleSheet.create({
   },
   actionText: { fontSize: 11, fontFamily: FONT.semibold, fontWeight: '600', color: T.text, textAlign: 'center' },
   rangeRow: { flexDirection: 'row', gap: 6, marginBottom: 10, alignSelf: 'flex-start' },
-  rangeChip: { borderRadius: 16, paddingHorizontal: 14, paddingVertical: 6, backgroundColor: T.blueLight },
-  rangeChipActive: { backgroundColor: T.blue },
-  rangeChipText: { fontSize: 12, fontFamily: FONT.semibold, fontWeight: '600', color: T.blueDark },
+  rangeChip: { borderRadius: 16, paddingHorizontal: 14, paddingVertical: 6, backgroundColor: D2.tealTint },
+  rangeChipActive: { backgroundColor: D2.teal },
+  rangeChipText: { fontSize: 12, fontFamily: FONT.semibold, fontWeight: '600', color: D2.tealDeep },
   rangeChipTextActive: { color: '#fff' },
   reminderCard: { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: T.surface, borderRadius: 12, padding: 14, borderWidth: 1, borderColor: T.border, marginBottom: 16 },
   reminderText: { fontSize: 13, fontFamily: FONT.semibold, fontWeight: '600', color: T.text, flex: 1 },
-  csvBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: T.surface, borderRadius: 28, paddingVertical: 12, marginTop: 10, borderWidth: 1.5, borderColor: T.blue },
-  csvBtnText: { color: T.blue, fontSize: 15, fontFamily: FONT.bold, fontWeight: '700' },
+  csvBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: T.surface, borderRadius: 28, paddingVertical: 12, marginTop: 10, borderWidth: 1.5, borderColor: D2.teal },
+  csvBtnText: { color: D2.tealDeep, fontSize: 15, fontFamily: FONT.bold, fontWeight: '700' },
   modeRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 14, flexWrap: 'wrap' },
   modeLabel: { fontSize: 12, fontFamily: FONT.semibold, fontWeight: '600', color: T.muted },
   modeChip: { borderRadius: 16, paddingHorizontal: 12, paddingVertical: 6, backgroundColor: T.surface, borderWidth: 1, borderColor: T.border },
-  modeChipActive: { backgroundColor: T.blue, borderColor: T.blue },
+  modeChipActive: { backgroundColor: D2.teal, borderColor: D2.teal },
   modeChipText: { fontSize: 12, fontFamily: FONT.semibold, fontWeight: '600', color: T.text },
   modeChipTextActive: { color: '#fff' },
   streakCard: { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: '#FEF7E0', borderRadius: 12, padding: 14, borderWidth: 1, borderColor: '#f9ab00', marginBottom: 16 },
