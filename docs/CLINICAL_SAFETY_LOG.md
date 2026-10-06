@@ -37,3 +37,13 @@ No future change should introduce a default TDD, default glucose, default correc
 | Basal dose field | `basal_dose` (units/day) stored separately from TDD; legacy `dose` column kept in sync for compatibility | Clinician review of dose-entry semantics (basal vs TDD round-tripping) |
 | Dosing gate unchanged | Dose calculator still requires clinician-approved regimen + TDD + correction target; no gate weakened by this change (review-verified) | — (no change) |
 | Insulin option lists | Basal: glargine U100/U300, detemir, degludec, NPH; bolus: aspart, lispro, glulisine, faster aspart, regular human, premix 70/30, + 'None'. Sources: ISPAD consensus chapter (2022; 2024 set context), CDC insulin types (2024) | Clinician to confirm local product names/brands to display |
+
+## Round 6.1 content-validation fixes (2026-10-06 evening)
+
+| Decision | Current behavior | Approval still required |
+|---|---|---|
+| Hypo recheck interval | Harmonized to **15 minutes** everywhere (was 20 in the rules engine vs 15 in Emergency copy) | Clinician confirmation (15/15 rule) |
+| Mild-ketone supplemental insulin | Replaced contradictory legacy value (-15%) with **+5% of TDD** (low end of commonly used 5–10% range), display made consistent, dose still requires clinician-approved regimen | Clinician to confirm 5% vs 5–10% for the 0.6–1.0 mmol/L tier |
+| ISPAD badge wording | "Based on ISPAD Guidelines (2022/2024)" | Nil (label) |
+| Weight-based hypo treatment (~0.3 g/kg) | Not added; flagged for clinician decision | Clinician input |
+| DKA "drink water en route" wording | Unchanged; flagged | Clinician wording review |

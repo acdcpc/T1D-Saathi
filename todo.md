@@ -64,6 +64,7 @@
 - [x] UI round 4: back buttons on all pushed screens; clearer tabs (Glucose); Learn tab hidden (committed 2026-10-06).
 - [x] UI design v2 "Warm Dawn": gradient glucose hero, coral CTAs, floating tab bar, quick actions, insight card; teal accent system across Dashboard/Home/Login/Log (committed 2026-10-06). See `docs/UI_DESIGN_V2.md` + `docs/screenshots/2026-10-06/`.
 - [x] Round 6 (2026-10-06): dual basal+bolus insulin regimen per ISPAD (migration `20261006000013` applied live); auth hardening per alisha audit (tri-state Google, sign-out, duplicate-email, password rule, 48dp clearance); back buttons on Education/Consent/Clinician screens; Warm Dawn restyle for changed screens. See `docs/ROUND6_2026-10-06.md`.
+- [x] Round 6.1 (2026-10-06 evening): app-wide Warm Dawn completion (legacy blue retired in theme + 15 files); ISPAD content validation pass (`docs/CONTENT_VALIDATION_2026-10-06.md`); hypo recheck 15 min; mild-ketone guidance consistency; evidence `docs/screenshots/2026-10-06/round6b-*.png`.
 - [x] Clinician web portal built (`portal/`) and smoke-checked.
 - [ ] Pull request for `agent/features-batch1` → `main`: review + merge decision (owner).
 - [ ] EAS preview rebuild (Android APK) — build in progress.
