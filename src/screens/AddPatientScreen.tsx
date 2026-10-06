@@ -10,14 +10,21 @@ import { supabase } from '../lib/supabase';
 import BSDatePicker from '../components/BSDatePicker';
 import { FONT,  T, input, section, primBtn } from '../theme';
 import BackBar from '../components/BackBar';
+import GradientButton from '../components/GradientButton';
+import { D2 } from '../design/tokens';
 
 const contentCol = { width: '100%' as const, maxWidth: 640, alignSelf: 'center' as const };
 
 const COMORBID_OPTIONS = ['celiac', 'thyroid', 'downSyndrome'];
 const SEX_OPTIONS = ['male', 'female', 'other'] as const;
 const DELIVERY_OPTIONS = ['pen', 'syringe', 'pump'] as const;
-const INSULIN_TYPE_OPTIONS = [
-  'Rapid-acting', 'Short-acting', 'Intermediate-acting', 'Long-acting', 'Premixed',
+// Dual-insulin model per ISPAD basal-bolus standard: basal (long-acting) + bolus (rapid-acting).
+const BASAL_INSULIN_OPTIONS = [
+  'Glargine (Lantus)', 'Glargine U300 (Toujeo)', 'Detemir (Levemir)', 'Degludec (Tresiba)', 'NPH (Insulatard)', 'None',
+];
+const BOLUS_INSULIN_OPTIONS = [
+  'Aspart (NovoRapid)', 'Lispro (Humalog)', 'Glulisine (Apidra)', 'Faster aspart (Fiasp)',
+  'Regular human insulin (Actrapid)', 'Premix 70/30 (Mixtard)', 'None',
 ];
 const FREQUENCY_OPTIONS = [
   'Once daily', 'Twice daily', 'Three times daily', 'Before each meal', 'Before meals + bedtime', 'Sliding scale',
@@ -77,7 +84,8 @@ export default function AddPatientScreen({ navigation }: any) {
   const [sex, setSex] = useState<string>('male');
   const [comorbid, setComorbid] = useState<string[]>([]);
   const [medications, setMedications] = useState('');
-  const [insulinType, setInsulinType] = useState('');
+  const [basalInsulin, setBasalInsulin] = useState('');
+  const [bolusInsulin, setBolusInsulin] = useState('');
   const [insulinDose, setInsulinDose] = useState('');
   const [insulinFreq, setInsulinFreq] = useState('');
   const [delivery, setDelivery] = useState<string>('pen');
@@ -113,7 +121,9 @@ export default function AddPatientScreen({ navigation }: any) {
     if (!user) return Alert.alert(t('error'), 'Not logged in');
     let ok = true;
     if (!name.trim()) { setNameError('Name is required'); ok = false; } else setNameError(null);
-    if (!insulinType.trim()) { setInsulinError('Insulin type is required'); ok = false; } else setInsulinError(null);
+    const hasBasal = !!basalInsulin && basalInsulin !== 'None';
+    const hasBolus = !!bolusInsulin && bolusInsulin !== 'None';
+    if (!hasBasal && !hasBolus) { setInsulinError('Select at least one insulin (basal and/or bolus)'); ok = false; } else setInsulinError(null);
     if (!tddValid) { setTddError('Enter a valid Total Daily Dose (TDD)'); ok = false; } else setTddError(null);
     if (!ok) return;
 
@@ -125,7 +135,9 @@ export default function AddPatientScreen({ navigation }: any) {
       sex,
       comorbid_conditions: comorbid.length > 0 ? comorbid : null,
       medications: medications.trim() || null,
-      insulin_type: insulinType.trim(),
+      insulin_type: [hasBasal ? basalInsulin : null, hasBolus ? bolusInsulin : null].filter(Boolean).join(' + '),
+      basal_insulin: hasBasal ? basalInsulin : null,
+      bolus_insulin: hasBolus ? bolusInsulin : null,
       insulin_dose: parseFloat(insulinDose) || 0,
       insulin_frequency: insulinFreq || null,
       insulin_delivery: delivery,
@@ -148,7 +160,10 @@ export default function AddPatientScreen({ navigation }: any) {
     if (newPatient) {
       const { error: regErr } = await supabase.from('insulin_regimens').insert({
         patient_id: newPatient.id,
-        insulin_type: insulinType.trim(),
+        insulin_type: [hasBasal ? basalInsulin : null, hasBolus ? bolusInsulin : null].filter(Boolean).join(' + '),
+        basal_insulin: hasBasal ? basalInsulin : null,
+        basal_dose: parseFloat(insulinDose) || null,
+        bolus_insulin: hasBolus ? bolusInsulin : null,
         dose: parseFloat(insulinDose) || 0,
         frequency: insulinFreq || 'daily',
         delivery_method: delivery,
@@ -208,16 +223,24 @@ export default function AddPatientScreen({ navigation }: any) {
 
       <Text style={styles.section}>{t('insulinRegimen')}</Text>
 
+      <Text style={styles.hintSmall}>{language === 'ne' ? 'बच्चाले दैनिक बेसल (लामो) र खाना अघि बोलस (छिटो) — दुवै इन्सुलिन प्रयोग गर्न सक्छन्।' : 'Children on multiple daily injections use both: a daily long-acting (basal) + rapid (bolus) insulin before meals.'}</Text>
       <Dropdown
-        label={`${t('insulinType')} *`}
-        options={INSULIN_TYPE_OPTIONS}
-        value={insulinType}
-        onChange={(v) => { setInsulinType(v); if (insulinError) setInsulinError(null); }}
-        placeholder="Select insulin type"
+        label={language === 'ne' ? 'लामो समय (बेसल) इन्सुलिन' : 'Long-acting (basal) insulin'}
+        options={BASAL_INSULIN_OPTIONS}
+        value={basalInsulin}
+        onChange={(v) => { setBasalInsulin(v); if (insulinError) setInsulinError(null); }}
+        placeholder="Select basal insulin"
+      />
+      <Dropdown
+        label={language === 'ne' ? 'छिटो काम गर्ने (बोलस) इन्सुलिन' : 'Rapid-acting (bolus) insulin'}
+        options={BOLUS_INSULIN_OPTIONS}
+        value={bolusInsulin}
+        onChange={(v) => { setBolusInsulin(v); if (insulinError) setInsulinError(null); }}
+        placeholder="Select bolus insulin"
       />
       {insulinError ? <Text style={styles.errorText}>{insulinError}</Text> : null}
 
-      <Text style={styles.label}>{t('insulinType')} {t('dose')}</Text>
+      <Text style={styles.label}>{language === 'ne' ? 'बेसल डोज (युनिट/दिन)' : 'Basal dose (units/day)'}</Text>
       <TextInput style={styles.input} value={insulinDose} onChangeText={setInsulinDose} placeholder="Units" keyboardType="numeric" />
 
       <Dropdown
@@ -280,9 +303,7 @@ export default function AddPatientScreen({ navigation }: any) {
       <Text style={styles.label}>{t('dkaHistory')}</Text>
       <TextInput style={[styles.input, styles.multiline]} value={dkaDesc} onChangeText={setDkaDesc} placeholder="Describe any past DKA or severe illness" multiline numberOfLines={3} />
 
-      <TouchableOpacity style={styles.saveBtn} onPress={handleSave} disabled={loading}>
-        {loading ? <ActivityIndicator color="#fff" /> : <Text style={styles.saveText}>{t('save')}</Text>}
-      </TouchableOpacity>
+      <GradientButton label={t('save')} onPress={handleSave} loading={loading} style={{ marginTop: 30 }} />
 
       <View style={{ height: 60 }} />
     </ScrollView>
@@ -292,15 +313,16 @@ export default function AddPatientScreen({ navigation }: any) {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: T.bg },
   content: { padding: 16 },
-  section: { ...section, color: T.blue, fontSize: 16, fontFamily: FONT.regular, marginTop: 24, marginBottom: 12 },
+  section: { ...section, color: D2.tealDeep, fontSize: 16, fontFamily: FONT.bold, fontWeight: '700', marginTop: 24, marginBottom: 12 },
   label: { fontSize: 13, fontFamily: FONT.semibold, fontWeight: '600', color: T.text, marginBottom: 6, marginTop: 10 },
   input: { ...input },
   inputError: { borderColor: T.red, borderWidth: 1.5 },
   errorText: { color: T.red, fontSize: 12, fontFamily: FONT.regular, marginTop: 4 },
+  hintSmall: { fontSize: 12, fontFamily: FONT.regular, color: T.muted, marginTop: 10, lineHeight: 17 },
   multiline: { minHeight: 70, textAlignVertical: 'top' },
   chipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   chip: { borderRadius: 20, paddingHorizontal: 16, paddingVertical: 8, backgroundColor: T.surface, borderWidth: 1, borderColor: T.border },
-  chipActive: { backgroundColor: T.blue, borderColor: T.blue },
+  chipActive: { backgroundColor: D2.teal, borderColor: D2.teal },
   chipActiveWarn: { backgroundColor: T.red, borderColor: T.red },
   chipText: { fontSize: 14, fontFamily: FONT.regular, color: T.muted },
   chipTextActive: { color: '#fff' },
@@ -315,18 +337,18 @@ const styles = StyleSheet.create({
   dropdownModal: { backgroundColor: '#fff', borderTopLeftRadius: 20, borderTopRightRadius: 20, padding: 20, maxHeight: '70%' },
   dropdownTitle: { fontSize: 16, fontFamily: FONT.bold, fontWeight: '700', color: T.text, textAlign: 'center', marginBottom: 12 },
   dropdownOption: { padding: 14, borderRadius: 8, marginVertical: 2 },
-  dropdownOptionActive: { backgroundColor: T.blueLight },
+  dropdownOptionActive: { backgroundColor: D2.tealTint },
   dropdownOptionText: { fontSize: 15, fontFamily: FONT.regular, color: T.text },
-  dropdownOptionActiveText: { color: T.blue, fontWeight: '700' },
+  dropdownOptionActiveText: { color: D2.tealDeep, fontWeight: '700' },
 
   // Auto-calculated dosing card
-  autoCard: { backgroundColor: T.blueLight, borderRadius: 12, padding: 14, marginTop: 12, borderWidth: 1, borderColor: '#BBD7F0' },
-  autoCardTitle: { fontSize: 13, fontFamily: FONT.bold, fontWeight: '700', color: T.blueDark, marginBottom: 10 },
+  autoCard: { backgroundColor: D2.tealTint, borderRadius: 12, padding: 14, marginTop: 12, borderWidth: 1, borderColor: '#B8E6DF' },
+  autoCardTitle: { fontSize: 13, fontFamily: FONT.bold, fontWeight: '700', color: D2.tealDeep, marginBottom: 10 },
   autoRow: { flexDirection: 'row', gap: 12 },
   autoField: { flex: 1, backgroundColor: '#fff', borderRadius: 8, padding: 10 },
   autoLabel: { fontSize: 11, fontFamily: FONT.regular, color: T.muted, marginBottom: 4 },
   autoValue: { fontSize: 17, fontFamily: FONT.extrabold, fontWeight: '800', color: T.text },
-  autoFormula: { fontSize: 11, fontFamily: FONT.regular, color: T.blue, marginTop: 3 },
+  autoFormula: { fontSize: 11, fontFamily: FONT.regular, color: D2.teal, marginTop: 3 },
   autoNote: { fontSize: 11, fontFamily: FONT.regular, color: T.muted, marginTop: 10, fontStyle: 'italic' },
 
   saveBtn: { ...primBtn, marginTop: 30 },

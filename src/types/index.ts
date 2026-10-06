@@ -6,6 +6,7 @@ export interface PatientProfile {
   sex: 'male' | 'female' | 'other'; photo_uri?: string;
   comorbid_conditions?: string[]; medications?: string;
   insulin_type: string; insulin_dose: number; insulin_frequency: string;
+  basal_insulin?: string | null; bolus_insulin?: string | null;
   insulin_delivery: 'pen' | 'syringe' | 'pump'; diagnosis_date: string;
   dka_history?: DKAHistoryEntry[]; documents?: string[];
   created_at: string; updated_at: string;
@@ -17,6 +18,8 @@ export interface InsulinRegimen {
   effective_date: string; isf?: number; carb_ratio?: number; tdd?: number;
   correction_target?: number; approved_by_clinician?: boolean; approved_at?: string; approved_by?: string;
   max_bolus?: number;
+  regimen_type?: 'mdi' | 'pump' | 'premix';
+  basal_insulin?: string | null; basal_dose?: number | null; bolus_insulin?: string | null;
 }
 export interface InsulinLog {
   id: string; patient_id: string; user_id: string; units: number;

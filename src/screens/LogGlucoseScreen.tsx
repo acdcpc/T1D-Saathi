@@ -186,7 +186,7 @@ export default function LogGlucoseScreen({ route, navigation }: any) {
 
       {regimen && (
         <View style={styles.regimenInfo}>
-          <Text style={styles.regimenText}>{t('insulinType')}: {regimen.insulin_type}</Text>
+          <Text style={styles.regimenText}>{t('insulinType')}: {[regimen.basal_insulin, regimen.bolus_insulin].filter(Boolean).join(' + ') || regimen.insulin_type}</Text>
           <Text style={styles.regimenText}>{t('tdd')}: {regimen.tdd || 'N/A'} U</Text>
           <Text style={styles.regimenText}>{t('isf')}: {regimen.isf || 'N/A'} mg/dL per U</Text>
           <Text style={styles.regimenText}>{regimen.approved_by_clinician ? 'Clinician-approved regimen' : 'Dose calculation unavailable until clinician approval'}</Text>

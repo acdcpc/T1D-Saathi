@@ -143,7 +143,7 @@ export default function PatientDashboard({ route, navigation }: any) {
           <View style={styles.profileInfo}>
             <Text style={styles.name}>{patient.name}</Text>
             <Text style={styles.subtitle}>
-              {patient.insulin_type || (isNe ? 'इन्सुलिन' : 'Insulin')} · {patient.sex}
+              {[patient.basal_insulin, patient.bolus_insulin].filter(Boolean).join(' + ') || patient.insulin_type || (isNe ? 'इन्सुलिन' : 'Insulin')} · {patient.sex}
             </Text>
           </View>
         </View>
