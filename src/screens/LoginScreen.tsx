@@ -110,6 +110,15 @@ export default function LoginScreen({ navigation }: any) {
     }
   };
 
+  const showStaffInfo = () => {
+    Alert.alert(
+      isNe ? 'स्टाफ पहुँच' : 'Staff access',
+      isNe
+        ? 'क्लिनिसियन र एडमिनहरूले आफ्नो आधिकारिक इमेल र पासवर्डले लग इन गर्नुहोस्। लग इन गरेपछि क्लिनिसियन क्षेत्र र एडमिन कन्सोल उपलब्ध हुन्छ।'
+        : 'Clinicians and admins sign in with their official email and password. After signing in you get the clinician area and admin console.',
+    );
+  };
+
   const handleGoogle = async () => {
     setLoading(true);
     try {
@@ -167,6 +176,9 @@ export default function LoginScreen({ navigation }: any) {
             onPress={handleSubmit}
             loading={loading}
           />
+          <TouchableOpacity onPress={showStaffInfo} accessibilityRole="button">
+            <Text style={styles.staffNote}>{isNe ? 'चिकित्सक वा एडमिन हुनुहुन्छ? कार्य इमेलले लग इन गर्नुहोस् →' : 'Clinician or admin? Sign in with your work email →'}</Text>
+          </TouchableOpacity>
           <TouchableOpacity onPress={() => setIsSignup(!isSignup)}>
             <Text style={styles.switchText}>
               {isSignup
@@ -194,6 +206,7 @@ export default function LoginScreen({ navigation }: any) {
 
 const styles = StyleSheet.create({
   hintText: { color: '#8A8F98', fontSize: 12, marginTop: 4 },
+  staffNote: { color: T.muted, textAlign: 'center', fontSize: 12.5, marginTop: 12, fontFamily: FONT.regular },
   container: { flex: 1, backgroundColor: T.bg },
   scroll: { flexGrow: 1, justifyContent: 'center', alignItems: 'center', padding: 24 },
   cardCol: {

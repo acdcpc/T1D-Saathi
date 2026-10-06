@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { View } from 'react-native';
+import { View, Text, ActivityIndicator } from 'react-native';
 import { NavigationContainer, createNavigationContainerRef } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { AuthProvider, useAuth } from './src/context/AuthContext';
@@ -32,8 +32,19 @@ import BarcodeScannerScreen from './src/screens/BarcodeScannerScreen';
 import CommunityScreen from './src/screens/CommunityScreen';
 import ConsentScreen from './src/screens/ConsentScreen';
 import InviteClinicianScreen from './src/screens/InviteClinicianScreen';
+import AdminConsoleScreen from './src/screens/AdminConsoleScreen';
 
 const Stack = createNativeStackNavigator();
+
+/** Shown while the user's role resolves — avoids a transient family-stack flash for staff accounts. */
+function RoleSplash() {
+  return (
+    <View style={{ flex: 1, backgroundColor: '#F7F1EB', alignItems: 'center', justifyContent: 'center' }}>
+      <Text style={{ fontSize: 24, fontWeight: '800', color: '#0B5E58' }}>T1D साथी</Text>
+      <ActivityIndicator color="#0D9488" style={{ marginTop: 14 }} />
+    </View>
+  );
+}
 const navigationRef = createNavigationContainerRef<any>();
 
 /** Global side-effects that need the navigation context (shake-to-emergency). */
@@ -53,10 +64,13 @@ function AppNavigator() {
           <Stack.Screen name="Onboarding" component={OnboardingScreen} />
           <Stack.Screen name="Login" component={LoginScreen} />
         </>
+      ) : !role ? (
+        <Stack.Screen name="RoleSplash" component={RoleSplash} />
       ) : role === 'clinician' ? (
         <>
           <Stack.Screen name="ClinicianPatientList" component={ClinicianPatientListScreen} />
           <Stack.Screen name="ClinicianPatientDetail" component={ClinicianPatientDetailScreen} />
+          <Stack.Screen name="AdminConsole" component={AdminConsoleScreen} />
           <Stack.Screen name="HealthCenters" component={HealthCentersScreen} />
           <Stack.Screen name="Settings" component={SettingsScreen} />
           <Stack.Screen name="Consent" component={ConsentScreen} />
@@ -78,6 +92,7 @@ function AppNavigator() {
           <Stack.Screen name="Community" component={CommunityScreen} />
           <Stack.Screen name="Consent" component={ConsentScreen} />
           <Stack.Screen name="InviteClinician" component={InviteClinicianScreen} />
+          <Stack.Screen name="AdminConsole" component={AdminConsoleScreen} />
         </>
       )}
     </Stack.Navigator>

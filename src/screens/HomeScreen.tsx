@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { View, Text, FlatList, TouchableOpacity, StyleSheet, RefreshControl } from 'react-native';
+import { View, Text, FlatList, TouchableOpacity, StyleSheet, RefreshControl, Linking } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
@@ -18,6 +18,7 @@ import ConflictDialog from '../components/ConflictDialog';
 import AnimatedPressable from '../components/AnimatedPressable';
 import { usePreferences } from '../context/PreferencesContext';
 import { checkAppVersion } from '../utils/versionCheck';
+import { toBSDisplay } from '../utils/bsDateDisplay';
 import type { PatientProfile } from '../types';
 
 /** Centered content column — keeps the layout composed on tablet/desktop widths. */
@@ -80,12 +81,12 @@ export default function HomeScreen({ navigation }: any) {
   useEffect(() => {
     (async () => {
       try {
-        if (!user) return;
+        if (!user || role !== 'parent') return;
         const { data } = await supabase.from('consents').select('id').eq('user_id', user.id).limit(1);
         if (!data || data.length === 0) navigation.navigate('Consent', { firstRun: true });
       } catch { /* ignore */ }
     })();
-  }, [user, navigation]);
+  }, [user, role, navigation]);
 
   // Register this device for remote caregiver alerts (silent; only when notifications are already allowed).
   useEffect(() => {
@@ -136,7 +137,7 @@ export default function HomeScreen({ navigation }: any) {
         onPress={() => navigation.navigate('PatientTabs', { patient: item })}
       >
           <View style={styles.cardRow}>
-        <ChildAvatar name={item.name} sex={item.sex} size={52} />
+        <ChildAvatar name={item.name} sex={item.sex} size={52} photoUri={item.photo_uri} />
         <View style={styles.cardInfo}>
           <Text style={styles.patientName}>{item.name}</Text>
           <View style={styles.metaRow}>
@@ -169,6 +170,7 @@ export default function HomeScreen({ navigation }: any) {
               <Text style={[styles.headerTitle, { color: TH.text }]}>T1D साथी</Text>
             </View>
             <Text style={styles.headerSubtitle}>{greeting}</Text>
+            <Text style={styles.headerDate}>{(() => { try { return toBSDisplay(new Date()); } catch { return ''; } })()}</Text>
           </View>
           <View style={styles.headerRight}>
             <TouchableOpacity
@@ -179,16 +181,17 @@ export default function HomeScreen({ navigation }: any) {
               activeOpacity={0.8}
             >
               <Ionicons name="warning" size={15} color={T.red} />
-              <Text style={styles.sosText}>{isNe ? 'आपतकाल' : 'SOS'}</Text>
+              <Text style={styles.sosText}>{isNe ? 'आपतकाल' : 'Emergency'}</Text>
             </TouchableOpacity>
             <TouchableOpacity
               accessibilityRole="button"
               accessibilityLabel={isNe ? 'सेटिङ्स खोल्नुहोस्' : 'Open settings'}
-              style={[styles.iconBtn, { width: 40 * scale, height: 40 * scale }]}
+              style={styles.settingsPill}
               onPress={() => navigation.navigate('Settings')}
               activeOpacity={0.7}
             >
-              <Ionicons name="settings-outline" size={19} color={T.muted} />
+              <Ionicons name="settings-outline" size={15} color={T.muted} />
+              <Text style={styles.settingsPillText}>{isNe ? 'सेटिङ' : 'Settings'}</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -285,6 +288,44 @@ export default function HomeScreen({ navigation }: any) {
               </View>
             </View>
           }
+          ListFooterComponent={
+            <View>
+              <View style={styles.quickHelpCard}>
+                <Text style={styles.quickHelpTitle}>{isNe ? 'छिटो सहयोग' : 'Quick help'}</Text>
+                <TouchableOpacity style={styles.quickHelpRow} onPress={() => Linking.openURL('tel:9851350883')} accessibilityRole="button">
+                  <View style={[styles.quickHelpIcon, { backgroundColor: D2.tealTint }]}><Ionicons name="call" size={16} color={D2.tealDeep} /></View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.quickHelpRowTitle}>{isNe ? 'डा. अर्चनालाई फोन गर्नुहोस्' : 'Call Dr. Archana'}</Text>
+                    <Text style={styles.quickHelpRowSub}>9851350883 · 24/7 {isNe ? 'हेल्पलाइन' : 'helpline'}</Text>
+                  </View>
+                  <Ionicons name="chevron-forward" size={16} color={D2.faint} />
+                </TouchableOpacity>
+                <TouchableOpacity style={styles.quickHelpRow} onPress={() => navigation.navigate('Emergency')} accessibilityRole="button">
+                  <View style={[styles.quickHelpIcon, { backgroundColor: D2.redTint }]}><Ionicons name="warning" size={16} color={T.red} /></View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.quickHelpRowTitle}>{isNe ? 'आपतकालीन मार्गदर्शन' : 'Emergency guide'}</Text>
+                    <Text style={styles.quickHelpRowSub}>{isNe ? 'हाइपो, DKA — चरणबद्ध निर्देशन' : 'Hypo, DKA — step-by-step'}</Text>
+                  </View>
+                  <Ionicons name="chevron-forward" size={16} color={D2.faint} />
+                </TouchableOpacity>
+              </View>
+              {role === 'clinician' && (
+                <View style={styles.staffCard}>
+                  <Text style={styles.staffTitle}>{isNe ? 'स्टाफ पहुँच' : 'Staff access'}</Text>
+                  <TouchableOpacity style={styles.staffBtn} onPress={() => navigation.navigate('ClinicianPatientList')} accessibilityRole="button">
+                    <Ionicons name="medkit-outline" size={16} color={D2.tealDeep} />
+                    <Text style={styles.staffBtnText}>{isNe ? 'क्लिनिसियन क्षेत्र' : 'Clinician area'}</Text>
+                    <Ionicons name="chevron-forward" size={14} color={D2.faint} />
+                  </TouchableOpacity>
+                  <TouchableOpacity style={styles.staffBtn} onPress={() => navigation.navigate('AdminConsole')} accessibilityRole="button">
+                    <Ionicons name="shield-checkmark-outline" size={16} color={D2.tealDeep} />
+                    <Text style={styles.staffBtnText}>{isNe ? 'एडमिन कन्सोल' : 'Admin console'}</Text>
+                    <Ionicons name="chevron-forward" size={14} color={D2.faint} />
+                  </TouchableOpacity>
+                </View>
+              )}
+            </View>
+          }
         />
       )}
 
@@ -298,19 +339,6 @@ export default function HomeScreen({ navigation }: any) {
           onPress={() => navigation.navigate('AddPatient', {})}
         >
           <Ionicons name="add" size={30} color="#fff" />
-        </TouchableOpacity>
-      )}
-
-      {/* Clinician switch */}
-      {role === 'clinician' && (
-        <TouchableOpacity
-          accessibilityRole="button"
-          accessibilityLabel={isNe ? 'क्लिनिसियन पोर्टल खोल्नुहोस्' : 'Open clinician portal'}
-          style={styles.clinicianBar}
-          onPress={() => navigation.navigate('ClinicianPatientList')}
-        >
-          <Ionicons name="people-outline" size={18} color="#fff" />
-          <Text style={styles.clinicianBarText}>{isNe ? 'क्लिनिसियन पोर्टल' : 'Clinician Portal'} ›</Text>
         </TouchableOpacity>
       )}
 
@@ -439,6 +467,19 @@ const styles = StyleSheet.create({
   chevronCircle: { width: 30, height: 30, borderRadius: 15, backgroundColor: D2.tealTint, alignItems: 'center', justifyContent: 'center' },
 
   // ── FAB ──
+  headerDate: { fontSize: 12.5, fontFamily: FONT.regular, color: T.muted, marginTop: 2 },
+  settingsPill: { flexDirection: 'row', alignItems: 'center', gap: 6, borderWidth: 1.5, borderColor: T.border, borderRadius: 999, paddingHorizontal: 12, paddingVertical: 7, backgroundColor: '#FFFFFF' },
+  settingsPillText: { fontSize: 13, fontFamily: FONT.semibold, fontWeight: '600', color: T.muted },
+  quickHelpCard: { backgroundColor: '#FFFFFF', borderRadius: 16, borderWidth: 1, borderColor: '#EDE0D4', padding: 16, marginTop: 16, shadowColor: '#221C33', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.06, shadowRadius: 8, elevation: 2 },
+  quickHelpTitle: { fontSize: 15, fontFamily: FONT.bold, fontWeight: '700', color: T.text, marginBottom: 4 },
+  quickHelpRow: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 10 },
+  quickHelpIcon: { width: 34, height: 34, borderRadius: 17, alignItems: 'center', justifyContent: 'center' },
+  quickHelpRowTitle: { fontSize: 14.5, fontFamily: FONT.semibold, fontWeight: '600', color: T.text },
+  quickHelpRowSub: { fontSize: 12, fontFamily: FONT.regular, color: T.muted, marginTop: 1 },
+  staffCard: { backgroundColor: '#FFFFFF', borderRadius: 16, borderWidth: 1, borderColor: '#EDE0D4', padding: 16, marginTop: 12, marginBottom: 8, shadowColor: '#221C33', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.06, shadowRadius: 8, elevation: 2 },
+  staffTitle: { fontSize: 15, fontFamily: FONT.bold, fontWeight: '700', color: T.text, marginBottom: 4 },
+  staffBtn: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 12 },
+  staffBtnText: { flex: 1, fontSize: 14, fontFamily: FONT.semibold, fontWeight: '600', color: D2.tealDeep },
   fab: {
     position: 'absolute', bottom: 28, right: 20,
     width: 58, height: 58, borderRadius: 29,

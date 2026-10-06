@@ -4,6 +4,8 @@ import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
 import { supabase } from '../lib/supabase';
 import BackBar from '../components/BackBar';
+import { Ionicons } from '@expo/vector-icons';
+import { D2 } from '../design/tokens';
 import type { PatientProfile } from '../types';
 import { FONT, T } from '../theme';
 
@@ -58,7 +60,13 @@ export default function ClinicianPatientListScreen({ navigation }: any) {
   return (
     <View style={styles.container}>
       <View style={styles.topBar}><BackBar navigation={navigation} /></View>
-      <Text style={styles.title}>{t('patientList')}</Text>
+      <View style={styles.titleRow}>
+        <Text style={styles.title}>{t('patientList')}</Text>
+        <TouchableOpacity style={styles.adminBtn} onPress={() => navigation.navigate('AdminConsole')} accessibilityRole="button">
+          <Ionicons name="shield-checkmark-outline" size={14} color={D2.tealDeep} />
+          <Text style={styles.adminBtnText}>Admin console</Text>
+        </TouchableOpacity>
+      </View>
       <View style={styles.redeemCard}>
         <Text style={styles.redeemTitle}>Add patient with invite code</Text>
         <View style={styles.redeemRow}>
@@ -97,7 +105,10 @@ export default function ClinicianPatientListScreen({ navigation }: any) {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: T.bg },
-  title: { fontSize: 24, fontFamily: FONT.extrabold, fontWeight: '800', color: '#202124', padding: 20, paddingTop: 4 },
+  title: { fontSize: 24, fontFamily: FONT.extrabold, fontWeight: '800', color: '#202124', paddingHorizontal: 20, paddingTop: 4, paddingBottom: 4 },
+  titleRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingRight: 20 },
+  adminBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, borderWidth: 1.5, borderColor: '#0D9488', borderRadius: 999, paddingHorizontal: 12, paddingVertical: 6 },
+  adminBtnText: { fontSize: 12.5, fontFamily: FONT.semibold, fontWeight: '600', color: '#0B5E58' },
   topBar: { paddingHorizontal: 20, paddingTop: 64 },
   list: { padding: 16 },
   card: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#fff', borderRadius: 12, padding: 16, marginBottom: 10, borderWidth: 1, borderColor: '#e8eaed' },

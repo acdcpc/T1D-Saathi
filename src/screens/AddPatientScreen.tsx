@@ -10,6 +10,9 @@ import { supabase } from '../lib/supabase';
 import BSDatePicker from '../components/BSDatePicker';
 import { FONT,  T, input, section, primBtn } from '../theme';
 import BackBar from '../components/BackBar';
+import ChildAvatar from '../components/ChildAvatar';
+import { Ionicons } from '@expo/vector-icons';
+import * as ImagePicker from 'expo-image-picker';
 import GradientButton from '../components/GradientButton';
 import { D2 } from '../design/tokens';
 
@@ -80,6 +83,7 @@ export default function AddPatientScreen({ navigation }: any) {
   const [loading, setLoading] = useState(false);
 
   const [name, setName] = useState('');
+  const [photoUri, setPhotoUri] = useState<string | null>(null);
   const [dob, setDob] = useState('');
   const [sex, setSex] = useState<string>('male');
   const [comorbid, setComorbid] = useState<string[]>([]);
@@ -117,6 +121,33 @@ export default function AddPatientScreen({ navigation }: any) {
     else if (years >= 10 && years <= 17) setAgeBand('Teen (10–17)');
   }, [dob, ageBand]);
 
+  const takePhoto = async () => {
+    try {
+      const perm = await ImagePicker.requestCameraPermissionsAsync();
+      if (!perm.granted) return;
+      const r = await ImagePicker.launchCameraAsync({ allowsEditing: true, quality: 0.7 });
+      if (!r.canceled && r.assets?.[0]?.uri) setPhotoUri(r.assets[0].uri);
+    } catch { /* camera unavailable */ }
+  };
+  const choosePhoto = async () => {
+    try {
+      const r = await ImagePicker.launchImageLibraryAsync({ mediaTypes: 'images', allowsEditing: true, quality: 0.7 });
+      if (!r.canceled && r.assets?.[0]?.uri) setPhotoUri(r.assets[0].uri);
+    } catch { /* gallery unavailable */ }
+  };
+  const pickPhoto = () => {
+    Alert.alert(
+      language === 'ne' ? 'बच्चाको फोटो' : "Child's photo",
+      language === 'ne' ? 'फोटो कसरी थप्ने?' : 'How would you like to add it?',
+      [
+        { text: language === 'ne' ? 'क्यामेरा' : 'Take photo', onPress: takePhoto },
+        { text: language === 'ne' ? 'ग्यालरी' : 'Choose from gallery', onPress: choosePhoto },
+        ...(photoUri ? [{ text: language === 'ne' ? 'हटाउनुहोस्' : 'Remove photo', style: 'destructive' as const, onPress: () => setPhotoUri(null) }] : []),
+        { text: language === 'ne' ? 'रद्द गर्नुहोस्' : 'Cancel', style: 'cancel' as const },
+      ],
+    );
+  };
+
   const handleSave = async () => {
     if (!user) return Alert.alert(t('error'), 'Not logged in');
     let ok = true;
@@ -132,6 +163,7 @@ export default function AddPatientScreen({ navigation }: any) {
       user_id: user.id,
       name: name.trim(),
       date_of_birth: dob || null,
+      photo_uri: photoUri || null,
       sex,
       comorbid_conditions: comorbid.length > 0 ? comorbid : null,
       medications: medications.trim() || null,
@@ -190,6 +222,22 @@ export default function AddPatientScreen({ navigation }: any) {
       <Text style={styles.label}>{t('childName')} *</Text>
       <TextInput style={[styles.input, nameError && styles.inputError]} value={name} onChangeText={(v) => { setName(v); if (nameError) setNameError(null); }} placeholder="Full name" />
       {nameError ? <Text style={styles.errorText}>{nameError}</Text> : null}
+
+      <View style={styles.photoRow}>
+        <TouchableOpacity onPress={pickPhoto} activeOpacity={0.8} accessibilityRole="button" accessibilityLabel={language === 'ne' ? 'बच्चाको फोटो थप्नुहोस्' : "Add child's photo"}>
+          <View>
+            <ChildAvatar name={name || '?'} sex={sex} size={64} photoUri={photoUri} />
+            <View style={styles.photoEditBadge}><Ionicons name="camera" size={12} color="#fff" /></View>
+          </View>
+        </TouchableOpacity>
+        <View style={{ flex: 1 }}>
+          <Text style={styles.label}>{language === 'ne' ? 'बच्चाको फोटो' : "Child's photo"}</Text>
+          <Text style={styles.photoHint}>{language === 'ne' ? 'अनुहार देखिने फोटो थप्नुहोस् — प्रोफाइलमा देखिन्छ (वैकल्पिक)' : "Add a photo of your child's face — shown on their profile (optional)"}</Text>
+          <TouchableOpacity onPress={pickPhoto} accessibilityRole="button">
+            <Text style={styles.photoBtnText}>{photoUri ? (language === 'ne' ? 'फोटो परिवर्तन गर्नुहोस्' : 'Change photo') : (language === 'ne' ? 'फोटो थप्नुहोस्' : 'Add photo')}</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
 
       <BSDatePicker
         label={t('dateOfBirth')}
@@ -319,6 +367,10 @@ const styles = StyleSheet.create({
   inputError: { borderColor: T.red, borderWidth: 1.5 },
   errorText: { color: T.red, fontSize: 12, fontFamily: FONT.regular, marginTop: 4 },
   hintSmall: { fontSize: 12, fontFamily: FONT.regular, color: T.muted, marginTop: 10, lineHeight: 17 },
+  photoRow: { flexDirection: 'row', alignItems: 'center', gap: 14, marginTop: 8 },
+  photoEditBadge: { position: 'absolute', bottom: -2, right: -2, width: 22, height: 22, borderRadius: 11, backgroundColor: D2.teal, alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: '#fff' },
+  photoHint: { fontSize: 12, fontFamily: FONT.regular, color: T.muted, lineHeight: 17 },
+  photoBtnText: { color: D2.tealDeep, fontSize: 13, fontFamily: FONT.bold, fontWeight: '700', marginTop: 2 },
   multiline: { minHeight: 70, textAlignVertical: 'top' },
   chipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   chip: { borderRadius: 20, paddingHorizontal: 16, paddingVertical: 8, backgroundColor: T.surface, borderWidth: 1, borderColor: T.border },

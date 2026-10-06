@@ -17,7 +17,7 @@ const contentCol = { width: '100%' as const, maxWidth: 640, alignSelf: 'center' 
 import type { Language } from '../types';
 
 export default function SettingsScreen({ navigation }: any) {
-  const { signOut } = useAuth();
+  const { signOut, role } = useAuth();
   const { language, setLanguage, t } = useLanguage();
   const { highContrast, largeButtons, fontScale, theme: TH, setHighContrast, setLargeButtons, setFontScale } = usePreferences();
   const isNe = language === 'ne';
@@ -291,6 +291,20 @@ export default function SettingsScreen({ navigation }: any) {
           </View>
           <Switch value={motivation} onValueChange={handleMotivationToggle} trackColor={{ true: T.blue }} />
         </View>
+
+        {role === 'clinician' && (
+          <>
+            <Text style={styles.sectionLabel}>{isNe ? 'स्टाफ' : 'Staff'}</Text>
+            <TouchableOpacity style={styles.rowCard} onPress={() => navigation.navigate('AdminConsole')}>
+              <Ionicons name="shield-checkmark-outline" size={20} color={T.blue} />
+              <View style={{ flex: 1, marginLeft: 10 }}>
+                <Text style={styles.rowTitle}>{isNe ? 'एडमिन कन्सोल' : 'Admin console'}</Text>
+                <Text style={styles.rowSub}>{isNe ? 'क्लिनिसियन र स्टाफ उपकरणहरू' : 'Clinician & staff tools'}</Text>
+              </View>
+              <Ionicons name="chevron-forward" size={18} color={T.muted} />
+            </TouchableOpacity>
+          </>
+        )}
 
         <Text style={styles.sectionLabel}>{isNe ? 'सहमति र गोपनीयता' : 'Consent & privacy'}</Text>
         <TouchableOpacity style={styles.rowCard} onPress={() => navigation.navigate('Consent')}>

@@ -139,7 +139,21 @@ export default function PatientDashboard({ route, navigation }: any) {
       >
         {/* Avatar header */}
         <View style={styles.profileHeader}>
-          <ChildAvatar name={patient.name} sex={patient.sex} size={56} />
+          <TouchableOpacity
+            accessibilityRole="button"
+            accessibilityLabel={isNe ? 'बिरामी सूचीमा फर्कनुहोस्' : 'Back to patients'}
+            hitSlop={8}
+            style={styles.backCircle}
+            onPress={() => {
+              const parent = navigation?.getParent?.();
+              if (parent?.canGoBack?.()) { parent.goBack(); return; }
+              if (navigation?.canGoBack?.()) { navigation.goBack(); return; }
+              navigation?.navigate?.('Home');
+            }}
+          >
+            <Ionicons name="chevron-back" size={20} color={D2.tealDeep} />
+          </TouchableOpacity>
+          <ChildAvatar name={patient.name} sex={patient.sex} size={56} photoUri={patient.photo_uri} />
           <View style={styles.profileInfo}>
             <Text style={styles.name}>{patient.name}</Text>
             <Text style={styles.subtitle}>
@@ -333,6 +347,7 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: T.bg },
   content: { padding: 16, paddingTop: 10 },
 
+  backCircle: { width: 36, height: 36, borderRadius: 18, backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: '#EDE0D4', alignItems: 'center', justifyContent: 'center' },
   profileHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 20 },
   profileAv: { ...avatar, width: 56, height: 56, borderRadius: 28, backgroundColor: D2.tealTint },
   profileAvText: { fontSize: 26, fontFamily: FONT.bold, fontWeight: '700', color: D2.teal },
