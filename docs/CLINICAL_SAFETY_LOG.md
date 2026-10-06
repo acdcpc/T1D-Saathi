@@ -26,3 +26,14 @@ No future change should introduce a default TDD, default glucose, default correc
 | 15/15 hypoglycemia card | Emergency screen shows mild-hypo steps (15 g fast carbs → recheck 15 min) | Clinician review of wording and examples |
 | Long-acting dose log | Manual long-acting entries recorded in the insulin diary, separate from bolus IOB | Confirm logging expectations for MDI regimens |
 | Mood / activity diary fields | Optional non-clinical fields on glucose logs | Nil (label review only) |
+
+
+## Round 6 additions (2026-10-06) — dual-insulin regimen (basal + bolus)
+
+| Decision | Current branch behavior | Approval still required |
+|---|---|---|
+| Dual-insulin regimen model | Patients/regimens store basal (long-acting) AND bolus (rapid-acting) insulins separately, per ISPAD basal-bolus standard; `regimen_type` ∈ {mdi, pump, premix}. Legacy single `insulin_type` retained as fallback label. | Clinician review of insulin option lists (what is actually available in Nepal) and regimen-type defaults |
+| At-least-one-insulin rule | AddPatient / Regimen settings fail closed if neither basal nor bolus is selected; TDD > 0 and correction target > 0 still required | Clinician confirmation of required-field policy |
+| Basal dose field | `basal_dose` (units/day) stored separately from TDD; legacy `dose` column kept in sync for compatibility | Clinician review of dose-entry semantics (basal vs TDD round-tripping) |
+| Dosing gate unchanged | Dose calculator still requires clinician-approved regimen + TDD + correction target; no gate weakened by this change (review-verified) | — (no change) |
+| Insulin option lists | Basal: glargine U100/U300, detemir, degludec, NPH; bolus: aspart, lispro, glulisine, faster aspart, regular human, premix 70/30, + 'None'. Sources: ISPAD consensus chapter (2022; 2024 set context), CDC insulin types (2024) | Clinician to confirm local product names/brands to display |
