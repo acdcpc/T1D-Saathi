@@ -162,7 +162,7 @@ export default function SickDayWizardScreen({ route, navigation }: any) {
     }
   };
 
-  if (loading) return <View style={styles.centered}><ActivityIndicator size="large" color="#1a73e8" /></View>;
+  if (loading) return <View style={styles.centered}><ActivityIndicator size="large" color="#0D9488" /></View>;
 
   const redFlags = step === 'results' ? checkRedFlags() : [];
 
@@ -313,18 +313,16 @@ export default function SickDayWizardScreen({ route, navigation }: any) {
             ) : matchedRule.supplemental_insulin_percent ? (
               suppDose !== null ? (
                 <>
-                  <Text style={styles.guidanceText}>{matchedRule.supplemental_insulin_percent > 0 ? 'Increase' : 'Reduce'} TDD by {Math.abs(matchedRule.supplemental_insulin_percent)}%</Text>
+                  <Text style={styles.guidanceText}>Increase TDD by {Math.abs(matchedRule.supplemental_insulin_percent)}% — extra rapid-acting insulin</Text>
                   <Text style={styles.doseText}>
-                    {matchedRule.supplemental_insulin_percent > 0 ? '+' : ''}{suppDose.toFixed(1)} units from the clinician-approved TDD
+                    +{suppDose.toFixed(1)} units from the clinician-approved TDD
                   </Text>
-                  {matchedRule.supplemental_insulin_percent > 0 && (
-                    doseSaved ? (
-                      <Text style={styles.doseSavedText}>✓ {language === 'ne' ? 'डोज रेकर्ड भयो' : 'Dose recorded'}</Text>
-                    ) : (
-                      <TouchableOpacity style={styles.saveDoseBtn} onPress={handleSaveDose}>
-                        <Text style={styles.saveDoseBtnText}>{language === 'ne' ? 'यो डोज रेकर्ड गर्नुहोस्' : 'Log this dose'}</Text>
-                      </TouchableOpacity>
-                    )
+                  {doseSaved ? (
+                    <Text style={styles.doseSavedText}>✓ {language === 'ne' ? 'डोज रेकर्ड भयो' : 'Dose recorded'}</Text>
+                  ) : (
+                    <TouchableOpacity style={styles.saveDoseBtn} onPress={handleSaveDose}>
+                      <Text style={styles.saveDoseBtnText}>{language === 'ne' ? 'यो डोज रेकर्ड गर्नुहोस्' : 'Log this dose'}</Text>
+                    </TouchableOpacity>
                   )}
                 </>
               ) : (
@@ -396,7 +394,7 @@ const styles = StyleSheet.create({
   content: { padding: 20, paddingTop: 60 },
   centered: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   stepIndicator: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginBottom: 24 },
-  stepActive: { width: 36, height: 36, borderRadius: 18, backgroundColor: '#1a73e8', justifyContent: 'center', alignItems: 'center' },
+  stepActive: { width: 36, height: 36, borderRadius: 18, backgroundColor: '#0D9488', justifyContent: 'center', alignItems: 'center' },
   stepDone: { width: 36, height: 36, borderRadius: 18, backgroundColor: '#34a853', justifyContent: 'center', alignItems: 'center' },
   stepInactive: { width: 36, height: 36, borderRadius: 18, backgroundColor: '#dadce0', justifyContent: 'center', alignItems: 'center' },
   stepLine: { width: 30, height: 2, backgroundColor: '#dadce0' },
@@ -409,17 +407,17 @@ const styles = StyleSheet.create({
   glucoseInput: { backgroundColor: '#fff', borderRadius: 10, padding: 14, fontSize: 28, fontFamily: FONT.bold, fontWeight: '700', borderWidth: 1, borderColor: '#dadce0', textAlign: 'center' },
   toggleRow: { flexDirection: 'row', gap: 12 },
   toggleBtn: { flex: 1, borderRadius: 10, padding: 14, alignItems: 'center', backgroundColor: '#e8eaed' },
-  toggleActive: { backgroundColor: '#1a73e8' },
+  toggleActive: { backgroundColor: '#0D9488' },
   toggleText: { fontSize: 16, fontFamily: FONT.semibold, fontWeight: '600', color: '#3c4043' },
   toggleActiveText: { color: '#fff' },
   chipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   chip: { borderRadius: 20, paddingHorizontal: 16, paddingVertical: 8, backgroundColor: '#e8eaed' },
-  chipActive: { backgroundColor: '#1a73e8' },
+  chipActive: { backgroundColor: '#0D9488' },
   chipText: { fontSize: 14, fontFamily: FONT.regular, color: '#3c4043' },
   chipTextActive: { color: '#fff' },
   warningBox: { backgroundColor: '#fef7e0', borderRadius: 8, padding: 12, marginTop: 14, borderWidth: 1, borderColor: '#f9ab00' },
   warningText: { fontSize: 13, fontFamily: FONT.regular, color: '#e37400' },
-  nextBtn: { backgroundColor: '#1a73e8', borderRadius: 12, padding: 16, alignItems: 'center', marginTop: 24 },
+  nextBtn: { backgroundColor: '#0D9488', borderRadius: 12, padding: 16, alignItems: 'center', marginTop: 24 },
   nextBtnText: { color: '#fff', fontSize: 17, fontFamily: FONT.semibold, fontWeight: '600' },
   emergencyBox: { backgroundColor: '#fce8e6', borderRadius: 12, padding: 18, marginBottom: 16, borderWidth: 2, borderColor: '#ea4335' },
   emergencyTitle: { fontSize: 20, fontFamily: FONT.extrabold, fontWeight: '800', color: '#ea4335', marginBottom: 8 },
@@ -430,7 +428,7 @@ const styles = StyleSheet.create({
   guidanceSection: { marginBottom: 16 },
   guidanceLabel: { fontSize: 15, fontFamily: FONT.bold, fontWeight: '700', color: '#202124', marginBottom: 6 },
   guidanceText: { fontSize: 14, fontFamily: FONT.regular, color: '#5f6368', paddingVertical: 2 },
-  doseText: { fontSize: 18, fontFamily: FONT.bold, fontWeight: '700', color: '#1a73e8', marginTop: 4 },
+  doseText: { fontSize: 18, fontFamily: FONT.bold, fontWeight: '700', color: '#0D9488', marginTop: 4 },
   redFlagBox: { backgroundColor: '#fef7e0', borderRadius: 10, padding: 14, marginBottom: 14, borderWidth: 1, borderColor: '#f9ab00' },
   redFlagTitle: { fontSize: 15, fontFamily: FONT.bold, fontWeight: '700', color: '#e37400', marginBottom: 6 },
   redFlagText: { fontSize: 13, fontFamily: FONT.regular, color: '#5f6368', paddingVertical: 1 },
@@ -444,10 +442,10 @@ const styles = StyleSheet.create({
   smallDisclaimer: { textAlign: 'center', color: '#5f6368', fontSize: 11, fontFamily: FONT.regular, marginTop: 10, paddingHorizontal: 12 },
   doneBtn: { backgroundColor: '#34a853', borderRadius: 12, padding: 16, alignItems: 'center', marginTop: 16 },
   doneBtnText: { color: '#fff', fontSize: 17, fontFamily: FONT.semibold, fontWeight: '600' },
-  ketonePromptBox: { backgroundColor: '#e8f0fe', borderRadius: 10, padding: 14, marginTop: 14, marginBottom: 14, borderWidth: 1, borderColor: '#1a73e8' },
-  ketonePromptTitle: { fontSize: 15, fontFamily: FONT.bold, fontWeight: '700', color: '#1a73e8', marginBottom: 6 },
-  ketonePromptText: { fontSize: 13, fontFamily: FONT.regular, color: '#1a73e8', lineHeight: 18 },
-  saveDoseBtn: { backgroundColor: '#1a73e8', borderRadius: 10, paddingHorizontal: 16, paddingVertical: 10, alignSelf: 'flex-start', marginTop: 8 },
+  ketonePromptBox: { backgroundColor: '#E5F4F1', borderRadius: 10, padding: 14, marginTop: 14, marginBottom: 14, borderWidth: 1, borderColor: '#0D9488' },
+  ketonePromptTitle: { fontSize: 15, fontFamily: FONT.bold, fontWeight: '700', color: '#0D9488', marginBottom: 6 },
+  ketonePromptText: { fontSize: 13, fontFamily: FONT.regular, color: '#0D9488', lineHeight: 18 },
+  saveDoseBtn: { backgroundColor: '#0D9488', borderRadius: 10, paddingHorizontal: 16, paddingVertical: 10, alignSelf: 'flex-start', marginTop: 8 },
   saveDoseBtnText: { color: '#fff', fontSize: 13, fontFamily: FONT.semibold, fontWeight: '600' },
   doseSavedText: { fontSize: 13, fontFamily: FONT.semibold, fontWeight: '600', color: '#0D9488', marginTop: 8 },
 });

@@ -36,7 +36,9 @@ export const DEFAULT_SICK_DAY_RULES: SickDayRule[] = [
     urine_ketone: 'trace',
     guidance_key: 'mildKetones',
     severity: 'yellow',
-    supplemental_insulin_percent: -15,
+    // Mild ketones: extra rapid-acting insulin ~5–10% of TDD per common paediatric sick-day plans.
+    // Low end (5%) chosen conservatively; clinician to confirm — see CLINICAL_SAFETY_LOG (round 6).
+    supplemental_insulin_percent: 5,
     monitoring_glucose_minutes: 120,
     monitoring_ketone_minutes: 240,
     escalate: false,
@@ -89,8 +91,8 @@ export const HYDRATION_THRESHOLD = 250;
 // Hypoglycemia threshold: 70 mg/dL
 export const HYPO_THRESHOLD = 70;
 
-// Hypoglycemia recheck interval in minutes
-export const HYPO_RECHECK_MINUTES = 20;
+// Hypoglycemia recheck interval in minutes — aligned with the 15/15 rule (retest after 15 min)
+export const HYPO_RECHECK_MINUTES = 15;
 
 // ISPAD monitoring guidance
 export function getMonitoringGuidance(ketoneValue: number): {
