@@ -3,6 +3,7 @@ import { View, Text, FlatList, TouchableOpacity, StyleSheet, RefreshControl, Tex
 import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
 import { supabase } from '../lib/supabase';
+import BackBar from '../components/BackBar';
 import type { PatientProfile } from '../types';
 import { FONT, T } from '../theme';
 
@@ -56,6 +57,7 @@ export default function ClinicianPatientListScreen({ navigation }: any) {
 
   return (
     <View style={styles.container}>
+      <View style={styles.topBar}><BackBar navigation={navigation} /></View>
       <Text style={styles.title}>{t('patientList')}</Text>
       <View style={styles.redeemCard}>
         <Text style={styles.redeemTitle}>Add patient with invite code</Text>
@@ -82,7 +84,7 @@ export default function ClinicianPatientListScreen({ navigation }: any) {
             <View style={styles.avatar}><Text style={styles.avatarText}>{item.name[0]?.toUpperCase()}</Text></View>
             <View style={styles.cardText}>
               <Text style={styles.patientName}>{item.name}</Text>
-              <Text style={styles.meta}>{item.insulin_type} · {item.sex}</Text>
+              <Text style={styles.meta}>{[item.basal_insulin, item.bolus_insulin].filter(Boolean).join(' + ') || item.insulin_type || '—'} · {item.sex}</Text>
             </View>
             <Text style={styles.chevron}>›</Text>
           </TouchableOpacity>
@@ -95,7 +97,8 @@ export default function ClinicianPatientListScreen({ navigation }: any) {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: T.bg },
-  title: { fontSize: 24, fontFamily: FONT.extrabold, fontWeight: '800', color: '#202124', padding: 20, paddingTop: 90 },
+  title: { fontSize: 24, fontFamily: FONT.extrabold, fontWeight: '800', color: '#202124', padding: 20, paddingTop: 4 },
+  topBar: { paddingHorizontal: 20, paddingTop: 64 },
   list: { padding: 16 },
   card: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#fff', borderRadius: 12, padding: 16, marginBottom: 10, borderWidth: 1, borderColor: '#e8eaed' },
   avatar: { width: 44, height: 44, borderRadius: 22, backgroundColor: '#e8f0fe', justifyContent: 'center', alignItems: 'center', marginRight: 14 },

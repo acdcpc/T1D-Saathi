@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Alert, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import BackBar from '../components/BackBar';
 import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
 import { supabase } from '../lib/supabase';
@@ -80,6 +81,7 @@ export default function ConsentScreen({ navigation, route }: any) {
   return (
     <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
       <ScrollView contentContainerStyle={styles.content}>
+        <BackBar navigation={navigation} />
         <Text style={styles.title}>{isNe ? 'सहमति र अनुमति' : 'Consent & Assent'}</Text>
         {firstRun && (
           <Text style={styles.sub}>{isNe ? 'सुरु गर्नु अघि कृपया पढ्नुहोस्।' : 'Please review before you begin.'}</Text>

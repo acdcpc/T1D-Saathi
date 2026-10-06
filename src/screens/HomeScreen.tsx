@@ -44,7 +44,7 @@ export default function HomeScreen({ navigation }: any) {
     setLoading(true);
     const { data, error } = await supabase
       .from('patients')
-      .select('id,user_id,name,date_of_birth,sex,photo_uri,comorbid_conditions,medications,insulin_type,insulin_dose,insulin_frequency,insulin_delivery,diagnosis_date,dka_history,documents,created_at,updated_at,age_band')
+      .select('id,user_id,name,date_of_birth,sex,photo_uri,comorbid_conditions,medications,insulin_type,insulin_dose,insulin_frequency,insulin_delivery,diagnosis_date,dka_history,documents,basal_insulin,bolus_insulin,created_at,updated_at,age_band')
       .eq('user_id', user.id)
       .order('created_at', { ascending: false });
     if (error) console.error('fetch error:', error);
@@ -146,7 +146,7 @@ export default function HomeScreen({ navigation }: any) {
               </View>
             ) : null}
             <View style={styles.metaChip}>
-              <Text style={styles.metaChipText}>{item.insulin_type || (isNe ? 'इन्सुलिन' : 'Insulin')}</Text>
+              <Text style={styles.metaChipText}>{[item.basal_insulin, item.bolus_insulin].filter(Boolean).join(' + ') || item.insulin_type || (isNe ? 'इन्सुलिन' : 'Insulin')}</Text>
             </View>
           </View>
         </View>
@@ -307,7 +307,7 @@ export default function HomeScreen({ navigation }: any) {
           accessibilityRole="button"
           accessibilityLabel={isNe ? 'क्लिनिसियन पोर्टल खोल्नुहोस्' : 'Open clinician portal'}
           style={styles.clinicianBar}
-          onPress={() => navigation.reset({ index: 0, routes: [{ name: 'ClinicianPatientList' }] })}
+          onPress={() => navigation.navigate('ClinicianPatientList')}
         >
           <Ionicons name="people-outline" size={18} color="#fff" />
           <Text style={styles.clinicianBarText}>{isNe ? 'क्लिनिसियन पोर्टल' : 'Clinician Portal'} ›</Text>

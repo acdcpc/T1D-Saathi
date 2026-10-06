@@ -6,10 +6,11 @@ import { supabase } from '../lib/supabase';
 import type { GlucoseLog, KetoneLog, SickDayEpisode, InsulinRegimen } from '../types';
 import { toBSDateTimeDisplay, toBSDisplay } from '../utils/bsDateDisplay';
 import { FONT, T } from '../theme';
+import BackBar from '../components/BackBar';
 
 interface InsulinRow { id: string; units: number; insulin_type: string; source: string; timestamp: string; }
 
-export default function ClinicianPatientDetailScreen({ route }: any) {
+export default function ClinicianPatientDetailScreen({ route, navigation }: any) {
   const { patientId, patientName } = route.params;
   const { t } = useLanguage();
   const { user } = useAuth();
@@ -33,7 +34,7 @@ export default function ClinicianPatientDetailScreen({ route }: any) {
       let reg: InsulinRegimen | null = null;
       const full = await supabase
         .from('insulin_regimens')
-        .select('id,patient_id,insulin_type,tdd,isf,carb_ratio,correction_target,max_bolus,approved_by_clinician,approved_at,effective_date')
+        .select('id,patient_id,insulin_type,regimen_type,basal_insulin,basal_dose,bolus_insulin,tdd,isf,carb_ratio,correction_target,max_bolus,approved_by_clinician,approved_at,effective_date')
         .eq('patient_id', patientId)
         .order('effective_date', { ascending: false })
         .limit(1)
@@ -87,7 +88,7 @@ export default function ClinicianPatientDetailScreen({ route }: any) {
     Alert.alert('Regimen approved', 'The regimen is now available to the family for dosing support.');
   };
 
-  if (loading) return <View style={styles.centered}><ActivityIndicator size="large" color="#1a73e8" /></View>;
+  if (loading) return <View style={styles.centered}><ActivityIndicator size="large" color="#0D9488" /></View>;
 
   const getKetoneColor = (val: number | undefined | null) => {
     if (val === undefined || val === null) return '#202124';
@@ -100,12 +101,16 @@ export default function ClinicianPatientDetailScreen({ route }: any) {
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+      <BackBar navigation={navigation} />
       <Text style={styles.title}>{patientName}</Text>
 
       <Text style={styles.section}>Insulin Regimen</Text>
       {regimen ? (
         <View style={styles.regimenCard}>
           <View style={styles.regimenRow}><Text style={styles.regimenLabel}>Type</Text><Text style={styles.regimenValue}>{regimen.insulin_type || '—'}</Text></View>
+          {regimen.regimen_type ? (<View style={styles.regimenRow}><Text style={styles.regimenLabel}>Regimen</Text><Text style={styles.regimenValue}>{regimen.regimen_type === 'mdi' ? 'Basal-bolus (MDI)' : regimen.regimen_type === 'pump' ? 'Pump (CSII)' : 'Premixed'}</Text></View>) : null}
+          {regimen.basal_insulin ? (<View style={styles.regimenRow}><Text style={styles.regimenLabel}>Basal</Text><Text style={styles.regimenValue}>{regimen.basal_insulin}{regimen.basal_dose ? ` · ${regimen.basal_dose} U/day` : ''}</Text></View>) : null}
+          {regimen.bolus_insulin ? (<View style={styles.regimenRow}><Text style={styles.regimenLabel}>Bolus</Text><Text style={styles.regimenValue}>{regimen.bolus_insulin}</Text></View>) : null}
           <View style={styles.regimenRow}><Text style={styles.regimenLabel}>TDD</Text><Text style={styles.regimenValue}>{regimen.tdd ?? '—'} U</Text></View>
           <View style={styles.regimenRow}><Text style={styles.regimenLabel}>Correction target</Text><Text style={styles.regimenValue}>{regimen.correction_target ?? '—'} mg/dL</Text></View>
           <View style={styles.regimenRow}><Text style={styles.regimenLabel}>Max bolus</Text><Text style={styles.regimenValue}>{regimen.max_bolus ?? '—'} U</Text></View>

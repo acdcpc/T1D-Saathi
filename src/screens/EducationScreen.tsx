@@ -5,6 +5,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { useLanguage } from '../context/LanguageContext';
 import { usePatient } from '../context/PatientContext';
 import { FONT, T } from '../theme';
+import BackBar from '../components/BackBar';
+import { useTabBarSpace } from '../design/useTabBarSpace';
 import { toDisplayNumber } from '../utils/nepaliNumber';
 
 const contentCol = { width: '100%' as const, maxWidth: 640, alignSelf: 'center' as const };
@@ -22,6 +24,7 @@ export default function EducationScreen({ route, navigation }: any) {
   const patientId = (route.params as any)?.patientId || usePatient()?.id || '';
   const { t, language } = useLanguage();
   const isNe = language === 'ne';
+  const tabSpace = useTabBarSpace();
   const [completed, setCompleted] = useState<string[]>([]);
 
   useEffect(() => {
@@ -42,7 +45,8 @@ export default function EducationScreen({ route, navigation }: any) {
   const pct = Math.round((completed.length / TOPICS.length) * 100);
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { paddingBottom: tabSpace.contentPaddingBottom }]}>
+      <BackBar navigation={navigation} />
       <Text style={styles.title}>{t('educationLibrary')}</Text>
       <Text style={styles.subtitle}>{isNe ? 'विषय थिच्नुहोस् — पढेपछि चिन्ह लगाउनुहोस्' : 'Tap a topic to mark it as read'}</Text>
 
@@ -82,7 +86,7 @@ export default function EducationScreen({ route, navigation }: any) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: T.bg, padding: 20, paddingTop: 90 },
+  container: { flex: 1, backgroundColor: T.bg, padding: 20, paddingTop: 64 },
   title: {
     width: '100%', maxWidth: 640, alignSelf: 'center', fontSize: 24, fontFamily: FONT.extrabold, fontWeight: '800', color: '#202124', marginBottom: 4 },
   subtitle: {
@@ -98,7 +102,7 @@ const styles = StyleSheet.create({
   cardText: { flex: 1 },
   cardTitle: { fontSize: 16, fontFamily: FONT.semibold, fontWeight: '600', color: '#202124' },
   audience: { fontSize: 12, fontFamily: FONT.regular, color: '#5f6368', marginTop: 2 },
-  quizBtn: { backgroundColor: '#1a73e8', borderRadius: 12, padding: 16, alignItems: 'center', marginTop: 10, flexDirection: 'row', justifyContent: 'center', gap: 8 },
+  quizBtn: { backgroundColor: '#0D9488', borderRadius: 12, padding: 16, alignItems: 'center', marginTop: 10, flexDirection: 'row', justifyContent: 'center', gap: 8 },
   iconTile: { width: 44, height: 44, borderRadius: 12, alignItems: 'center', justifyContent: 'center', marginRight: 14 },
   quizText: { color: '#fff', fontSize: 17, fontFamily: FONT.semibold, fontWeight: '600' },
 });
