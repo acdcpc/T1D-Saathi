@@ -12,7 +12,7 @@ import { FONT,  T, input, section, primBtn } from '../theme';
 import BackBar from '../components/BackBar';
 import ChildAvatar from '../components/ChildAvatar';
 import { Ionicons } from '@expo/vector-icons';
-import * as ImagePicker from 'expo-image-picker';
+import { pickPatientPhoto } from '../utils/patientPhoto';
 import GradientButton from '../components/GradientButton';
 import { D2 } from '../design/tokens';
 
@@ -121,31 +121,10 @@ export default function AddPatientScreen({ navigation }: any) {
     else if (years >= 10 && years <= 17) setAgeBand('Teen (10–17)');
   }, [dob, ageBand]);
 
-  const takePhoto = async () => {
-    try {
-      const perm = await ImagePicker.requestCameraPermissionsAsync();
-      if (!perm.granted) return;
-      const r = await ImagePicker.launchCameraAsync({ allowsEditing: true, quality: 0.7 });
-      if (!r.canceled && r.assets?.[0]?.uri) setPhotoUri(r.assets[0].uri);
-    } catch { /* camera unavailable */ }
-  };
-  const choosePhoto = async () => {
-    try {
-      const r = await ImagePicker.launchImageLibraryAsync({ mediaTypes: 'images', allowsEditing: true, quality: 0.7 });
-      if (!r.canceled && r.assets?.[0]?.uri) setPhotoUri(r.assets[0].uri);
-    } catch { /* gallery unavailable */ }
-  };
-  const pickPhoto = () => {
-    Alert.alert(
-      language === 'ne' ? 'बच्चाको फोटो' : "Child's photo",
-      language === 'ne' ? 'फोटो कसरी थप्ने?' : 'How would you like to add it?',
-      [
-        { text: language === 'ne' ? 'क्यामेरा' : 'Take photo', onPress: takePhoto },
-        { text: language === 'ne' ? 'ग्यालरी' : 'Choose from gallery', onPress: choosePhoto },
-        ...(photoUri ? [{ text: language === 'ne' ? 'हटाउनुहोस्' : 'Remove photo', style: 'destructive' as const, onPress: () => setPhotoUri(null) }] : []),
-        { text: language === 'ne' ? 'रद्द गर्नुहोस्' : 'Cancel', style: 'cancel' as const },
-      ],
-    );
+  const pickPhoto = async () => {
+    const next = await pickPatientPhoto(language === 'ne', !!photoUri);
+    if (next === undefined) return;
+    setPhotoUri(next);
   };
 
   const handleSave = async () => {

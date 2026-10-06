@@ -19,6 +19,7 @@ import { sendCaregiverAlert } from '../utils/caregiverAlert';
 import { glucoseToMgDl } from '../utils/dosingCalc';
 import ISPADBadge from '../components/ISPADBadge';
 import ChildAvatar from '../components/ChildAvatar';
+import { pickPatientPhoto } from '../utils/patientPhoto';
 import GlucoseTrendChart from '../components/GlucoseTrendChart';
 import TirDonut from '../components/TirDonut';
 import AnimatedPressable from '../components/AnimatedPressable';
@@ -50,6 +51,9 @@ export default function PatientDashboard({ route, navigation }: any) {
   const [nextReminder, setNextReminder] = useState<{ key: 'breakfast' | 'lunch' | 'dinner' | 'bedtime'; hour: number; minute: number } | null>(null);
   const [ageBand, setAgeBand] = useState<string | null>(null);
   const [motivationOptOut, setMotivationOptOut] = useState(false);
+  const [photoUri, setPhotoUri] = useState<string | null>(patient?.photo_uri ?? null);
+
+  useEffect(() => { setPhotoUri(patient?.photo_uri ?? null); }, [patient?.id]);
 
   const fetchData = useCallback(async () => {
     const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
@@ -113,6 +117,20 @@ export default function PatientDashboard({ route, navigation }: any) {
     if (error) Alert.alert(isNe ? 'त्रुटि' : 'Error', error.message);
   };
 
+  const changePhoto = async () => {
+    const prev = photoUri;
+    const next = await pickPatientPhoto(isNe, !!photoUri);
+    if (next === undefined) return;
+    setPhotoUri(next);
+    try {
+      const { error } = await supabase.from('patients').update({ photo_uri: next }).eq('id', patient.id);
+      if (error) throw error;
+    } catch {
+      setPhotoUri(prev);
+      Alert.alert(isNe ? 'त्रुटि' : 'Error', isNe ? 'फोटो सुरक्षित गर्न सकिएन — फेरि प्रयास गर्नुहोस्' : 'Could not save the photo. Please try again.');
+    }
+  };
+
   const heroStatus = statusForMgdl(latestMgDl);
   const lowCount7d = history.filter((l) => {
     try {
@@ -153,7 +171,18 @@ export default function PatientDashboard({ route, navigation }: any) {
           >
             <Ionicons name="chevron-back" size={20} color={D2.tealDeep} />
           </TouchableOpacity>
-          <ChildAvatar name={patient.name} sex={patient.sex} size={56} photoUri={patient.photo_uri} />
+          <TouchableOpacity
+            accessibilityRole="button"
+            accessibilityLabel={isNe ? 'बच्चाको फोटो परिवर्तन गर्नुहोस्' : "Change child's photo"}
+            onPress={changePhoto}
+            activeOpacity={0.85}
+            style={styles.photoWrap}
+          >
+            <View>
+              <ChildAvatar name={patient.name} sex={patient.sex} size={56} photoUri={photoUri} />
+              <View style={styles.photoEditBadge}><Ionicons name="camera" size={11} color="#fff" /></View>
+            </View>
+          </TouchableOpacity>
           <View style={styles.profileInfo}>
             <Text style={styles.name}>{patient.name}</Text>
             <Text style={styles.subtitle}>
@@ -348,6 +377,8 @@ const styles = StyleSheet.create({
   content: { padding: 16, paddingTop: 10 },
 
   backCircle: { width: 36, height: 36, borderRadius: 18, backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: '#EDE0D4', alignItems: 'center', justifyContent: 'center' },
+  photoWrap: { marginRight: 10 },
+  photoEditBadge: { position: 'absolute', bottom: -2, right: -2, width: 20, height: 20, borderRadius: 10, backgroundColor: D2.teal, alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: '#fff' },
   profileHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 20 },
   profileAv: { ...avatar, width: 56, height: 56, borderRadius: 28, backgroundColor: D2.tealTint },
   profileAvText: { fontSize: 26, fontFamily: FONT.bold, fontWeight: '700', color: D2.teal },
