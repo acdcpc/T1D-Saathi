@@ -18,7 +18,14 @@ import { D2 } from '../design/tokens';
 
 const contentCol = { width: '100%' as const, maxWidth: 640, alignSelf: 'center' as const };
 
-const COMORBID_OPTIONS = ['celiac', 'thyroid', 'downSyndrome'];
+const COMORBID_OPTIONS: { key: string; en: string; ne: string }[] = [
+  { key: 'celiac', en: 'Celiac Disease', ne: 'सिलियाक रोग' },
+  { key: 'thyroid', en: 'Thyroid Disease', ne: 'थाइरोइड रोग' },
+  { key: 'downSyndrome', en: 'Down Syndrome', ne: 'डाउन सिन्ड्रोम' },
+  { key: 'vitaminD', en: 'Vitamin D deficiency', ne: 'भिटामिन डी कमी' },
+  { key: 'asthma', en: 'Asthma', ne: 'दम (अस्थमा)' },
+  { key: 'anemia', en: 'Anemia', ne: 'रक्तअल्पता' },
+];
 const SEX_OPTIONS = ['male', 'female', 'other'] as const;
 const DELIVERY_OPTIONS = ['pen', 'syringe', 'pump'] as const;
 // Dual-insulin model per ISPAD basal-bolus standard: basal (long-acting) + bolus (rapid-acting).
@@ -87,6 +94,9 @@ export default function AddPatientScreen({ navigation }: any) {
   const [dob, setDob] = useState('');
   const [sex, setSex] = useState<string>('male');
   const [comorbid, setComorbid] = useState<string[]>([]);
+  const [comorbidHas, setComorbidHas] = useState<'yes' | 'no'>('no');
+  const [comorbidOtherOn, setComorbidOtherOn] = useState(false);
+  const [comorbidOther, setComorbidOther] = useState('');
   const [medications, setMedications] = useState('');
   const [basalInsulin, setBasalInsulin] = useState('');
   const [bolusInsulin, setBolusInsulin] = useState('');
@@ -109,6 +119,12 @@ export default function AddPatientScreen({ navigation }: any) {
 
   const toggleComorbid = (c: string) => {
     setComorbid(prev => prev.includes(c) ? prev.filter(x => x !== c) : [...prev, c]);
+  };
+
+  const comorbidList = () => {
+    if (comorbidHas !== 'yes') return null;
+    const list = [...comorbid, ...(comorbidOtherOn && comorbidOther.trim() ? [comorbidOther.trim()] : [])];
+    return list.length > 0 ? list : null;
   };
 
   // Suggest the age band from the date of birth (owner can still override).
@@ -144,7 +160,7 @@ export default function AddPatientScreen({ navigation }: any) {
       date_of_birth: dob || null,
       photo_uri: photoUri || null,
       sex,
-      comorbid_conditions: comorbid.length > 0 ? comorbid : null,
+      comorbid_conditions: comorbidList(),
       medications: medications.trim() || null,
       insulin_type: [hasBasal ? basalInsulin : null, hasBolus ? bolusInsulin : null].filter(Boolean).join(' + '),
       basal_insulin: hasBasal ? basalInsulin : null,
@@ -267,8 +283,8 @@ export default function AddPatientScreen({ navigation }: any) {
       />
       {insulinError ? <Text style={styles.errorText}>{insulinError}</Text> : null}
 
-      <Text style={styles.label}>{language === 'ne' ? 'बेसल डोज (युनिट/दिन)' : 'Basal dose (units/day)'}</Text>
-      <TextInput style={styles.input} value={insulinDose} onChangeText={setInsulinDose} placeholder="Units" keyboardType="numeric" />
+      <Text style={styles.label}>{language === 'ne' ? 'लामो (बेसल) इन्सुलिन डोज — युनिट/दिन' : 'Long-acting (basal) dose (units per day)'}</Text>
+      <TextInput style={styles.input} value={insulinDose} onChangeText={setInsulinDose} placeholder={language === 'ne' ? 'जस्तै: १२' : 'e.g. 12'} keyboardType="numeric" />
 
       <Dropdown
         label={t('frequency')}
@@ -316,13 +332,42 @@ export default function AddPatientScreen({ navigation }: any) {
       </View>
 
       <Text style={styles.section}>{t('comorbidConditions')}</Text>
+      <Text style={styles.label}>{language === 'ne' ? 'बच्चालाई अन्य कुनै स्वास्थ्य समस्या छ?' : 'Does the child have any other health condition?'}</Text>
       <View style={styles.chipRow}>
-        {COMORBID_OPTIONS.map(c => (
-          <TouchableOpacity key={c} style={[styles.chip, comorbid.includes(c) && styles.chipActiveWarn]} onPress={() => toggleComorbid(c)}>
-            <Text style={[styles.chipText, comorbid.includes(c) && styles.chipTextWarn]}>{t(c as any)}</Text>
+        {(['no', 'yes'] as const).map(v => (
+          <TouchableOpacity
+            key={v}
+            style={[styles.chip, comorbidHas === v && styles.chipActiveWarn]}
+            onPress={() => { setComorbidHas(v); if (v === 'no') { setComorbid([]); setComorbidOtherOn(false); } }}
+          >
+            <Text style={[styles.chipText, comorbidHas === v && styles.chipTextWarn]}>{v === 'yes' ? (language === 'ne' ? 'छ' : 'Yes') : (language === 'ne' ? 'छैन' : 'No')}</Text>
           </TouchableOpacity>
         ))}
       </View>
+      {comorbidHas === 'yes' ? (
+        <>
+          <Text style={styles.label}>{language === 'ne' ? 'कुन कुन छन्? (एक वा बढी छान्नुहोस्)' : 'Which ones? (select one or more)'}</Text>
+          <View style={styles.chipRow}>
+            {COMORBID_OPTIONS.map(c => (
+              <TouchableOpacity key={c.key} style={[styles.chip, comorbid.includes(c.key) && styles.chipActiveWarn]} onPress={() => toggleComorbid(c.key)}>
+                <Text style={[styles.chipText, comorbid.includes(c.key) && styles.chipTextWarn]}>{language === 'ne' ? c.ne : c.en}</Text>
+              </TouchableOpacity>
+            ))}
+            <TouchableOpacity style={[styles.chip, comorbidOtherOn && styles.chipActiveWarn]} onPress={() => setComorbidOtherOn(v => !v)}>
+              <Text style={[styles.chipText, comorbidOtherOn && styles.chipTextWarn]}>{language === 'ne' ? 'अन्य' : 'Other'}</Text>
+            </TouchableOpacity>
+          </View>
+          {comorbidOtherOn ? (
+            <TextInput
+              style={styles.input}
+              value={comorbidOther}
+              onChangeText={setComorbidOther}
+              placeholder={language === 'ne' ? 'समस्याको नाम लेख्नुहोस्' : 'Type the condition name'}
+              maxLength={80}
+            />
+          ) : null}
+        </>
+      ) : null}
 
       <Text style={styles.label}>{t('currentMedications')}</Text>
       <TextInput style={styles.input} value={medications} onChangeText={setMedications} placeholder="List all current medications" multiline />

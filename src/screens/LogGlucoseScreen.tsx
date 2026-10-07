@@ -145,6 +145,7 @@ export default function LogGlucoseScreen({ route, navigation }: any) {
         </View>
       </View>
       {glucoseError ? <Text style={styles.errorText}>{glucoseError}</Text> : null}
+      <Text style={styles.glucoseHint}>{language === 'ne' ? 'रक्त ग्लुकोज मान — ७०–१८० mg/dL दायरा हो।' : 'Blood glucose reading — 70–180 mg/dL is the in-range band.'}</Text>
 
       <Text style={styles.label}>{t('carbs')} ({t('optional')})</Text>
       <TextInput style={styles.input} value={carbs} onChangeText={setCarbs} keyboardType="numeric" placeholder="grams" />
@@ -232,6 +233,7 @@ export default function LogGlucoseScreen({ route, navigation }: any) {
             <Text style={styles.resultLabelBold}>{t('totalDose')}</Text>
             <Text style={styles.resultValueBold}>{result.total} U</Text>
           </View>
+          <Text style={styles.resultNote}>{language === 'ne' ? 'यो छिटो-कार्य (बोलस) इन्सुलिनको अनुमान हो — तपाईंको चिकित्सक-अनुमोदित अनुपातबाट। सुरुवाती बिन्दु मानी आफ्नो योजना अनुसार पुष्टि गर्नुहोस्।' : 'This is an estimated rapid-acting (bolus) dose from your clinician-approved ratios — a starting point; confirm per your care plan.'}</Text>
         </View>
       )}
 
@@ -260,6 +262,8 @@ const styles = StyleSheet.create({
   inputError: { borderColor: T.red, borderWidth: 1.5 },
   errorText: { color: T.red, fontSize: 12, fontFamily: FONT.regular, marginTop: 6 },
   glucoseInput: { flex: 1, backgroundColor: '#fff', borderRadius: 10, padding: 14, fontSize: 32, fontFamily: FONT.bold, fontWeight: '700', borderWidth: 1, borderColor: '#dadce0', textAlign: 'center' },
+  glucoseHint: { fontSize: 12, fontFamily: FONT.medium, color: '#7A6E65', marginTop: 6 },
+  resultNote: { fontSize: 12, fontFamily: FONT.medium, color: '#5C5348', marginTop: 10, lineHeight: 17 },
   unitToggle: { flexDirection: 'row', gap: 4 },
   unitBtn: { borderRadius: 8, paddingHorizontal: 12, paddingVertical: 10, backgroundColor: '#e8eaed' },
   unitActive: { backgroundColor: '#0D9488' },

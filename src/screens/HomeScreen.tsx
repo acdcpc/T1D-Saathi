@@ -41,7 +41,7 @@ export default function HomeScreen({ navigation }: any) {
   const [lastSynced, setLastSynced] = useState<Date | null>(null);
 
   const fetchPatients = useCallback(async () => {
-    if (!user) return;
+    if (!user) { setLoading(false); return; }
     setLoading(true);
     const { data, error } = await supabase
       .from('patients')

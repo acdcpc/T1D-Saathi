@@ -139,14 +139,12 @@ export default function PatientDashboard({ route, navigation }: any) {
   }).length;
   const insight = buildInsight(stats, lowCount7d, isNe);
   const actions: { icon: keyof typeof Ionicons.glyphMap; color: string; label: string; route: string; border: string }[] = [
-    { icon: 'book-outline', color: D2.teal, label: isNe ? 'शिक्षा' : 'Education', route: 'Learn', border: T.border },
     { icon: 'medkit-outline', color: D2.teal, label: isNe ? 'स्वास्थ्य केन्द्र' : 'Nearby Care', route: 'HealthCenters', border: T.border },
     { icon: 'call-outline', color: T.red, label: isNe ? 'हेल्पलाइन' : 'Helpline', route: 'Helpline', border: T.red },
     { icon: 'chatbubble-ellipses-outline', color: D2.teal, label: isNe ? 'सन्देश' : 'Messages', route: 'Messages', border: T.border },
     { icon: 'warning-outline', color: T.red, label: isNe ? 'आपतकाल' : 'Emergency', route: 'Emergency', border: T.red },
     { icon: 'barcode-outline', color: T.teal, label: isNe ? 'बारकोड' : 'Scan Barcode', route: 'BarcodeScanner', border: T.border },
     { icon: 'people-outline', color: D2.teal, label: isNe ? 'समुदाय' : 'Community', route: 'Community', border: T.border },
-    { icon: 'person-add-outline', color: D2.teal, label: isNe ? 'चिकित्सक आमन्त्रण' : 'Invite Clinician', route: 'InviteClinician', border: T.border },
   ];
 
   return (

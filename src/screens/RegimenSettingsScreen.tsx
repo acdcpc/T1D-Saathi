@@ -153,7 +153,7 @@ export default function RegimenSettingsScreen({ route, navigation }: any) {
         placeholder="Select bolus insulin"
       />
 
-      <Text style={styles.label}>Basal dose (units/day)</Text>
+      <Text style={styles.label}>Long-acting (basal) dose (units/day)</Text>
       <TextInput style={styles.input} value={dose} onChangeText={setDose} keyboardType="numeric" />
 
       <Dropdown

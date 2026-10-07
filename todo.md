@@ -81,3 +81,5 @@
 - [x] Test APK built in CI (GitHub Actions) and published as pre-release `sano-bir-test-2026-10-07` (`SanoBir-v1.0.0-test.apk`) — for owner device testing.
 
 - [x] Food database v2 (2026-10-07): authoritative nutrition sources integrated — Nepal FCT 2017 (100-kcal exchange list) + Life for a Child 2021 + clinic handouts; 34 foods added, key values reconciled (dal/roti/rice/dhindo/momo/banana…), duplicates removed, provenance tags per row. See `docs/FOOD_DATA_SOURCES_2026-10-07.md`.
+
+- [x] Round 7 UX fixes (2026-10-07): food photo classifier fixed for react-native-fast-tflite v3 (`loadTensorflowModel`); Home skeleton stuck-loading fixed (user-null guard); comorbid conditions → Yes/No + common list + Other free text; long-acting (basal) dose field labeled clearly; log screen hints + dose explanation; Education & Invite Clinician hidden for now; Learn tab removed.
