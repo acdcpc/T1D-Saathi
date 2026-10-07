@@ -1,5 +1,5 @@
-/* T1D Saathi service worker — app-shell caching for offline + installability. */
-const CACHE_NAME = 't1d-saathi-v1';
+/* Sano Bir service worker — app-shell caching for offline + installability. */
+const CACHE_NAME = 'sano-bir-v1';
 const APP_SHELL = ['/', '/index.html', '/manifest.json'];
 
 self.addEventListener('install', (event) => {

@@ -431,7 +431,7 @@
     const blob = new Blob([csv], { type: 'text/csv' });
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
-    a.download = 't1d_' + p.name.replace(/[^a-z0-9]+/gi, '_') + '_export.csv';
+    a.download = 'sano_bir_' + p.name.replace(/[^a-z0-9]+/gi, '_') + '_export.csv';
     a.click(); URL.revokeObjectURL(a.href);
   }
 

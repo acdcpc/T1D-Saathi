@@ -72,7 +72,7 @@ export async function exportPatientCsv(patient: PatientProfile): Promise<{ ok: b
     if (!available) return { ok: false, message: 'Sharing is not available on this device.' };
 
     const stamp = new Date().toISOString().slice(0, 10);
-    const uri = `${FileSystem.cacheDirectory}t1d_${safeFileName(patient.name)}_export_${stamp}.csv`;
+    const uri = `${FileSystem.cacheDirectory}sano_bir_${safeFileName(patient.name)}_export_${stamp}.csv`;
     await FileSystem.writeAsStringAsync(uri, toCsv(rows), { encoding: FileSystem.EncodingType.UTF8 });
     await Sharing.shareAsync(uri, { mimeType: 'text/csv', dialogTitle: 'Export records (CSV)' });
     return { ok: true };

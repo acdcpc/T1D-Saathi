@@ -42,15 +42,6 @@
       "expo-secure-store",
       "expo-sharing",
       [
-        "expo-splash-screen",
-        {
-          "backgroundColor": "#0B4F4A",
-          "image": "./assets/splash-icon.png",
-          "imageWidth": 200,
-          "resizeMode": "contain"
-        }
-      ],
-      [
         "expo-image-picker",
         {
           "photosPermission": "Allow Sano Bir to access your photos for food photo estimation and document upload.",
