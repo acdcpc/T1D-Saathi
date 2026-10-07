@@ -1,0 +1,70 @@
+name: Publish APK release
+
+# Takes an existing "sano-bir-apk" artifact from a build run and publishes it
+# as a pre-release — done server-side, no local transfer needed.
+on:
+  workflow_dispatch: {}
+  push:
+    paths:
+      - 'builds/publish.txt'
+
+permissions:
+  contents: write
+  actions: read
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      BUILD_RUN_ID: "37575268942"
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download build artifact
+        run: |
+          gh run download "$BUILD_RUN_ID" -R "$GITHUB_REPOSITORY" -n sano-bir-apk -D apk
+          find apk -type f | head -5
+
+      - name: Verify APK contents
+        run: |
+          APK=$(find apk -name "*.apk" | head -1)
+          echo "APK size: $(ls -la "$APK" | awk '{print $5}') bytes"
+          echo "--- bundle brand check ---"
+          if unzip -p "$APK" assets/index.android.bundle 2>/dev/null | grep -aq "Sano Bir"; then
+            echo "BRAND_OK: 'Sano Bir' present in JS bundle"
+          else
+            echo "BRAND_CHECK: not found in bundle (verify later)"
+          fi
+          echo "--- launcher resources ---"
+          unzip -l "$APK" | grep -iE "ic_launcher|adaptive" | head -8 || true
+          echo "--- manifest label (aapt) ---"
+          BT=$(ls "$ANDROID_HOME"/build-tools 2>/dev/null | sort -V | tail -1 || true)
+          if [ -n "$BT" ] && [ -x "$ANDROID_HOME/build-tools/$BT/aapt" ]; then
+            "$ANDROID_HOME/build-tools/$BT/aapt" dump badging "$APK" 2>/dev/null | grep -E "package: name|application-label" | head -4 || true
+          else
+            echo "aapt unavailable (skipping label read)"
+          fi
+
+      - name: Publish pre-release
+        run: |
+          APK=$(find apk -name "*.apk" | head -1)
+          cp "$APK" SanoBir-v1.0.0-test.apk
+          if gh release view sano-bir-test-2026-10-07 -R "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            gh release upload sano-bir-test-2026-10-07 SanoBir-v1.0.0-test.apk --clobber -R "$GITHUB_REPOSITORY"
+          else
+            gh release create sano-bir-test-2026-10-07 SanoBir-v1.0.0-test.apk \
+              -R "$GITHUB_REPOSITORY" \
+              --prerelease \
+              --target agent/features-batch1 \
+              --title "Sano Bir — test build (7 Oct 2026)" \
+              --notes "Internal test APK for the Sano Bir rebrand (सानो वीर).
+
+- Debug-signed release build — internal testing only, not Play-ready.
+- Uninstall the previous T1D Saathi build first (different signing key).
+- What to test: launcher icon + name, splash, login tagline, home header, settings, notification permission text, invite codes (SB-)."
+          fi
+          echo "--- release info ---"
+          gh release view sano-bir-test-2026-10-07 -R "$GITHUB_REPOSITORY" --json url,tagName -q '"RELEASE URL: " + .url'
+          gh release view sano-bir-test-2026-10-07 -R "$GITHUB_REPOSITORY" --json assets -q '.assets[].url'
