@@ -27,3 +27,14 @@
 - Device test recommended for native splash/mask rendering; confirm Play Store listing name at publish time.
 - Trademark / company-registry check remains recommended before public launch (as per brand review).
 - Cross-device photo upload and other backlog items are unaffected by this change.
+
+
+## Test APK (7 Oct 2026)
+
+Built in the cloud via GitHub Actions (no local toolchain needed): workflow `.github/workflows/build-apk.yml` runs `expo prebuild` + Gradle `assembleRelease` — build run `37575268942` finished green (~15 min); the APK was verified by CI, then published server-side by `.github/workflows/publish-apk.yml`:
+
+- Release: https://github.com/acdcpc/T1D-Saathi/releases/tag/sano-bir-test-2026-10-07
+- Asset: `SanoBir-v1.0.0-test.apk` (~176 MB, debug-signed release build — internal testing only)
+- CI checks: JS bundle contains "Sano Bir" OK; manifest `application-label='Sano Bir'` OK; `com.t1dsaathi.app` v1.0.0 OK.
+
+Note: debug-signed — uninstall any previous T1D Saathi install first (signature differs from store/EAS builds).
