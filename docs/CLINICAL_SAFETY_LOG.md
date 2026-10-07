@@ -47,3 +47,10 @@ No future change should introduce a default TDD, default glucose, default correc
 | ISPAD badge wording | "Based on ISPAD Guidelines (2022/2024)" | Nil (label) |
 | Weight-based hypo treatment (~0.3 g/kg) | Not added; flagged for clinician decision | Clinician input |
 | DKA "drink water en route" wording | Unchanged; flagged | Clinician wording review |
+
+
+## 2026-10-07 — Food database v2: authoritative nutrition sources integrated
+- `src/data/nepaliFoods.ts` reconciled against: (1) Nepal Food composition table 2017 via the clinic 100-kcal exchange list, (2) Life for a Child "Healthy eating and carbohydrate counting" (Indian Foods, Ed 1, 2021), (3) clinic 100-kcal / 6-g-protein handouts, (4) T1DM CHO portions sheet.
+- These values feed the meal carb totals used by dosing suggestions (ICR math unchanged; per-food data only).
+- Conflict resolutions: dal + roti densities preferred from the Nepal composition table; banana book value discarded as inconsistent; papaya exchange row flagged internally inconsistent and left unchanged.
+- Full change log: `docs/FOOD_DATA_SOURCES_2026-10-07.md`. Pending: dietitian confirmation of the papaya value and of the "1 CHO portion" definition.

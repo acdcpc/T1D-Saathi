@@ -79,3 +79,5 @@
 - [x] Owner chose **Sano Bir (सानो वीर)** — "little hero" — from the brand shortlist; full logo treatment delivered (`DELIVERY/t1d-saathi-branding/`).
 - [x] App rebranded: hero-star icon set + native splash; display name; login/onboarding/home/settings; notifications; invite codes (`SB-`); PDF header; clinician portal; README. Evidence `docs/screenshots/2026-10-07/`, notes `docs/REBRAND_SANO_BIR_2026-10-07.md`.
 - [x] Test APK built in CI (GitHub Actions) and published as pre-release `sano-bir-test-2026-10-07` (`SanoBir-v1.0.0-test.apk`) — for owner device testing.
+
+- [x] Food database v2 (2026-10-07): authoritative nutrition sources integrated — Nepal FCT 2017 (100-kcal exchange list) + Life for a Child 2021 + clinic handouts; 34 foods added, key values reconciled (dal/roti/rice/dhindo/momo/banana…), duplicates removed, provenance tags per row. See `docs/FOOD_DATA_SOURCES_2026-10-07.md`.
