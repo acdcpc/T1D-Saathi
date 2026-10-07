@@ -68,8 +68,11 @@ jobs:
       - name: Expo prebuild (Android)
         run: npx expo prebuild --platform android --no-install
 
+      - name: Tune Gradle memory (avoid daemon Metaspace OOM)
+        run: echo "org.gradle.jvmargs=-Xmx6144m -XX:MaxMetaspaceSize=1536m -Dfile.encoding=UTF-8" >> android/gradle.properties
+
       - name: Build release APK
-        run: cd android && ./gradlew assembleRelease --stacktrace
+        run: cd android && ./gradlew assembleRelease --stacktrace --no-daemon
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
