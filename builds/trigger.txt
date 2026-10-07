@@ -2,3 +2,5 @@ APK build trigger — commit a change to this file (or to the workflow itself) t
 Last trigger: 2026-10-07 — Sano Bir rebrand test build.
 
 Trigger v2 — 2026-10-07: rebuild to include food database v2 (commit 26e7809).
+
+Trigger v3 — 2026-10-07: rebuild with round 7 UX fixes.
