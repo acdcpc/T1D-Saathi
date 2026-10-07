@@ -73,3 +73,8 @@
 - [ ] Two-user RLS negative tests with real accounts (`docs/RLS_TEST_PLAN.md`).
 - [ ] Clinician sign-off of clinical decisions (`docs/CLINICAL_SAFETY_LOG.md`).
 - [ ] Dependency maintenance branch (SDK 57–compatible pass; not a runtime release blocker per audit).
+
+## Rebrand (2026-10-07): Sano Bir
+
+- [x] Owner chose **Sano Bir (सानो वीर)** — "little hero" — from the brand shortlist; full logo treatment delivered (`DELIVERY/t1d-saathi-branding/`).
+- [x] App rebranded: hero-star icon set + native splash; display name; login/onboarding/home/settings; notifications; invite codes (`SB-`); PDF header; clinician portal; README. Evidence `docs/screenshots/2026-10-07/`, notes `docs/REBRAND_SANO_BIR_2026-10-07.md`.
