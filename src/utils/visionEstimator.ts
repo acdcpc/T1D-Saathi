@@ -1,4 +1,4 @@
-// Free-only vision-based food estimator pipeline for T1D Saathi
+// Free-only vision-based food estimator pipeline for Sano Bir
 // Pipeline: on-device classify → local Nepali DB (primary) → USDA/OpenFoodFacts (fallback) → manual search
 //
 // Design intent:

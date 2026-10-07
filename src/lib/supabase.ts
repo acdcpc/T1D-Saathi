@@ -17,7 +17,7 @@ const supabaseAnonKey =
 
 // Config check — fail early with a clear message
 if (!supabaseUrl || !supabaseAnonKey) {
-  const msg = '[T1D Saathi] Supabase not configured. Ensure supabaseUrl and supabaseAnonKey are set in app.json extra or .env.';
+  const msg = '[Sano Bir] Supabase not configured. Ensure supabaseUrl and supabaseAnonKey are set in app.json extra or .env.';
   console.error(msg);
 }
 

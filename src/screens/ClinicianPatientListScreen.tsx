@@ -74,7 +74,7 @@ export default function ClinicianPatientListScreen({ navigation }: any) {
             style={styles.redeemInput}
             value={code}
             onChangeText={setCode}
-            placeholder="T1D-XXXXXX"
+            placeholder="SB-XXXXXX"
             autoCapitalize="characters"
           />
           <TouchableOpacity style={styles.redeemBtn} onPress={redeemInvite} disabled={redeeming}>

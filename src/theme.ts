@@ -1,4 +1,4 @@
-// src/theme.ts — Shared design tokens for T1D Saathi
+// src/theme.ts — Shared design tokens for Sano Bir
 import { MMOL_TO_MGDL } from './utils/dosingCalc';
 // Aligned with Kapoori Ka design language (warm, earthy, accessible)
 // Import as: import { T, card, pill, section, primBtn, input } from '../theme';

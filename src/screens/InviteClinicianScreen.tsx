@@ -11,7 +11,7 @@ import BackBar from '../components/BackBar';
 const CODE_CHARS = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
 
 function makeCode(): string {
-  let s = 'T1D-';
+  let s = 'SB-';
   for (let i = 0; i < 6; i++) s += CODE_CHARS[Math.floor(Math.random() * CODE_CHARS.length)];
   return s;
 }
@@ -65,8 +65,8 @@ export default function InviteClinicianScreen({ route, navigation }: any) {
     try {
       await Share.share({
         message: isNe
-          ? `T1D साथी: मेरो बच्चा ${patientName} को उपचार टोलीमा जोडिनुहोस्। आमन्त्रण कोड: ${invite.code} (${invite.expires_at.slice(0, 10)} सम्म मान्य)`
-          : `T1D Saathi: please join my child ${patientName}'s care team. Invite code: ${invite.code} (valid until ${invite.expires_at.slice(0, 10)})`,
+          ? `सानो वीर: मेरो बच्चा ${patientName} को उपचार टोलीमा जोडिनुहोस्। आमन्त्रण कोड: ${invite.code} (${invite.expires_at.slice(0, 10)} सम्म मान्य)`
+          : `Sano Bir: please join my child ${patientName}'s care team. Invite code: ${invite.code} (valid until ${invite.expires_at.slice(0, 10)})`,
       });
     } catch { /* ignored */ }
   };

@@ -141,7 +141,7 @@ export async function syncCustomReminderNotifications(list: CustomReminder[]): P
       for (const wd of r.weekdays) {
         await Notifications.scheduleNotificationAsync({
           identifier: `t1d_custom_${r.id}_${wd}`,
-          content: { title: r.label || 'Reminder', body: r.label || 'T1D Saathi reminder' },
+          content: { title: r.label || 'Reminder', body: r.label || 'Sano Bir reminder' },
           trigger: { type: Notifications.SchedulableTriggerInputTypes.WEEKLY, weekday: wd, hour: r.hour, minute: r.minute } as any,
         });
       }

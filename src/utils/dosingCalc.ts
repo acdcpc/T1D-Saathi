@@ -1,4 +1,4 @@
-// Clinical dosing helpers for T1D Saathi.
+// Clinical dosing helpers for Sano Bir.
 // These calculations are intentionally fail-closed: callers must provide
 // complete, clinician-approved inputs and handle validation errors explicitly.
 

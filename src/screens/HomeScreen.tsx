@@ -167,7 +167,7 @@ export default function HomeScreen({ navigation }: any) {
           <View style={styles.headerLeft}>
             <View style={styles.brandRow}>
               <View style={styles.brandDot} />
-              <Text style={[styles.headerTitle, { color: TH.text }]}>T1D साथी</Text>
+              <Text style={[styles.headerTitle, { color: TH.text }]}>{isNe ? 'सानो वीर' : 'Sano Bir'}</Text>
             </View>
             <Text style={styles.headerSubtitle}>{greeting}</Text>
             <Text style={styles.headerDate}>{(() => { try { return toBSDisplay(new Date()); } catch { return ''; } })()}</Text>

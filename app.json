@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "T1D Saathi",
+    "name": "Sano Bir",
     "slug": "T1d-sathi",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -12,13 +12,13 @@
       "supportsTablet": true,
       "bundleIdentifier": "com.t1dsaathi.app",
       "infoPlist": {
-        "NSCameraUsageDescription": "T1D Saathi needs camera access to take food photos for carb estimation.",
-        "NSPhotoLibraryUsageDescription": "T1D Saathi needs photo library access to upload food photos and medical documents."
+        "NSCameraUsageDescription": "Sano Bir needs camera access to take food photos for carb estimation.",
+        "NSPhotoLibraryUsageDescription": "Sano Bir needs photo library access to upload food photos and medical documents."
       }
     },
     "android": {
       "adaptiveIcon": {
-        "backgroundColor": "#E6F4FE",
+        "backgroundColor": "#F2604A",
         "foregroundImage": "./assets/android-icon-foreground.png",
         "backgroundImage": "./assets/android-icon-background.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"
@@ -35,24 +35,33 @@
     "web": {
       "favicon": "./assets/favicon.png",
       "lang": "en",
-      "themeColor": "#1a73e8",
-      "description": "T1D Saathi — Type 1 Diabetes management app for Nepali children and families."
+      "themeColor": "#0B4F4A",
+      "description": "Sano Bir — Type 1 Diabetes companion app for Nepali children and families."
     },
     "plugins": [
       "expo-secure-store",
       "expo-sharing",
       [
+        "expo-splash-screen",
+        {
+          "backgroundColor": "#0B4F4A",
+          "image": "./assets/splash-icon.png",
+          "imageWidth": 200,
+          "resizeMode": "contain"
+        }
+      ],
+      [
         "expo-image-picker",
         {
-          "photosPermission": "Allow T1D Saathi to access your photos for food photo estimation and document upload.",
-          "cameraPermission": "Allow T1D Saathi to use the camera for food photo estimation."
+          "photosPermission": "Allow Sano Bir to access your photos for food photo estimation and document upload.",
+          "cameraPermission": "Allow Sano Bir to use the camera for food photo estimation."
         }
       ],
       [
         "expo-notifications",
         {
-          "icon": "./assets/android-icon-foreground.png",
-          "color": "#1a73e8"
+          "icon": "./assets/android-icon-monochrome.png",
+          "color": "#F2604A"
         }
       ]
     ],

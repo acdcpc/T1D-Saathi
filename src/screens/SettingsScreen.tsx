@@ -343,12 +343,12 @@ export default function SettingsScreen({ navigation }: any) {
           <Text style={styles.disclaimerTitle}>{isNe ? 'महत्वपूर्ण' : 'Important'}</Text>
           <Text style={styles.disclaimerText}>
             {isNe
-              ? 'T1D साथी चिकित्सकीय उपकरण होइन। सबै डोज सिफारिसहरू परामर्शमात्र हुन् र चिकित्सकले पुष्टि गर्नुपर्छ।'
-              : 'T1D Saathi is not a medical device. All dosing recommendations are advisory and require clinician verification.'}
+              ? 'सानो वीर चिकित्सकीय उपकरण होइन। सबै डोज सिफारिसहरू परामर्शमात्र हुन् र चिकित्सकले पुष्टि गर्नुपर्छ।'
+              : 'Sano Bir is not a medical device. All dosing recommendations are advisory and require clinician verification.'}
           </Text>
         </View>
 
-        <Text style={styles.version}>v1.0.0 · T1D Saathi</Text>
+        <Text style={styles.version}>v1.0.0 · Sano Bir</Text>
         <Text style={styles.credit}>© 2026 · {isNe ? 'नेपाली परिवारहरूको लागि ♥ सहित' : 'Built with ♥ for Nepali families'}</Text>
         <Text style={styles.madeIn}>🇳🇵 {isNe ? 'नेपालमा निर्मित' : 'Made in Nepal'}</Text>
       </ScrollView>

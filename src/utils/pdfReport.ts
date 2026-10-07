@@ -38,7 +38,7 @@ export async function generateGlucoseReport(patient: PatientProfile, logs: Gluco
   .foot { color: #7A6E65; font-size: 10px; margin-top: 20px; }
 </style></head><body>
   <h1>${patient.name} (${patient.sex})</h1>
-  <div class="sub">T1D Saathi · Glucose Report · Generated ${new Date().toLocaleString()}</div>
+  <div class="sub">Sano Bir · Glucose Report · Generated ${new Date().toLocaleString()}</div>
   <div class="stats">
     <div class="stat">Time in Range<b>${stats.timeInRangePct}%</b></div>
     <div class="stat">Mean<b>${stats.meanMgdl}</b></div>

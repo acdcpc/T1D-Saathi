@@ -142,8 +142,8 @@ export default function LoginScreen({ navigation }: any) {
       <ScrollView contentContainerStyle={[styles.scroll, { paddingBottom: Math.max(insets.bottom ?? 0, 48) }]} keyboardShouldPersistTaps="handled">
         <View style={styles.cardCol}>
         <View style={styles.header}>
-          <Text style={[styles.appTitle, { color: TH.text, fontSize: 26 * fontScale }]}>T1D साथी</Text>
-          <Text style={styles.tagline}>{isNe ? 'तपाईंको मधुमेह सहयात्री' : 'Your Diabetes Companion'}</Text>
+          <Text style={[styles.appTitle, { color: TH.text, fontSize: 26 * fontScale }]}>{isNe ? 'सानो वीर' : 'Sano Bir'}</Text>
+          <Text style={styles.tagline}>{isNe ? 'हरेक बच्चा वीर छ' : 'Every child is brave'}</Text>
         </View>
         <View style={styles.form}>
           <TextInput

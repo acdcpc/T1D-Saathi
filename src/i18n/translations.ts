@@ -1,7 +1,7 @@
 export const translations = {
   en: {
-    appName: 'T1D Saathi',
-    tagline: 'Diabetes companion for families',
+    appName: 'Sano Bir',
+    tagline: 'Every child is brave',
     login: 'Log In',
     signup: 'Sign Up',
     email: 'Email',
@@ -166,8 +166,8 @@ export const translations = {
     underTwo: '< 2 years',
   },
   ne: {
-    appName: 'T1D साथी',
-    tagline: 'मधुमेह व्यवस्थापन सहयात्री',
+    appName: 'सानो वीर',
+    tagline: 'हरेक बच्चा वीर छ',
     login: 'लग इन',
     signup: 'साइन अप',
     email: 'इमेल',

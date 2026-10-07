@@ -208,8 +208,8 @@ export default function LogGlucoseScreen({ route, navigation }: any) {
           <TouchableOpacity
             style={styles.notifyBtn}
             onPress={() => sendCaregiverAlert(language === 'ne'
-              ? `T1D साथी सूचना: कम ग्लुकोज (${glucose} ${unit === 'mmol' ? 'mmol/L' : 'mg/dL'}) रेकर्ड भयो। कृपया जाँच गर्नुहोस्।`
-              : `T1D Saathi alert: low glucose (${glucose} ${unit === 'mmol' ? 'mmol/L' : 'mg/dL'}) was logged. Please check on the child.`)}
+              ? `सानो वीर सूचना: कम ग्लुकोज (${glucose} ${unit === 'mmol' ? 'mmol/L' : 'mg/dL'}) रेकर्ड भयो। कृपया जाँच गर्नुहोस्।`
+              : `Sano Bir alert: low glucose (${glucose} ${unit === 'mmol' ? 'mmol/L' : 'mg/dL'}) was logged. Please check on the child.`)}
           >
             <Text style={styles.notifyBtnText}>{language === 'ne' ? 'हेरचाहकर्तालाई जानकारी (WhatsApp)' : 'Notify caregiver (WhatsApp)'}</Text>
           </TouchableOpacity>

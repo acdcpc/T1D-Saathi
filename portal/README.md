@@ -1,4 +1,4 @@
-# T1D Saathi — Clinician Portal (web)
+# Sano Bir — Clinician Portal (web)
 
 A lightweight, single-file web portal for clinicians:
 

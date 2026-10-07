@@ -40,7 +40,7 @@ const Stack = createNativeStackNavigator();
 function RoleSplash() {
   return (
     <View style={{ flex: 1, backgroundColor: '#F7F1EB', alignItems: 'center', justifyContent: 'center' }}>
-      <Text style={{ fontSize: 24, fontWeight: '800', color: '#0B5E58' }}>T1D साथी</Text>
+      <Text style={{ fontSize: 24, fontWeight: '800', color: '#0B5E58' }}>Sano Bir</Text>
       <ActivityIndicator color="#0D9488" style={{ marginTop: 14 }} />
     </View>
   );

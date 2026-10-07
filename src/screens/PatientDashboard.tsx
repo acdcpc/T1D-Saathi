@@ -239,8 +239,8 @@ export default function PatientDashboard({ route, navigation }: any) {
               style={styles.notifyBtn}
               onPress={() => sendCaregiverAlert(
                 isNe
-                  ? `T1D साथी सूचना: ${patient.name} को ग्लुकोज ${latestGlucose?.value ?? ''} ${latestGlucose?.unit === 'mmol' ? 'mmol/L' : 'mg/dL'} — कम छ। कृपया जाँच गर्नुहोस्।`
-                  : `T1D Saathi alert: ${patient.name}'s glucose is ${latestGlucose?.value ?? ''} ${latestGlucose?.unit === 'mmol' ? 'mmol/L' : 'mg/dL'} (low). Please check on them.`
+                  ? `सानो वीर सूचना: ${patient.name} को ग्लुकोज ${latestGlucose?.value ?? ''} ${latestGlucose?.unit === 'mmol' ? 'mmol/L' : 'mg/dL'} — कम छ। कृपया जाँच गर्नुहोस्।`
+                  : `Sano Bir alert: ${patient.name}'s glucose is ${latestGlucose?.value ?? ''} ${latestGlucose?.unit === 'mmol' ? 'mmol/L' : 'mg/dL'} (low). Please check on them.`
               )}
             >
               <Ionicons name="logo-whatsapp" size={16} color="#fff" />
