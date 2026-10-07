@@ -1,1 +1,2 @@
 Publish trigger — 2026-10-07 (Sano Bir test APK from build run 37575268942).
+Publish trigger v2 — 2026-10-07. (Fixed YAML; publishing Sano Bir test APK from run 37575268942.)
