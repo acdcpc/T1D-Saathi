@@ -1,10 +1,15 @@
 name: Build Android APK
 
 # Cloud build for test APKs (internal testing only — debug-signed release build).
-# Trigger manually:  gh workflow run build-apk.yml --ref <branch>
+# Trigger: push a change to this workflow file or to builds/trigger.txt.
+# Re-runs can also be started from the Actions tab.
 
 on:
   workflow_dispatch: {}
+  push:
+    paths:
+      - '.github/workflows/build-apk.yml'
+      - 'builds/trigger.txt'
 
 permissions:
   contents: read
