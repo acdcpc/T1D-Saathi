@@ -378,7 +378,7 @@ const styles = StyleSheet.create({
     borderWidth: 1, borderColor: T.border,
     alignItems: 'center', justifyContent: 'center',
   },
-  cardRow: { flexDirection: 'row', alignItems: 'center' },
+  cardRow: { flex: 1, flexDirection: 'row', alignItems: 'center' },
 
   // ── Sync pill ──
   syncPill: {
