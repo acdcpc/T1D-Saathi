@@ -4,3 +4,5 @@ Last trigger: 2026-10-07 — Sano Bir rebrand test build.
 Trigger v2 — 2026-10-07: rebuild to include food database v2 (commit 26e7809).
 
 Trigger v3 — 2026-10-07: rebuild with round 7 UX fixes.
+
+Trigger v4 — 2026-10-08: fix patient card layout (flex:1 on cardRow).
