@@ -400,7 +400,10 @@ const styles = StyleSheet.create({
     borderWidth: 1, borderColor: T.border,
     alignItems: 'center', justifyContent: 'center',
   },
-  cardRow: { flex: 1, flexDirection: 'row', alignItems: 'center' },
+  // Patient card inner row: must stay a plain width-stretching row.
+  // Do NOT add flex:1 here and do NOT make the card a row — on native Yoga the
+  // width chain collapses (flex children get 0 width) and the card renders giant.
+  cardRow: { flexDirection: 'row', alignItems: 'center' },
 
   // ── Sync pill ──
   syncPill: {
@@ -477,7 +480,6 @@ const styles = StyleSheet.create({
   countPillText: { fontSize: 12, fontFamily: FONT.bold, fontWeight: '700', color: D2.tealDeep },
 
   patientCard: {
-    flexDirection: 'row', alignItems: 'center',
     backgroundColor: '#FFFFFF', borderRadius: 18,
     padding: 16, marginBottom: 10,
     borderWidth: 1, borderColor: T.border,
