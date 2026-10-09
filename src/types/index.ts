@@ -7,6 +7,7 @@ export interface PatientProfile {
   comorbid_conditions?: string[]; medications?: string;
   insulin_type: string; insulin_dose: number; insulin_frequency: string;
   basal_insulin?: string | null; bolus_insulin?: string | null;
+  bolus_dose?: number | null;
   insulin_delivery: 'pen' | 'syringe' | 'pump'; diagnosis_date: string;
   dka_history?: DKAHistoryEntry[]; documents?: string[];
   created_at: string; updated_at: string;
@@ -20,6 +21,7 @@ export interface InsulinRegimen {
   max_bolus?: number;
   regimen_type?: 'mdi' | 'pump' | 'premix';
   basal_insulin?: string | null; basal_dose?: number | null; bolus_insulin?: string | null;
+  bolus_dose?: number | null;
 }
 export interface InsulinLog {
   id: string; patient_id: string; user_id: string; units: number;

@@ -257,8 +257,10 @@ export default function FoodEstimatorScreen({ route }: any) {
     try {
       const dosing = calculateDosing(glucoseMgdl, totals.total_carbs_g, {
         tdd: regimen.tdd,
-        icr_constant: 500,
-        isf_constant: 1800,
+        // Clinician overrides (Settings → Insulin regimen) win over the standard
+        // 1800/500 rules when set — pass them as effective constants (constant ÷ TDD).
+        icr_constant: Number.isFinite(Number(regimen.carb_ratio)) && Number(regimen.carb_ratio) > 0 ? Number(regimen.carb_ratio) * regimen.tdd : 500,
+        isf_constant: Number.isFinite(Number(regimen.isf)) && Number(regimen.isf) > 0 ? Number(regimen.isf) * regimen.tdd : 1800,
         target_glucose: regimen.correction_target,
         approved_by_clinician: true,
         regimen_id: regimen.id,

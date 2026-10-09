@@ -31,7 +31,7 @@ const ICR_CONSTANT = 500;
 
 export default function RegimenSettingsScreen({ route, navigation }: any) {
   const { patientId } = route.params;
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const insets = useSafeAreaInsets();
 
   const [regimen, setRegimen] = useState<InsulinRegimen | null>(null);
@@ -40,6 +40,7 @@ export default function RegimenSettingsScreen({ route, navigation }: any) {
   const [bolusInsulin, setBolusInsulin] = useState('');
   const [regimenType, setRegimenType] = useState<'mdi' | 'pump' | 'premix'>('mdi');
   const [dose, setDose] = useState('');
+  const [bolusDose, setBolusDose] = useState('');
   const [frequency, setFrequency] = useState('');
   const [delivery, setDelivery] = useState<string>('pen');
   const [tdd, setTdd] = useState('');
@@ -63,6 +64,7 @@ export default function RegimenSettingsScreen({ route, navigation }: any) {
         setBolusInsulin(data.bolus_insulin || '');
         setRegimenType((data.regimen_type as any) || 'mdi');
         setDose(String(data.dose));
+        setBolusDose(data.bolus_dose ? String(data.bolus_dose) : '');
         setFrequency(data.frequency || '');
         setDelivery(data.delivery_method);
         setTdd(data.tdd ? String(data.tdd) : '');
@@ -81,6 +83,13 @@ export default function RegimenSettingsScreen({ route, navigation }: any) {
   const autoIsf = tddValid ? Math.round((ISF_CONSTANT / tddNum) * 10) / 10 : null;
   const autoIcr = tddValid ? Math.round((ICR_CONSTANT / tddNum) * 10) / 10 : null;
 
+  // Basal + bolus sum, shown as a hint only when both fields are filled in.
+  // Never auto-overwrites the clinician-confirmed TDD.
+  const basalNum = parseFloat(dose);
+  const bolusNum = parseFloat(bolusDose);
+  const showTddHint = Number.isFinite(basalNum) && basalNum > 0 && Number.isFinite(bolusNum) && bolusNum > 0;
+  const combinedDose = showTddHint ? Math.round((basalNum + bolusNum) * 10) / 10 : null;
+
   const handleSave = async () => {
     const tddValue = parseFloat(tdd);
     const targetValue = parseFloat(target);
@@ -96,6 +105,7 @@ export default function RegimenSettingsScreen({ route, navigation }: any) {
       insulin_type: [hasBasal ? basalInsulin : null, hasBolus ? bolusInsulin : null].filter(Boolean).join(' + '),
       basal_insulin: hasBasal ? basalInsulin : null,
       basal_dose: parseFloat(dose) || null,
+      bolus_dose: parseFloat(bolusDose) || null,
       bolus_insulin: hasBolus ? bolusInsulin : null,
       dose: parseFloat(dose) || 0,
       frequency,
@@ -155,6 +165,16 @@ export default function RegimenSettingsScreen({ route, navigation }: any) {
 
       <Text style={styles.label}>Long-acting (basal) dose (units/day)</Text>
       <TextInput style={styles.input} value={dose} onChangeText={setDose} keyboardType="numeric" />
+
+      <Text style={styles.label}>Rapid-acting (bolus) dose (units/day)</Text>
+      <TextInput style={styles.input} value={bolusDose} onChangeText={setBolusDose} keyboardType="numeric" />
+      {showTddHint ? (
+        <Text style={styles.hintSmall}>
+          {language === 'ne'
+            ? `बेसल + बोलस = ${combinedDose} U/दिन — धेरै चिकित्सकहरू यो जोडलाई कुल दैनिक डोज (TDD) मान्छन्। आफ्नो TDD चिकित्सकसँग पुष्टि गर्नुहोस्।`
+            : `Basal + bolus = ${combinedDose} U/day — many clinicians use this sum as the total daily dose (TDD). Confirm your TDD with your clinician.`}
+        </Text>
+      ) : null}
 
       <Dropdown
         label={t('frequency')}

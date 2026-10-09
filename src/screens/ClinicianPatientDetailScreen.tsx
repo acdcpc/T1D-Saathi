@@ -34,7 +34,7 @@ export default function ClinicianPatientDetailScreen({ route, navigation }: any)
       let reg: InsulinRegimen | null = null;
       const full = await supabase
         .from('insulin_regimens')
-        .select('id,patient_id,insulin_type,regimen_type,basal_insulin,basal_dose,bolus_insulin,tdd,isf,carb_ratio,correction_target,max_bolus,approved_by_clinician,approved_at,effective_date')
+        .select('id,patient_id,insulin_type,regimen_type,basal_insulin,basal_dose,bolus_insulin,bolus_dose,tdd,isf,carb_ratio,correction_target,max_bolus,approved_by_clinician,approved_at,effective_date')
         .eq('patient_id', patientId)
         .order('effective_date', { ascending: false })
         .limit(1)
@@ -110,7 +110,7 @@ export default function ClinicianPatientDetailScreen({ route, navigation }: any)
           <View style={styles.regimenRow}><Text style={styles.regimenLabel}>Type</Text><Text style={styles.regimenValue}>{regimen.insulin_type || '—'}</Text></View>
           {regimen.regimen_type ? (<View style={styles.regimenRow}><Text style={styles.regimenLabel}>Regimen</Text><Text style={styles.regimenValue}>{regimen.regimen_type === 'mdi' ? 'Basal-bolus (MDI)' : regimen.regimen_type === 'pump' ? 'Pump (CSII)' : 'Premixed'}</Text></View>) : null}
           {regimen.basal_insulin ? (<View style={styles.regimenRow}><Text style={styles.regimenLabel}>Basal</Text><Text style={styles.regimenValue}>{regimen.basal_insulin}{regimen.basal_dose ? ` · ${regimen.basal_dose} U/day` : ''}</Text></View>) : null}
-          {regimen.bolus_insulin ? (<View style={styles.regimenRow}><Text style={styles.regimenLabel}>Bolus</Text><Text style={styles.regimenValue}>{regimen.bolus_insulin}</Text></View>) : null}
+          {(regimen.bolus_insulin || regimen.bolus_dose) ? (<View style={styles.regimenRow}><Text style={styles.regimenLabel}>Bolus</Text><Text style={styles.regimenValue}>{[regimen.bolus_insulin || null, regimen.bolus_dose ? `${regimen.bolus_dose} U/day` : null].filter(Boolean).join(' · ')}</Text></View>) : null}
           <View style={styles.regimenRow}><Text style={styles.regimenLabel}>TDD</Text><Text style={styles.regimenValue}>{regimen.tdd ?? '—'} U</Text></View>
           <View style={styles.regimenRow}><Text style={styles.regimenLabel}>Correction target</Text><Text style={styles.regimenValue}>{regimen.correction_target ?? '—'} mg/dL</Text></View>
           <View style={styles.regimenRow}><Text style={styles.regimenLabel}>Max bolus</Text><Text style={styles.regimenValue}>{regimen.max_bolus ?? '—'} U</Text></View>

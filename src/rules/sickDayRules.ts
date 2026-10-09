@@ -126,23 +126,57 @@ export function findSickDayRule(ketoneValue?: number, urineKetone?: string): Sic
   return DEFAULT_SICK_DAY_RULES[DEFAULT_SICK_DAY_RULES.length - 1];
 }
 
-// Calculate correction dose using 1800 rule (configurable)
+// Calculate correction dose using the 1800 rule (configurable via clinician-set ISF).
+// Fail-closed: invalid or missing inputs yield 0 — never NaN or Infinity.
+// A supplied-but-unusable ISF (0, NaN, negative) refuses to compute rather than
+// silently falling back to an approximation.
 export function calculateCorrectionDose(
   currentGlucose: number,
   targetGlucose: number,
   tdd: number,
   isf?: number
 ): number {
+  if (!Number.isFinite(currentGlucose) || !Number.isFinite(targetGlucose)) return 0;
+  if (currentGlucose <= 0 || targetGlucose <= 0) return 0;
   if (currentGlucose <= targetGlucose) return 0;
-  const factor = isf || (1800 / tdd);
-  return Math.max(0, (currentGlucose - targetGlucose) / factor);
+
+  let factor: number;
+  if (typeof isf === 'number') {
+    // ISF supplied — it must be finite and positive to be trusted.
+    if (!Number.isFinite(isf) || isf <= 0) return 0;
+    factor = isf;
+  } else {
+    // No ISF supplied — derive from TDD via the 1800 rule when TDD is usable.
+    factor = typeof tdd === 'number' && Number.isFinite(tdd) && tdd > 0 ? 1800 / tdd : NaN;
+  }
+  if (!Number.isFinite(factor) || factor <= 0) return 0;
+
+  const dose = (currentGlucose - targetGlucose) / factor;
+  return Number.isFinite(dose) && dose > 0 ? dose : 0;
 }
 
-// Calculate carb dose using 500 rule (configurable)
+// Calculate carb dose using the 500 rule (configurable via clinician-set I:C ratio).
+// Fail-closed: invalid or missing inputs yield 0 — never NaN or Infinity.
+// There is no default ratio: without a clinician-set ratio or a usable TDD the
+// dose is 0, not a guess (previously silently assumed 1:10).
 export function calculateCarbDose(carbs: number, carbRatio?: number, tdd?: number): number {
-  if (!carbs || carbs <= 0) return 0;
-  const ratio = carbRatio || (tdd ? 500 / tdd : 10);
-  return carbs / ratio;
+  if (!Number.isFinite(carbs) || carbs <= 0) return 0;
+
+  let ratio: number;
+  if (typeof carbRatio === 'number') {
+    // I:C ratio supplied — it must be finite and positive to be trusted.
+    if (!Number.isFinite(carbRatio) || carbRatio <= 0) return 0;
+    ratio = carbRatio;
+  } else if (typeof tdd === 'number' && Number.isFinite(tdd) && tdd > 0) {
+    // No ratio supplied — derive from TDD via the 500 rule.
+    ratio = 500 / tdd;
+  } else {
+    return 0;
+  }
+  if (!Number.isFinite(ratio) || ratio <= 0) return 0;
+
+  const dose = carbs / ratio;
+  return Number.isFinite(dose) && dose > 0 ? dose : 0;
 }
 
 // Convert glucose between units

@@ -11,7 +11,8 @@ import { FONT, T } from '../theme';
 
 export default function ClinicianPatientListScreen({ navigation }: any) {
   const { user } = useAuth();
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
+  const isNe = language === 'ne';
   const [patients, setPatients] = useState<PatientProfile[]>([]);
   const [refreshing, setRefreshing] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -64,7 +65,7 @@ export default function ClinicianPatientListScreen({ navigation }: any) {
         <Text style={styles.title}>{t('patientList')}</Text>
         <TouchableOpacity style={styles.adminBtn} onPress={() => navigation.navigate('AdminConsole')} accessibilityRole="button">
           <Ionicons name="shield-checkmark-outline" size={14} color={D2.tealDeep} />
-          <Text style={styles.adminBtnText}>Admin console</Text>
+          <Text style={styles.adminBtnText}>{isNe ? 'एडमिन कन्सोल' : 'Admin console'}</Text>
         </TouchableOpacity>
       </View>
       <View style={styles.redeemCard}>

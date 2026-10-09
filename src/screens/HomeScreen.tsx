@@ -39,6 +39,7 @@ export default function HomeScreen({ navigation }: any) {
   const [showConflict, setShowConflict] = useState(false);
   const [updateRequired, setUpdateRequired] = useState(false);
   const [lastSynced, setLastSynced] = useState<Date | null>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
 
   const fetchPatients = useCallback(async () => {
     if (!user) { setLoading(false); return; }
@@ -94,6 +95,17 @@ export default function HomeScreen({ navigation }: any) {
       try { if (user) await registerPushToken(user.id); } catch { /* ignore */ }
     })();
   }, [user]);
+
+  // App-admin flag — unlocks the staff card for non-clinician admin emails (best-effort).
+  useEffect(() => {
+    (async () => {
+      if (!user?.id) return;
+      try {
+        const { data } = await supabase.rpc('is_app_admin', { p_user_id: user.id });
+        setIsAdmin(!!data);
+      } catch { /* optional check */ }
+    })();
+  }, [user?.id]);
 
   const onRefresh = async () => { setRefreshing(true); await fetchPatients(); setRefreshing(false); };
 
@@ -270,6 +282,13 @@ export default function HomeScreen({ navigation }: any) {
                   </View>
                 ))}
               </View>
+
+              {(role === 'clinician' || isAdmin) && (
+                <TouchableOpacity style={styles.emptyStaffBtn} onPress={() => navigation.navigate('AdminConsole')} accessibilityRole="button">
+                  <Ionicons name="shield-checkmark-outline" size={16} color={D2.tealDeep} />
+                  <Text style={styles.emptyStaffText}>{isNe ? 'एडमिन कन्सोल खोल्नुहोस्' : 'Open admin console'}</Text>
+                </TouchableOpacity>
+              )}
             </View>
           }
         />
@@ -309,7 +328,7 @@ export default function HomeScreen({ navigation }: any) {
                   <Ionicons name="chevron-forward" size={16} color={D2.faint} />
                 </TouchableOpacity>
               </View>
-              {role === 'clinician' && (
+              {(role === 'clinician' || isAdmin) && (
                 <View style={styles.staffCard}>
                   <Text style={styles.staffTitle}>{isNe ? 'स्टाफ पहुँच' : 'Staff access'}</Text>
                   <TouchableOpacity style={styles.staffBtn} onPress={() => navigation.navigate('ClinicianPatientList')} accessibilityRole="button">
@@ -320,6 +339,9 @@ export default function HomeScreen({ navigation }: any) {
                   <TouchableOpacity style={styles.staffBtn} onPress={() => navigation.navigate('AdminConsole')} accessibilityRole="button">
                     <Ionicons name="shield-checkmark-outline" size={16} color={D2.tealDeep} />
                     <Text style={styles.staffBtnText}>{isNe ? 'एडमिन कन्सोल' : 'Admin console'}</Text>
+                    {isAdmin && (
+                      <View style={styles.adminPill}><Text style={styles.adminPillText}>{isNe ? 'एप एडमिन' : 'App admin'}</Text></View>
+                    )}
                     <Ionicons name="chevron-forward" size={14} color={D2.faint} />
                   </TouchableOpacity>
                 </View>
@@ -421,6 +443,8 @@ const styles = StyleSheet.create({
 
   emptyTitle: { fontSize: 24, fontFamily: FONT.extrabold, fontWeight: '800', color: T.text, textAlign: 'center' },
   emptySub: { fontSize: 14, fontFamily: FONT.regular, color: T.muted, textAlign: 'center', marginTop: 10, lineHeight: 21, maxWidth: 380 },
+  emptyStaffBtn: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 26, backgroundColor: '#FFFFFF', borderRadius: 999, borderWidth: 1, borderColor: '#EDE0D4', paddingHorizontal: 16, paddingVertical: 10 },
+  emptyStaffText: { fontSize: 13.5, fontFamily: FONT.semibold, fontWeight: '600', color: D2.tealDeep },
   primaryCta: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8,
     backgroundColor: D2.teal, borderRadius: 999,
@@ -480,6 +504,8 @@ const styles = StyleSheet.create({
   staffTitle: { fontSize: 15, fontFamily: FONT.bold, fontWeight: '700', color: T.text, marginBottom: 4 },
   staffBtn: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 12 },
   staffBtnText: { flex: 1, fontSize: 14, fontFamily: FONT.semibold, fontWeight: '600', color: D2.tealDeep },
+  adminPill: { backgroundColor: D2.tealTint, borderRadius: 999, paddingHorizontal: 8, paddingVertical: 2 },
+  adminPillText: { fontSize: 10.5, fontFamily: FONT.bold, fontWeight: '700', color: D2.tealDeep },
   fab: {
     position: 'absolute', bottom: 28, right: 20,
     width: 58, height: 58, borderRadius: 29,

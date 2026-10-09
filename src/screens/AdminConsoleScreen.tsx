@@ -11,6 +11,8 @@ import { D2 } from '../design/tokens';
 
 const contentCol = { width: '100%' as const, maxWidth: 640, alignSelf: 'center' as const };
 
+type StaffAccount = { user_id: string; email: string; full_name: string | null; role: string | null; full_access: boolean };
+
 /** Staff console (early preview): quick overview + links. Full tooling lives in the web portal. */
 export default function AdminConsoleScreen({ navigation }: any) {
   const { user, role } = useAuth();
@@ -21,14 +23,19 @@ export default function AdminConsoleScreen({ navigation }: any) {
 
   const [loading, setLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
+  const [staffAccounts, setStaffAccounts] = useState<StaffAccount[]>([]);
   const [stats, setStats] = useState<{ patients: number | null; logs24h: number | null; careTeam: number | null }>({ patients: null, logs24h: null, careTeam: null });
 
   const load = useCallback(async () => {
-    if (!user?.id || !isStaff) { setLoading(false); return; }
+    if (!user?.id) { setIsAdmin(false); setLoading(false); return; }
+    // Admin flag first — lets non-clinician admin emails into the console.
+    let admin = false;
     try {
       const { data } = await supabase.rpc('is_app_admin', { p_user_id: user.id });
-      setIsAdmin(!!data);
+      admin = data === true;
     } catch { /* optional check */ }
+    setIsAdmin(admin);
+    if (!isStaff && !admin) { setLoading(false); return; }
     try {
       const dayAgo = new Date(Date.now() - 24 * 3600 * 1000).toISOString();
       const [p, g, c] = await Promise.all([
@@ -38,12 +45,31 @@ export default function AdminConsoleScreen({ navigation }: any) {
       ]);
       setStats({ patients: p.count ?? null, logs24h: g.count ?? null, careTeam: c.count ?? null });
     } catch { /* counts best-effort under RLS */ }
+    try {
+      // Staff directory — admin-gated RPC (SECURITY DEFINER); hidden if blocked or empty.
+      const { data, error } = await supabase.rpc('admin_list_staff');
+      if (!error && Array.isArray(data)) setStaffAccounts(data as StaffAccount[]);
+    } catch { /* optional */ }
     setLoading(false);
   }, [user?.id, isStaff]);
 
   useEffect(() => { load(); }, [load]);
 
-  if (!isStaff) {
+  const allowed = isStaff || isAdmin === true;
+
+  if (isAdmin === null && !isStaff) {
+    // Waiting on the admin check before deciding access.
+    return (
+      <View style={[styles.container, { paddingTop: insets.top + 16 }]}>
+        <View style={[styles.col, contentCol]}>
+          <BackBar navigation={navigation} />
+          <ActivityIndicator color={D2.teal} style={{ marginTop: 24 }} />
+        </View>
+      </View>
+    );
+  }
+
+  if (!allowed) {
     return (
       <View style={[styles.container, { paddingTop: insets.top + 16 }]}>
         <View style={[styles.col, contentCol]}>
@@ -52,7 +78,7 @@ export default function AdminConsoleScreen({ navigation }: any) {
             <Ionicons name="lock-closed-outline" size={26} color={T.muted} />
             <Text style={styles.deniedTitle}>{isNe ? 'पहुँच सीमित छ' : 'Access restricted'}</Text>
             <Text style={styles.deniedText}>
-              {isNe ? 'यो कन्सोल क्लिनिसियन र स्टाफ खाताहरूको लागि हो।' : 'This console is for clinician and staff accounts only.'}
+              {isNe ? 'यो कन्सोल क्लिनिसियन, स्टाफ र एप एडमिन खाताहरूको लागि हो।' : 'This console is for clinician, staff and app-admin accounts only.'}
             </Text>
           </View>
         </View>
@@ -89,8 +115,38 @@ export default function AdminConsoleScreen({ navigation }: any) {
 
           <View style={styles.card}>
             <View style={styles.row}><Text style={styles.rowLabel}>{isNe ? 'लग इन' : 'Signed in as'}</Text><Text style={styles.rowValue} numberOfLines={1}>{user?.email || '—'}</Text></View>
-            <View style={styles.row}><Text style={styles.rowLabel}>{isNe ? 'भूमिका' : 'Role'}</Text><Text style={styles.rowValue}>{isAdmin ? (isNe ? 'क्लिनिसियन + एप एडमिन' : 'Clinician + app admin') : (isNe ? 'क्लिनिसियन' : 'Clinician')}</Text></View>
+            <View style={styles.row}>
+              <Text style={styles.rowLabel}>{isNe ? 'भूमिका' : 'Role'}</Text>
+              <Text style={styles.rowValue}>
+                {isAdmin
+                  ? (isStaff ? (isNe ? 'क्लिनिसियन + एप एडमिन' : 'Clinician + app admin') : (isNe ? 'एप एडमिन' : 'App admin'))
+                  : (isNe ? 'क्लिनिसियन' : 'Clinician')}
+              </Text>
+            </View>
           </View>
+
+          {staffAccounts.length > 0 && (
+            <View style={styles.card}>
+              <View style={styles.cardTitleRow}>
+                <Text style={styles.cardTitle}>{isNe ? 'स्टाफ खाताहरू' : 'Staff accounts'}</Text>
+                <View style={styles.countPill}><Text style={styles.countPillText}>{staffAccounts.length}</Text></View>
+              </View>
+              {staffAccounts.map((s) => (
+                <View key={s.email} style={styles.staffRow}>
+                  <Ionicons name="person-circle-outline" size={18} color={D2.teal} />
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.staffEmail} numberOfLines={1}>{s.email}</Text>
+                    <Text style={styles.staffNote} numberOfLines={1}>
+                      {[s.full_name || null, s.role === 'clinician' ? (isNe ? 'क्लिनिसियन' : 'Clinician') : s.role || null].filter(Boolean).join(' · ') || (isNe ? 'स्टाफ खाता' : 'Staff account')}
+                    </Text>
+                  </View>
+                  {s.full_access ? (
+                    <View style={styles.accessPill}><Text style={styles.accessPillText}>{isNe ? 'पूर्ण पहुँच' : 'Full access'}</Text></View>
+                  ) : null}
+                </View>
+              ))}
+            </View>
+          )}
 
           <TouchableOpacity style={styles.actionRow} onPress={() => navigation.navigate('ClinicianPatientList')} accessibilityRole="button">
             <Ionicons name="medkit-outline" size={18} color={D2.tealDeep} />
@@ -125,6 +181,15 @@ const styles = StyleSheet.create({
   statValue: { fontSize: 20, fontFamily: FONT.extrabold, fontWeight: '800', color: '#221C33' },
   statLabel: { fontSize: 10.5, fontFamily: FONT.semibold, fontWeight: '600', color: '#7A6E65', textAlign: 'center' },
   card: { backgroundColor: '#FFFFFF', borderRadius: 14, borderWidth: 1, borderColor: '#EDE0D4', padding: 14, marginBottom: 12 },
+  cardTitleRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 },
+  cardTitle: { fontSize: 14, fontFamily: FONT.bold, fontWeight: '700', color: '#221C33' },
+  countPill: { backgroundColor: D2.tealTint, borderRadius: 999, paddingHorizontal: 9, paddingVertical: 2 },
+  countPillText: { fontSize: 12, fontFamily: FONT.bold, fontWeight: '700', color: D2.tealDeep },
+  accessPill: { backgroundColor: D2.tealTint, borderRadius: 999, paddingHorizontal: 8, paddingVertical: 2 },
+  accessPillText: { fontSize: 10.5, fontFamily: FONT.bold, fontWeight: '700', color: D2.tealDeep },
+  staffRow: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 7 },
+  staffEmail: { fontSize: 13.5, fontFamily: FONT.semibold, fontWeight: '600', color: '#221C33' },
+  staffNote: { fontSize: 12, fontFamily: FONT.regular, color: '#7A6E65', marginTop: 1 },
   row: { flexDirection: 'row', justifyContent: 'space-between', gap: 12, paddingVertical: 6 },
   rowLabel: { fontSize: 13, fontFamily: FONT.regular, color: '#7A6E65' },
   rowValue: { fontSize: 13, fontFamily: FONT.semibold, fontWeight: '600', color: '#221C33', flexShrink: 1 },

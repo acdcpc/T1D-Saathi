@@ -54,3 +54,14 @@ No future change should introduce a default TDD, default glucose, default correc
 - These values feed the meal carb totals used by dosing suggestions (ICR math unchanged; per-food data only).
 - Conflict resolutions: dal + roti densities preferred from the Nepal composition table; banana book value discarded as inconsistent; papaya exchange row flagged internally inconsistent and left unchanged.
 - Full change log: `docs/FOOD_DATA_SOURCES_2026-10-07.md`. Pending: dietitian confirmation of the papaya value and of the "1 CHO portion" definition.
+
+## Round 8 additions (2026-10-08) — bolus dose field + unified dosing engine + override handling
+
+| Decision | Current branch behavior | Approval still required |
+|---|---|---|
+| Rapid-acting (bolus) dose field | `insulin_regimens.bolus_dose` + `patients.bolus_dose` (units/day) added (nullable, additive; applied to live DB). Shown beside basal on Log / regimen / clinician views. The basal+bolus sum hint never auto-overwrites TDD. | Clinician confirmation of dose-entry semantics (bolus units/day vs per-meal) and whether TDD stays explicit or becomes the basal+bolus sum |
+| Unified dose engine | Log + Food both use `dosingCalc.calculateDosing` (fail-closed; approval gate; 15-min freshness; max-bolus guard). Loose helpers hardened (0 on invalid; silent 1:10 default removed); no production callers remain. | — (no thresholds changed) |
+| Clinician ISF / I:C overrides | Overrides set in regimen settings are honored in BOTH dose paths (effective constants = override × TDD; else 1800/500 defaults). Previously the food path silently ignored overrides. | Clinician confirmation of per-insulin-type constants: 1800/500 for rapid analogs vs 1500/450-style for regular human insulin (e.g., Actrapid) |
+| Unapproved-regimen UX | "Calculate" on an unapproved regimen shows explicit guidance (how to unlock: clinician approves; where) instead of a silent no-op. Gate itself unchanged. | — (copy review) |
+| Rounding & display | 0.1 U half-up from the unrounded sum; tiny true doses (e.g. 0.04 U) may display 0.0 U; individually-rounded parts may not sum to the rounded total (±0.1 U display artifact). | Pen-device rounding policy (0.5 U / 1 U pens) |
+| Max bolus semantics | `max_bolus` compares against the TOTAL suggested bolus (meal + correction); warning only, does not block. | Clinician confirmation: max applies to total vs correction-only |

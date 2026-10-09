@@ -17,7 +17,7 @@ const contentCol = { width: '100%' as const, maxWidth: 640, alignSelf: 'center' 
 import type { Language } from '../types';
 
 export default function SettingsScreen({ navigation }: any) {
-  const { signOut, role } = useAuth();
+  const { signOut, role, user } = useAuth();
   const { language, setLanguage, t } = useLanguage();
   const { highContrast, largeButtons, fontScale, theme: TH, setHighContrast, setLargeButtons, setFontScale } = usePreferences();
   const isNe = language === 'ne';
@@ -31,6 +31,7 @@ export default function SettingsScreen({ navigation }: any) {
   const [newMinute, setNewMinute] = useState('00');
   const [newDays, setNewDays] = useState<number[]>([1, 2, 3, 4, 5, 6, 7]);
   const [myPatients, setMyPatients] = useState<{ id: string; name: string }[]>([]);
+  const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -49,6 +50,17 @@ export default function SettingsScreen({ navigation }: any) {
       } catch { /* patient list is optional */ }
     })();
   }, []);
+
+  // App-admin flag — staff section is also shown to admin emails without the clinician role.
+  useEffect(() => {
+    (async () => {
+      if (!user?.id) return;
+      try {
+        const { data } = await supabase.rpc('is_app_admin', { p_user_id: user.id });
+        setIsAdmin(!!data);
+      } catch { /* optional check */ }
+    })();
+  }, [user?.id]);
 
   const handleVoiceToggle = async (val: boolean) => {
     setVoice(val);
@@ -292,7 +304,7 @@ export default function SettingsScreen({ navigation }: any) {
           <Switch value={motivation} onValueChange={handleMotivationToggle} trackColor={{ true: T.blue }} />
         </View>
 
-        {role === 'clinician' && (
+        {(role === 'clinician' || isAdmin) && (
           <>
             <Text style={styles.sectionLabel}>{isNe ? 'स्टाफ' : 'Staff'}</Text>
             <TouchableOpacity style={styles.rowCard} onPress={() => navigation.navigate('AdminConsole')}>
@@ -301,6 +313,9 @@ export default function SettingsScreen({ navigation }: any) {
                 <Text style={styles.rowTitle}>{isNe ? 'एडमिन कन्सोल' : 'Admin console'}</Text>
                 <Text style={styles.rowSub}>{isNe ? 'क्लिनिसियन र स्टाफ उपकरणहरू' : 'Clinician & staff tools'}</Text>
               </View>
+              {isAdmin && (
+                <View style={styles.adminPill}><Text style={styles.adminPillText}>{isNe ? 'एप एडमिन' : 'App admin'}</Text></View>
+              )}
               <Ionicons name="chevron-forward" size={18} color={T.muted} />
             </TouchableOpacity>
           </>
@@ -388,6 +403,8 @@ const styles = StyleSheet.create({
   },
   rowTitle: { fontSize: 15, fontFamily: FONT.semibold, fontWeight: '600', color: T.text },
   rowSub: { fontSize: 12, fontFamily: FONT.regular, color: T.muted, marginTop: 2 },
+  adminPill: { backgroundColor: T.blueLight, borderRadius: 999, paddingHorizontal: 8, paddingVertical: 2 },
+  adminPillText: { fontSize: 10.5, fontFamily: FONT.bold, fontWeight: '700', color: T.blueDark },
 
   logoutBtn: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8,

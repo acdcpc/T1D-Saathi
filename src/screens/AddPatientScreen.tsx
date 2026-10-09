@@ -101,6 +101,7 @@ export default function AddPatientScreen({ navigation }: any) {
   const [basalInsulin, setBasalInsulin] = useState('');
   const [bolusInsulin, setBolusInsulin] = useState('');
   const [insulinDose, setInsulinDose] = useState('');
+  const [bolusDose, setBolusDose] = useState('');
   const [insulinFreq, setInsulinFreq] = useState('');
   const [delivery, setDelivery] = useState<string>('pen');
   const [diagnosisDate, setDiagnosisDate] = useState('');
@@ -166,6 +167,7 @@ export default function AddPatientScreen({ navigation }: any) {
       basal_insulin: hasBasal ? basalInsulin : null,
       bolus_insulin: hasBolus ? bolusInsulin : null,
       insulin_dose: parseFloat(insulinDose) || 0,
+      bolus_dose: parseFloat(bolusDose) || null,
       insulin_frequency: insulinFreq || null,
       insulin_delivery: delivery,
       diagnosis_date: diagnosisDate || null,
@@ -190,6 +192,7 @@ export default function AddPatientScreen({ navigation }: any) {
         insulin_type: [hasBasal ? basalInsulin : null, hasBolus ? bolusInsulin : null].filter(Boolean).join(' + '),
         basal_insulin: hasBasal ? basalInsulin : null,
         basal_dose: parseFloat(insulinDose) || null,
+        bolus_dose: parseFloat(bolusDose) || null,
         bolus_insulin: hasBolus ? bolusInsulin : null,
         dose: parseFloat(insulinDose) || 0,
         frequency: insulinFreq || 'daily',
@@ -283,8 +286,16 @@ export default function AddPatientScreen({ navigation }: any) {
       />
       {insulinError ? <Text style={styles.errorText}>{insulinError}</Text> : null}
 
-      <Text style={styles.label}>{language === 'ne' ? 'लामो (बेसल) इन्सुलिन डोज — युनिट/दिन' : 'Long-acting (basal) dose (units per day)'}</Text>
-      <TextInput style={styles.input} value={insulinDose} onChangeText={setInsulinDose} placeholder={language === 'ne' ? 'जस्तै: १२' : 'e.g. 12'} keyboardType="numeric" />
+      <View style={styles.doseRow}>
+        <View style={styles.doseCol}>
+          <Text style={styles.label}>{language === 'ne' ? 'लामो (बेसल) इन्सुलिन डोज — युनिट/दिन' : 'Long-acting (basal) dose (units per day)'}</Text>
+          <TextInput style={styles.input} value={insulinDose} onChangeText={setInsulinDose} placeholder={language === 'ne' ? 'जस्तै: १२' : 'e.g. 12'} keyboardType="numeric" />
+        </View>
+        <View style={styles.doseCol}>
+          <Text style={styles.label}>{language === 'ne' ? 'छिटो (बोलस) इन्सुलिन डोज — युनिट/दिन' : 'Rapid-acting (bolus) dose (units per day)'}</Text>
+          <TextInput style={styles.input} value={bolusDose} onChangeText={setBolusDose} placeholder={language === 'ne' ? 'जस्तै: ४' : 'e.g. 4'} keyboardType="numeric" />
+        </View>
+      </View>
 
       <Dropdown
         label={t('frequency')}
@@ -387,6 +398,8 @@ const styles = StyleSheet.create({
   content: { padding: 16 },
   section: { ...section, color: D2.tealDeep, fontSize: 16, fontFamily: FONT.bold, fontWeight: '700', marginTop: 24, marginBottom: 12 },
   label: { fontSize: 13, fontFamily: FONT.semibold, fontWeight: '600', color: T.text, marginBottom: 6, marginTop: 10 },
+  doseRow: { flexDirection: 'row', gap: 12 },
+  doseCol: { flex: 1 },
   input: { ...input },
   inputError: { borderColor: T.red, borderWidth: 1.5 },
   errorText: { color: T.red, fontSize: 12, fontFamily: FONT.regular, marginTop: 4 },
