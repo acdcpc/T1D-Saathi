@@ -12,7 +12,7 @@ import GradientButton from '../components/GradientButton';
 import { D2 } from '../design/tokens';
 
 export default function LoginScreen({ navigation }: any) {
-  const { signIn, signUp, signInWithGoogle, signInAsGuest } = useAuth();
+  const { signIn, signUp, signInWithGoogle, signInAsGuest, requestPasswordReset } = useAuth();
   const insets = useSafeAreaInsets();
   const { t, language } = useLanguage();
   const { theme: TH, fontScale } = usePreferences();
@@ -23,6 +23,9 @@ export default function LoginScreen({ navigation }: any) {
   const [loading, setLoading] = useState(false);
   const [emailError, setEmailError] = useState<string | null>(null);
   const [passwordError, setPasswordError] = useState<string | null>(null);
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [confirmError, setConfirmError] = useState<string | null>(null);
+  const [resetMode, setResetMode] = useState(false);
 
   const validate = (): boolean => {
     let ok = true;
@@ -44,6 +47,17 @@ export default function LoginScreen({ navigation }: any) {
       ok = false;
     } else {
       setPasswordError(null);
+    }
+    if (isSignup) {
+      if (!confirmPassword.trim()) {
+        setConfirmError(isNe ? 'पासवर्ड पुनः लेख्नुहोस्' : 'Please confirm your password');
+        ok = false;
+      } else if (confirmPassword !== password) {
+        setConfirmError(isNe ? 'पासवर्डहरू मिलेनन्' : 'Passwords do not match');
+        ok = false;
+      } else {
+        setConfirmError(null);
+      }
     }
     return ok;
   };
@@ -110,6 +124,38 @@ export default function LoginScreen({ navigation }: any) {
     }
   };
 
+  const handleForgotPassword = async () => {
+    const emailRe = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!email.trim() || !emailRe.test(email.trim())) {
+      setEmailError(isNe ? 'मान्य इमेल लेख्नुहोस्' : 'Enter a valid email');
+      return;
+    }
+    setEmailError(null);
+    setLoading(true);
+    try {
+      const { error } = await requestPasswordReset(email.trim());
+      if (error) {
+        const lower = (error.message || '').toLowerCase();
+        const friendly = lower.includes('rate limit') || lower.includes('too many')
+          ? (isNe ? 'धेरै प्रयास भयो। एकछिन पछि फेरि प्रयास गर्नुहोस्।' : 'Too many attempts. Please try again in a little while.')
+          : error.message;
+        Alert.alert(isNe ? 'त्रुटि' : 'Error', friendly);
+      } else {
+        Alert.alert(
+          isNe ? 'इमेल जाँच गर्नुहोस्' : 'Check your email',
+          isNe
+            ? 'पासवर्ड रिसेट लिङ्क तपाईंको इमेलमा पठाइयो। लिङ्क खोलेर नयाँ पासवर्ड सेट गर्नुहोस्।'
+            : 'We sent a password reset link to your email. Open the link to set a new password.',
+        );
+        setResetMode(false);
+      }
+    } catch (e: any) {
+      Alert.alert(isNe ? 'त्रुटि' : 'Error', e?.message || (isNe ? 'केही गलत भयो।' : 'Something went wrong'));
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const showStaffInfo = () => {
     Alert.alert(
       isNe ? 'स्टाफ पहुँच' : 'Staff access',
@@ -158,28 +204,63 @@ export default function LoginScreen({ navigation }: any) {
             returnKeyType="next"
             placeholderTextColor={TH.muted}          />
           {emailError ? <Text style={styles.errorText}>{emailError}</Text> : null}
-          <TextInput
-            style={[styles.field, passwordError && styles.fieldError, { color: TH.text, fontSize: 15 * fontScale }]}
-            placeholder={isNe ? 'पासवर्ड' : 'Password'}
-            accessibilityLabel={isNe ? 'पासवर्ड' : 'Password'}
-            value={password}
-            onChangeText={(v) => { setPassword(v); if (passwordError) setPasswordError(null); }}
-            secureTextEntry
-            textContentType="password"
-            returnKeyType="done"
-            placeholderTextColor={TH.muted}          />
-          {passwordError ? <Text style={styles.errorText}>{passwordError}</Text> : (
-            isSignup ? <Text style={styles.hintText}>{isNe ? 'कम्तिमा ६ अक्षरको पासवर्ड' : 'At least 6 characters'}</Text> : null
+          {!resetMode && (
+            <>
+              <TextInput
+                style={[styles.field, passwordError && styles.fieldError, { color: TH.text, fontSize: 15 * fontScale }]}
+                placeholder={isNe ? 'पासवर्ड' : 'Password'}
+                accessibilityLabel={isNe ? 'पासवर्ड' : 'Password'}
+                value={password}
+                onChangeText={(v) => { setPassword(v); if (passwordError) setPasswordError(null); if (confirmError) setConfirmError(null); }}
+                secureTextEntry
+                textContentType="password"
+                returnKeyType="done"
+                placeholderTextColor={TH.muted}
+              />
+              {passwordError ? <Text style={styles.errorText}>{passwordError}</Text> : (
+                isSignup ? <Text style={styles.hintText}>{isNe ? 'कम्तिमा ६ अक्षरको पासवर्ड' : 'At least 6 characters'}</Text> : null
+              )}
+              {isSignup ? (
+                <>
+                  <TextInput
+                    style={[styles.field, confirmError && styles.fieldError, { color: TH.text, fontSize: 15 * fontScale }]}
+                    placeholder={isNe ? 'पासवर्ड पुनः लेख्नुहोस्' : 'Confirm password'}
+                    accessibilityLabel={isNe ? 'पासवर्ड पुनः लेख्नुहोस्' : 'Confirm password'}
+                    value={confirmPassword}
+                    onChangeText={(v) => { setConfirmPassword(v); if (confirmError) setConfirmError(null); }}
+                    secureTextEntry
+                    textContentType="newPassword"
+                    returnKeyType="done"
+                    placeholderTextColor={TH.muted}
+                  />
+                  {confirmError ? <Text style={styles.errorText}>{confirmError}</Text> : null}
+                </>
+              ) : (
+                <TouchableOpacity onPress={() => { setResetMode(true); setPasswordError(null); }} accessibilityRole="button">
+                  <Text style={styles.forgotText}>{isNe ? 'पासवर्ड बिर्सनुभयो?' : 'Forgot password?'}</Text>
+                </TouchableOpacity>
+              )}
+            </>
           )}
+          {resetMode ? (
+            <Text style={styles.resetHint}>
+              {isNe ? 'खातामा दर्ता भएको इमेल हाल्नुहोस् — नयाँ पासवर्ड सेट गर्न रिसेट लिङ्क पठाउँछौं।' : "Enter the email for your account — we'll send a link to set a new password."}
+            </Text>
+          ) : null}
           <GradientButton
-            label={isSignup ? (isNe ? 'खाता बनाउनुहोस्' : 'Create Account') : (isNe ? 'लग इन' : 'Log In')}
-            onPress={handleSubmit}
+            label={resetMode ? (isNe ? 'रिसेट लिङ्क पठाउनुहोस्' : 'Send reset link') : isSignup ? (isNe ? 'खाता बनाउनुहोस्' : 'Create Account') : (isNe ? 'लग इन' : 'Log In')}
+            onPress={resetMode ? handleForgotPassword : handleSubmit}
             loading={loading}
           />
+          {resetMode ? (
+            <TouchableOpacity onPress={() => setResetMode(false)} accessibilityRole="button">
+              <Text style={styles.switchText}>{isNe ? '← लग इनमा फर्कनुहोस्' : '← Back to log in'}</Text>
+            </TouchableOpacity>
+          ) : null}
           <TouchableOpacity onPress={showStaffInfo} accessibilityRole="button">
             <Text style={styles.staffNote}>{isNe ? 'चिकित्सक वा एडमिन हुनुहुन्छ? कार्य इमेलले लग इन गर्नुहोस् →' : 'Clinician or admin? Sign in with your work email →'}</Text>
           </TouchableOpacity>
-          <TouchableOpacity onPress={() => setIsSignup(!isSignup)}>
+          <TouchableOpacity onPress={() => { setIsSignup(!isSignup); setResetMode(false); setConfirmPassword(''); setConfirmError(null); }}>
             <Text style={styles.switchText}>
               {isSignup
                 ? (isNe ? 'पहिले नै खाता छ? लग इन गर्नुहोस्' : 'Already have an account? Log in')
@@ -206,6 +287,8 @@ export default function LoginScreen({ navigation }: any) {
 
 const styles = StyleSheet.create({
   hintText: { color: '#8A8F98', fontSize: 12, marginTop: 4 },
+  forgotText: { color: D2.tealDeep, textAlign: 'right', fontSize: 13.5, fontFamily: FONT.regular, marginTop: -4 },
+  resetHint: { color: '#8A8F98', fontSize: 13, fontFamily: FONT.regular, lineHeight: 19 },
   staffNote: { color: T.muted, textAlign: 'center', fontSize: 12.5, marginTop: 12, fontFamily: FONT.regular },
   container: { flex: 1, backgroundColor: T.bg },
   scroll: { flexGrow: 1, justifyContent: 'center', alignItems: 'center', padding: 24 },

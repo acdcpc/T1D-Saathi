@@ -8,6 +8,8 @@
  */
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import * as WebBrowser from 'expo-web-browser';
+import * as Linking from 'expo-linking';
+import { Alert } from 'react-native';
 import { supabase } from '../lib/supabase';
 import type { User, Session } from '@supabase/supabase-js';
 import type { UserRole } from '../types';
@@ -30,12 +32,16 @@ interface AuthContextType {
   signInWithGoogle: () => Promise<GoogleOutcome>;
   signInAsGuest: () => Promise<void>;
   signOut: () => Promise<void>;
+  /** True while a password-recovery deep link has produced a session. */
+  recoveryMode: boolean;
+  clearRecovery: () => void;
+  requestPasswordReset: (email: string) => Promise<{ error: any }>;
 }
 
 const AuthContext = createContext<AuthContextType>({} as AuthContextType);
 
 /** Parse access_token / refresh_token (and error/code params) from a redirect URL fragment or query. */
-function parseTokensFromUrl(url: string): { access_token: string | null; refresh_token: string | null; error: string | null; code: string | null } {
+function parseTokensFromUrl(url: string): { access_token: string | null; refresh_token: string | null; error: string | null; code: string | null; type: string | null; error_code: string | null } {
   const hashIdx = url.indexOf('#');
   let params: URLSearchParams;
   if (hashIdx !== -1) {
@@ -48,6 +54,8 @@ function parseTokensFromUrl(url: string): { access_token: string | null; refresh
     refresh_token: params.get('refresh_token'),
     error: params.get('error'),
     code: params.get('code'),
+    type: params.get('type'),
+    error_code: params.get('error_code'),
   };
 }
 
@@ -56,6 +64,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [role, setRole] = useState<UserRole | null>(null);
   const [loading, setLoading] = useState(true);
+  const [recoveryMode, setRecoveryMode] = useState(false);
 
   const fetchRole = useCallback(async (userId: string): Promise<UserRole> => {
     // maybeSingle → no error when the row doesn't exist yet
@@ -125,6 +134,34 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       subscription.unsubscribe();
     };
   }, [fetchRole]);
+
+  // ── Password recovery deep link ──
+  // Reset emails redirect to: com.t1dsaathi.app://auth/callback#access_token=…&type=recovery
+  // (Google OAuth returns via WebBrowser; recovery arrives at the OS/router level.)
+  useEffect(() => {
+    const handleUrl = async (url: string | null) => {
+      if (!url || !url.includes('auth/callback')) return;
+      const { access_token, refresh_token, type, error, error_code } = parseTokensFromUrl(url);
+      if (type !== 'recovery') return;
+      if (error || error_code) {
+        Alert.alert(
+          'Reset link problem',
+          'This password reset link is invalid or has expired. Please request a new one from the login screen.',
+        );
+        return;
+      }
+      if (!access_token || !refresh_token) return;
+      const { error: setErr } = await supabase.auth.setSession({ access_token, refresh_token });
+      if (setErr) {
+        console.warn('[AuthContext] recovery setSession failed:', setErr.message);
+        return;
+      }
+      setRecoveryMode(true);
+    };
+    const sub = Linking.addEventListener('url', ({ url }) => { void handleUrl(url); });
+    void Linking.getInitialURL().then((url) => { void handleUrl(url); });
+    return () => sub.remove();
+  }, []);
 
   const signIn = async (email: string, password: string) => {
     const { data, error } = await supabase.auth.signInWithPassword({ email, password });
@@ -215,8 +252,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setRole(null);
   };
 
+  /** Send a password-reset email that deep-links back into the app. */
+  const requestPasswordReset = useCallback(async (email: string) => {
+    const { error } = await supabase.auth.resetPasswordForEmail(email, { redirectTo: REDIRECT_URL });
+    return { error };
+  }, []);
+
+  const clearRecovery = useCallback(() => setRecoveryMode(false), []);
+
   return (
-    <AuthContext.Provider value={{ user, session, role, loading, signIn, signUp, signInWithGoogle, signInAsGuest, signOut }}>
+    <AuthContext.Provider value={{ user, session, role, loading, signIn, signUp, signInWithGoogle, signInAsGuest, signOut, recoveryMode, clearRecovery, requestPasswordReset }}>
       {children}
     </AuthContext.Provider>
   );

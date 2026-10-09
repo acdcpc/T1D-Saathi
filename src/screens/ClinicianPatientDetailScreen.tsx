@@ -8,6 +8,7 @@ import { toBSDateTimeDisplay, toBSDisplay } from '../utils/bsDateDisplay';
 import { FONT, T } from '../theme';
 import BackBar from '../components/BackBar';
 import Dropdown from '../components/Dropdown';
+import { computeTddFromDoses, isfFromTdd, icrFromTdd } from '../utils/regimenMath';
 
 interface InsulinRow { id: string; units: number; insulin_type: string; source: string; timestamp: string; }
 interface RegimenRequestRow { id: string; kind: 'review' | 'change'; note?: string | null; status: string; created_at: string; }
@@ -52,6 +53,22 @@ export default function ClinicianPatientDetailScreen({ route, navigation }: any)
   const [eIcr, setEIcr] = useState('');
   const [eTarget, setETarget] = useState('');
   const [eMaxBolus, setEMaxBolus] = useState('');
+
+  /**
+   * Recompute TDD / ISF / I:C when the clinician updates doses or frequency.
+   * TDD = basal (units/day) + bolus (units/dose) × bolus frequency (doses/day).
+   * ISF (correction factor) ≈ 1800 ÷ TDD · I:C ≈ 500 ÷ TDD — starting estimates,
+   * still editable before save.
+   */
+  const recalcFromDoses = (basalStr: string, bolusStr: string, freq: string) => {
+    const tdd = computeTddFromDoses(parseFloat(basalStr), parseFloat(bolusStr), freq);
+    if (tdd == null) return; // e.g. sliding scale / missing frequency → keep the manual value
+    setETdd(String(tdd));
+    const nextIsf = isfFromTdd(tdd);
+    const nextIcr = icrFromTdd(tdd);
+    if (nextIsf != null) setEIsf(String(nextIsf));
+    if (nextIcr != null) setEIcr(String(nextIcr));
+  };
 
   useEffect(() => {
     (async () => {
@@ -287,16 +304,19 @@ export default function ClinicianPatientDetailScreen({ route, navigation }: any)
           <Dropdown label={isNe ? 'लामो-कार्य (बेसल) इन्सुलिन' : 'Long-acting (basal) insulin'} options={BASAL_INSULIN_OPTIONS} value={eBasal} onChange={setEBasal} placeholder="Select basal insulin" />
           <Dropdown label={isNe ? 'छिटो-कार्य (बोलस) इन्सुलिन' : 'Rapid-acting (bolus) insulin'} options={BOLUS_INSULIN_OPTIONS} value={eBolus} onChange={setEBolus} placeholder="Select bolus insulin" />
           <Text style={styles.formLabel}>{isNe ? 'बेसल डोज (युनिट/दिन)' : 'Basal dose (units/day)'}</Text>
-          <TextInput style={styles.input} value={eBasalDose} onChangeText={setEBasalDose} keyboardType="numeric" />
-          <Text style={styles.formLabel}>{isNe ? 'बोलस डोज (युनिट/दिन)' : 'Bolus dose (units/day)'}</Text>
-          <TextInput style={styles.input} value={eBolusDose} onChangeText={setEBolusDose} keyboardType="numeric" />
-          <Dropdown label={isNe ? 'आवृत्ति' : 'Frequency'} options={FREQUENCY_OPTIONS} value={eFrequency} onChange={setEFrequency} placeholder="Select frequency" />
+          <TextInput style={styles.input} value={eBasalDose} onChangeText={(v) => { setEBasalDose(v); recalcFromDoses(v, eBolusDose, eFrequency); }} keyboardType="numeric" />
+          <Text style={styles.formLabel}>{isNe ? 'बोलस डोज (प्रति डोज युनिट)' : 'Bolus dose (units per dose)'}</Text>
+          <TextInput style={styles.input} value={eBolusDose} onChangeText={(v) => { setEBolusDose(v); recalcFromDoses(eBasalDose, v, eFrequency); }} keyboardType="numeric" />
+          <Dropdown label={isNe ? 'आवृत्ति' : 'Frequency'} options={FREQUENCY_OPTIONS} value={eFrequency} onChange={(v) => { setEFrequency(v); recalcFromDoses(eBasalDose, eBolusDose, v); }} placeholder="Select frequency" />
           <Text style={styles.formLabel}>{isNe ? 'कुल दैनिक डोज (TDD)' : 'Total daily dose (TDD)'}</Text>
           <TextInput style={styles.input} value={eTdd} onChangeText={setETdd} keyboardType="numeric" />
-          <Text style={styles.formLabel}>{isNe ? 'ISF अधिलेखन (mg/dL प्रति युनिट) — वैकल्पिक' : 'ISF override (mg/dL per unit) — optional'}</Text>
+          <Text style={styles.hintText}>{isNe ? 'स्वतः गणना: बेसल + बोलस × आवृत्ति (प्रति दिन)' : 'Auto-calculated: basal + bolus × frequency (per day)'}</Text>
+          <Text style={styles.formLabel}>{isNe ? 'ISF / सुधार कारक (mg/dL प्रति युनिट) — स्वतः' : 'ISF / correction factor (mg/dL per unit) — auto'}</Text>
           <TextInput style={styles.input} value={eIsf} onChangeText={setEIsf} keyboardType="numeric" />
-          <Text style={styles.formLabel}>{isNe ? 'I:C अनुपात (g प्रति युनिट) — वैकल्पिक' : 'I:C ratio (g per unit) — optional'}</Text>
+          <Text style={styles.hintText}>{isNe ? 'स्वतः अनुमान: 1800 ÷ TDD — आवश्यक परे सम्पादन गर्नुहोस्' : 'Auto estimate: 1800 ÷ TDD — edit if needed'}</Text>
+          <Text style={styles.formLabel}>{isNe ? 'I:C अनुपात (g प्रति युनिट) — स्वतः' : 'I:C ratio (g per unit) — auto'}</Text>
           <TextInput style={styles.input} value={eIcr} onChangeText={setEIcr} keyboardType="numeric" />
+          <Text style={styles.hintText}>{isNe ? 'स्वतः अनुमान: 500 ÷ TDD — आवश्यक परे सम्पादन गर्नुहोस्' : 'Auto estimate: 500 ÷ TDD — edit if needed'}</Text>
           <Text style={styles.formLabel}>{isNe ? 'सुधार लक्ष्य (mg/dL)' : 'Correction target (mg/dL)'}</Text>
           <TextInput style={styles.input} value={eTarget} onChangeText={setETarget} keyboardType="numeric" />
           <Text style={styles.formLabel}>{isNe ? 'अधिकतम बोलस (युनिट) — वैकल्पिक' : 'Max bolus (units) — optional'}</Text>
@@ -315,8 +335,10 @@ export default function ClinicianPatientDetailScreen({ route, navigation }: any)
           <View style={styles.regimenRow}><Text style={styles.regimenLabel}>Type</Text><Text style={styles.regimenValue}>{regimen.insulin_type || '—'}</Text></View>
           {regimen.regimen_type ? (<View style={styles.regimenRow}><Text style={styles.regimenLabel}>Regimen</Text><Text style={styles.regimenValue}>{regimen.regimen_type === 'mdi' ? 'Basal-bolus (MDI)' : regimen.regimen_type === 'pump' ? 'Pump (CSII)' : 'Premixed'}</Text></View>) : null}
           {regimen.basal_insulin ? (<View style={styles.regimenRow}><Text style={styles.regimenLabel}>Basal</Text><Text style={styles.regimenValue}>{regimen.basal_insulin}{regimen.basal_dose ? ` · ${regimen.basal_dose} U/day` : ''}</Text></View>) : null}
-          {(regimen.bolus_insulin || regimen.bolus_dose) ? (<View style={styles.regimenRow}><Text style={styles.regimenLabel}>Bolus</Text><Text style={styles.regimenValue}>{[regimen.bolus_insulin || null, regimen.bolus_dose ? `${regimen.bolus_dose} U/day` : null].filter(Boolean).join(' · ')}</Text></View>) : null}
+          {(regimen.bolus_insulin || regimen.bolus_dose) ? (<View style={styles.regimenRow}><Text style={styles.regimenLabel}>Bolus</Text><Text style={styles.regimenValue}>{[regimen.bolus_insulin || null, regimen.bolus_dose ? `${regimen.bolus_dose} U/dose` : null].filter(Boolean).join(' · ')}</Text></View>) : null}
           <View style={styles.regimenRow}><Text style={styles.regimenLabel}>TDD</Text><Text style={styles.regimenValue}>{regimen.tdd ?? '—'} U</Text></View>
+          {regimen.isf ? (<View style={styles.regimenRow}><Text style={styles.regimenLabel}>ISF / correction factor</Text><Text style={styles.regimenValue}>{regimen.isf} mg/dL/U</Text></View>) : null}
+          {regimen.carb_ratio ? (<View style={styles.regimenRow}><Text style={styles.regimenLabel}>I:C ratio</Text><Text style={styles.regimenValue}>1 U : {regimen.carb_ratio} g</Text></View>) : null}
           <View style={styles.regimenRow}><Text style={styles.regimenLabel}>Correction target</Text><Text style={styles.regimenValue}>{regimen.correction_target ?? '—'} mg/dL</Text></View>
           <View style={styles.regimenRow}><Text style={styles.regimenLabel}>Max bolus</Text><Text style={styles.regimenValue}>{regimen.max_bolus ?? '—'} U</Text></View>
           <View style={styles.regimenRow}>
@@ -419,6 +441,7 @@ const styles = StyleSheet.create({
   editToggleBtn: { marginTop: 10, borderRadius: 10, padding: 12, alignItems: 'center', borderWidth: 1, borderColor: '#0D9488' },
   editToggleText: { color: '#0D9488', fontSize: 14, fontFamily: FONT.semibold, fontWeight: '600' },
   formLabel: { fontSize: 13, fontFamily: FONT.semibold, fontWeight: '600', color: '#202124', marginTop: 12, marginBottom: 6 },
+  hintText: { fontSize: 11, fontFamily: FONT.regular, color: '#5f6368', marginTop: 6, fontStyle: 'italic' },
   chipRow: { flexDirection: 'row', gap: 8, flexWrap: 'wrap' },
   chip: { borderRadius: 20, paddingHorizontal: 14, paddingVertical: 7, backgroundColor: '#e8eaed' },
   chipActive: { backgroundColor: '#0D9488' },

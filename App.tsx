@@ -13,6 +13,7 @@ import { installCrashReporting } from './src/utils/crashReporting';
 import { useShakeDetector } from './src/hooks/useShakeDetector';
 
 import LoginScreen from './src/screens/LoginScreen';
+import ResetPasswordScreen from './src/screens/ResetPasswordScreen';
 import OnboardingScreen from './src/screens/OnboardingScreen';
 import HomeScreen from './src/screens/HomeScreen';
 import AddPatientScreen from './src/screens/AddPatientScreen';
@@ -54,7 +55,7 @@ function GlobalHandlers() {
 }
 
 function AppNavigator() {
-  const { user, role } = useAuth();
+  const { user, role, recoveryMode } = useAuth();
   useNetworkSync(60000);
 
   return (
@@ -64,6 +65,8 @@ function AppNavigator() {
           <Stack.Screen name="Onboarding" component={OnboardingScreen} />
           <Stack.Screen name="Login" component={LoginScreen} />
         </>
+      ) : recoveryMode ? (
+        <Stack.Screen name="ResetPassword" component={ResetPasswordScreen} />
       ) : !role ? (
         <Stack.Screen name="RoleSplash" component={RoleSplash} />
       ) : role === 'clinician' ? (
