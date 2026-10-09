@@ -12,3 +12,5 @@ Trigger v5 — 2026-10-09: full rebuild — round 8 (bolus dose, Log fixes, admi
 Trigger v6 — 2026-10-09: patient-card width-chain fix (card column + cardRow row-only; yoga-sim verified; supersedes v5).
 
 Trigger v7 — 2026-10-09: round 11 — signup confirm-password + forgot-password flow; clinician bolus per-dose + auto TDD/ISF/ICR.
+
+Trigger v8 — 2026-10-09: rounds 11+12 — auth flows (signup confirm + forgot password), clinician auto TDD/ISF/ICR + per-dose bolus, patient intake (weight/height/age-in-years/diagnosis precision).
