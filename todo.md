@@ -1,4 +1,3 @@
-
 ## Security audit: Supabase exposure review
 
 - [x] Audit all public tables for missing RLS and sensitive columns
@@ -51,8 +50,36 @@
 - [x] Finalize and validate the reusable t1d-saathi-security-release skill.
 - [x] Review GitHub pull request/branch mergeability and document whether conflicts remain.
 
-- [ ] Create a pull request from agent/t1d-typescript-and-docs into main.
-- [ ] Audit all 18 dependency vulnerabilities and document safe upgrade paths.
-- [ ] Add a production Supabase manual-migration verification checklist.
-- [ ] Validate the pull request and wait for explicit merge confirmation before merging to main.
-- [ ] Merge the approved pull request into main.
+- [x] Create a pull request from agent/t1d-typescript-and-docs into main. (PR #1 — created and merged 2026-08-22)
+- [x] Audit all 18 dependency vulnerabilities and document safe upgrade paths. (`docs/DEPENDENCY_VULNERABILITY_AUDIT_20260822.md`)
+- [x] Add a production Supabase manual-migration verification checklist. (`docs/SUPABASE_PRODUCTION_VERIFICATION_CHECKLIST.md`; migration applied + verified 2026-10-05)
+- [x] Validate the pull request and wait for explicit merge confirmation before merging to main.
+- [x] Merge the approved pull request into main.
+
+## Post-handover status (2026-10-05): batches 1–3 + portal + UI refresh
+
+- [x] Feature batches 1–3 implemented and validated (43 Jest tests; typecheck; repo validator). See `docs/FEATURE_BATCH1_2026-10-05.md`, `FEATURE_BATCH2`, `FEATURE_BATCH3`.
+- [x] All Supabase migrations applied to the live project + evidence recorded (`docs/SUPABASE_MIGRATION_EVIDENCE_2026-10-05.md`).
+- [x] UI refresh rounds 1–3 across main screens (+ screenshots in `docs/screenshots/2026-10-05/`). See `docs/UI_REFRESH_2026-10-05.md`.
+- [x] UI round 4: back buttons on all pushed screens; clearer tabs (Glucose); Learn tab hidden (committed 2026-10-06).
+- [x] UI design v2 "Warm Dawn": gradient glucose hero, coral CTAs, floating tab bar, quick actions, insight card; teal accent system across Dashboard/Home/Login/Log (committed 2026-10-06). See `docs/UI_DESIGN_V2.md` + `docs/screenshots/2026-10-06/`.
+- [x] Round 6 (2026-10-06): dual basal+bolus insulin regimen per ISPAD (migration `20261006000013` applied live); auth hardening per alisha audit (tri-state Google, sign-out, duplicate-email, password rule, 48dp clearance); back buttons on Education/Consent/Clinician screens; Warm Dawn restyle for changed screens. See `docs/ROUND6_2026-10-06.md`.
+- [x] Round 6.1 (2026-10-06 evening): app-wide Warm Dawn completion (legacy blue retired in theme + 15 files); ISPAD content validation pass (`docs/CONTENT_VALIDATION_2026-10-06.md`); hypo recheck 15 min; mild-ketone guidance consistency; evidence `docs/screenshots/2026-10-06/round6b-*.png`.
+- [x] Round 6.2 (2026-10-06 night): patient photo capture + initials avatars; dashboard back-to-list; Home redesign (BS date, labeled Emergency/Settings, Quick help, Staff access); Admin console + staff entry points; staff consent-gate fix. See `docs/ROUND6_2_2026-10-06.md` + `round6d-*` screenshots.
+- [x] Clinician web portal built (`portal/`) and smoke-checked.
+- [ ] Pull request for `agent/features-batch1` → `main`: review + merge decision (owner).
+- [ ] EAS preview rebuild (Android APK) — build in progress.
+- [ ] Real-device verification: push delivery, notifications, iOS, small screens.
+- [ ] Two-user RLS negative tests with real accounts (`docs/RLS_TEST_PLAN.md`).
+- [ ] Clinician sign-off of clinical decisions (`docs/CLINICAL_SAFETY_LOG.md`).
+- [ ] Dependency maintenance branch (SDK 57–compatible pass; not a runtime release blocker per audit).
+
+## Rebrand (2026-10-07): Sano Bir
+
+- [x] Owner chose **Sano Bir (सानो वीर)** — "little hero" — from the brand shortlist; full logo treatment delivered (`DELIVERY/t1d-saathi-branding/`).
+- [x] App rebranded: hero-star icon set + native splash; display name; login/onboarding/home/settings; notifications; invite codes (`SB-`); PDF header; clinician portal; README. Evidence `docs/screenshots/2026-10-07/`, notes `docs/REBRAND_SANO_BIR_2026-10-07.md`.
+- [x] Test APK built in CI (GitHub Actions) and published as pre-release `sano-bir-test-2026-10-07` (`SanoBir-v1.0.0-test.apk`) — for owner device testing.
+
+- [x] Food database v2 (2026-10-07): authoritative nutrition sources integrated — Nepal FCT 2017 (100-kcal exchange list) + Life for a Child 2021 + clinic handouts; 34 foods added, key values reconciled (dal/roti/rice/dhindo/momo/banana…), duplicates removed, provenance tags per row. See `docs/FOOD_DATA_SOURCES_2026-10-07.md`.
+
+- [x] Round 7 UX fixes (2026-10-07): food photo classifier fixed for react-native-fast-tflite v3 (`loadTensorflowModel`); Home skeleton stuck-loading fixed (user-null guard); comorbid conditions → Yes/No + common list + Other free text; long-acting (basal) dose field labeled clearly; log screen hints + dose explanation; Education & Invite Clinician hidden for now; Learn tab removed.

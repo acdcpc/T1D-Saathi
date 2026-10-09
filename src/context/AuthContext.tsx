@@ -8,6 +8,8 @@
  */
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import * as WebBrowser from 'expo-web-browser';
+import * as Linking from 'expo-linking';
+import { Alert } from 'react-native';
 import { supabase } from '../lib/supabase';
 import type { User, Session } from '@supabase/supabase-js';
 import type { UserRole } from '../types';
@@ -18,6 +20,8 @@ WebBrowser.maybeCompleteAuthSession();
 
 const REDIRECT_URL = 'com.t1dsaathi.app://auth/callback';
 
+export type GoogleOutcome = 'signed-in' | 'cancelled' | 'unavailable';
+
 interface AuthContextType {
   user: User | null;
   session: Session | null;
@@ -25,15 +29,19 @@ interface AuthContextType {
   loading: boolean;
   signIn: (email: string, password: string) => Promise<{ data: any; error: any }>;
   signUp: (email: string, password: string) => Promise<{ data: any; error: any }>;
-  signInWithGoogle: () => Promise<void>;
+  signInWithGoogle: () => Promise<GoogleOutcome>;
   signInAsGuest: () => Promise<void>;
   signOut: () => Promise<void>;
+  /** True while a password-recovery deep link has produced a session. */
+  recoveryMode: boolean;
+  clearRecovery: () => void;
+  requestPasswordReset: (email: string) => Promise<{ error: any }>;
 }
 
 const AuthContext = createContext<AuthContextType>({} as AuthContextType);
 
-/** Parse access_token / refresh_token from a redirect URL fragment or query. */
-function parseTokensFromUrl(url: string): { access_token: string | null; refresh_token: string | null } {
+/** Parse access_token / refresh_token (and error/code params) from a redirect URL fragment or query. */
+function parseTokensFromUrl(url: string): { access_token: string | null; refresh_token: string | null; error: string | null; code: string | null; type: string | null; error_code: string | null } {
   const hashIdx = url.indexOf('#');
   let params: URLSearchParams;
   if (hashIdx !== -1) {
@@ -44,6 +52,10 @@ function parseTokensFromUrl(url: string): { access_token: string | null; refresh
   return {
     access_token: params.get('access_token'),
     refresh_token: params.get('refresh_token'),
+    error: params.get('error'),
+    code: params.get('code'),
+    type: params.get('type'),
+    error_code: params.get('error_code'),
   };
 }
 
@@ -52,6 +64,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [role, setRole] = useState<UserRole | null>(null);
   const [loading, setLoading] = useState(true);
+  const [recoveryMode, setRecoveryMode] = useState(false);
 
   const fetchRole = useCallback(async (userId: string): Promise<UserRole> => {
     // maybeSingle → no error when the row doesn't exist yet
@@ -122,6 +135,34 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     };
   }, [fetchRole]);
 
+  // ── Password recovery deep link ──
+  // Reset emails redirect to: com.t1dsaathi.app://auth/callback#access_token=…&type=recovery
+  // (Google OAuth returns via WebBrowser; recovery arrives at the OS/router level.)
+  useEffect(() => {
+    const handleUrl = async (url: string | null) => {
+      if (!url || !url.includes('auth/callback')) return;
+      const { access_token, refresh_token, type, error, error_code } = parseTokensFromUrl(url);
+      if (type !== 'recovery') return;
+      if (error || error_code) {
+        Alert.alert(
+          'Reset link problem',
+          'This password reset link is invalid or has expired. Please request a new one from the login screen.',
+        );
+        return;
+      }
+      if (!access_token || !refresh_token) return;
+      const { error: setErr } = await supabase.auth.setSession({ access_token, refresh_token });
+      if (setErr) {
+        console.warn('[AuthContext] recovery setSession failed:', setErr.message);
+        return;
+      }
+      setRecoveryMode(true);
+    };
+    const sub = Linking.addEventListener('url', ({ url }) => { void handleUrl(url); });
+    void Linking.getInitialURL().then((url) => { void handleUrl(url); });
+    return () => sub.remove();
+  }, []);
+
   const signIn = async (email: string, password: string) => {
     const { data, error } = await supabase.auth.signInWithPassword({ email, password });
     if (!error && data.user) {
@@ -135,7 +176,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
-      options: { data: { full_name: email.split('@')[0] } },
+      options: { data: { full_name: email.split('@')[0] }, emailRedirectTo: REDIRECT_URL },
     });
     if (!error && data.user && data.session) {
       // Email confirmation disabled → signed in immediately
@@ -145,7 +186,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return { data, error };
   };
 
-  const signInWithGoogle = async () => {
+  const signInWithGoogle = async (): Promise<GoogleOutcome> => {
     const { data, error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
@@ -155,25 +196,40 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       },
     });
 
-    if (error) throw error;
-    if (!data?.url) throw new Error('No OAuth URL returned from Supabase');
+    if (error || !data?.url) {
+      console.warn('[AuthContext] google start failed:', error?.message);
+      return 'unavailable';
+    }
 
     const result = await WebBrowser.openAuthSessionAsync(data.url, REDIRECT_URL, {
       showInRecents: true,
     });
 
-    if (result.type === 'success' && result.url) {
-      const { access_token, refresh_token } = parseTokensFromUrl(result.url);
-      if (access_token && refresh_token) {
-        await supabase.auth.setSession({ access_token, refresh_token });
-      } else {
-        // Fallback: session may already be persisted
-        await supabase.auth.getSession();
-      }
+    // Deliberate user cancel/dismiss → stay silently on the login screen.
+    if (result.type === 'cancel' || result.type === 'dismiss' || result.type === 'locked') {
+      return 'cancelled';
     }
-    // result.type 'cancel' / 'dismiss' → leave the user on the login screen
+    if (result.type !== 'success' || !result.url) return 'unavailable';
+
+    const { access_token, refresh_token, error: redirectErr } = parseTokensFromUrl(result.url);
+    if (redirectErr) return 'cancelled'; // e.g. access_denied — user declined consent
+    if (!access_token || !refresh_token) {
+      const rp = new URLSearchParams(result.url.split('#')[1] || result.url.split('?')[1] || '');
+      console.warn('[AuthContext] google redirect missing tokens; params:', Array.from(rp.keys()).join(','));
+      return 'unavailable';
+    }
+
+    const { error: setErr } = await supabase.auth.setSession({ access_token, refresh_token });
+    if (setErr) {
+      console.warn('[AuthContext] setSession failed:', setErr.message);
+      return 'unavailable';
+    }
+    return 'signed-in';
   };
 
+  // G8 (alisha §3): anonymous guests create a real auth row with an empty email.
+  // Cleanup/upgrade plan: guests are identifiable via auth.users.is_anonymous; a future admin RPC
+  // will purge stale anonymous accounts, and guest → account linking is a planned follow-up.
   const signInAsGuest = async () => {
     const { data, error } = await supabase.auth.signInAnonymously();
     if (error) throw error;
@@ -185,14 +241,27 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const signOut = async () => {
     try { await clearOfflineQueue(); } catch { /* no active queue to clear */ }
-    await supabase.auth.signOut();
+    const { error } = await supabase.auth.signOut();
+    if (error) {
+      // Server revoke may fail (offline) — still guarantee the stored session is gone locally.
+      const { error: localErr } = await supabase.auth.signOut({ scope: 'local' });
+      if (localErr) console.warn('[AuthContext] local signOut failed:', localErr.message);
+    }
     setUser(null);
     setSession(null);
     setRole(null);
   };
 
+  /** Send a password-reset email that deep-links back into the app. */
+  const requestPasswordReset = useCallback(async (email: string) => {
+    const { error } = await supabase.auth.resetPasswordForEmail(email, { redirectTo: REDIRECT_URL });
+    return { error };
+  }, []);
+
+  const clearRecovery = useCallback(() => setRecoveryMode(false), []);
+
   return (
-    <AuthContext.Provider value={{ user, session, role, loading, signIn, signUp, signInWithGoogle, signInAsGuest, signOut }}>
+    <AuthContext.Provider value={{ user, session, role, loading, signIn, signUp, signInWithGoogle, signInAsGuest, signOut, recoveryMode, clearRecovery, requestPasswordReset }}>
       {children}
     </AuthContext.Provider>
   );

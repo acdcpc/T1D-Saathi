@@ -10,14 +10,14 @@ module.exports = ({ config }) => ({
     [
       'expo-camera',
       {
-        cameraPermission: 'Allow T1D Saathi to access your camera to scan food barcodes.',
+        cameraPermission: 'Allow Sano Bir to access your camera to scan food barcodes.',
         recordAudioAndroid: false,
       },
     ],
     [
       'expo-splash-screen',
       {
-        backgroundColor: '#F7F1EB',
+        backgroundColor: '#0B4F4A',
         image: './assets/splash-icon.png',
         imageWidth: 200,
       },

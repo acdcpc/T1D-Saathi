@@ -1,41 +1,32 @@
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import Svg, { Circle } from 'react-native-svg';
+import { View, Text, Image, StyleSheet } from 'react-native';
 import { FONT } from '../theme';
 
 /**
- * Child-friendly illustrated avatar: gender-aware color + happy face + a soft
- * decorative SVG ring. No remote image assets needed.
+ * Patient avatar — shows the child's photo when available (captured by the
+ * caregiver), otherwise a clean initials badge. Warm Dawn palette.
  */
-export default function ChildAvatar({ name, sex, size = 48 }: { name: string; sex?: string; size?: number }) {
+export default function ChildAvatar({ name, sex, size = 48, photoUri }: { name: string; sex?: string; size?: number; photoUri?: string | null }) {
   const isGirl = sex === 'female';
-  const bg = isGirl ? '#FCE7F3' : '#E6F4FE';
-  const fg = isGirl ? '#BE185D' : '#1d4ed8';
-  const ring = isGirl ? '#F9A8D4' : '#93C5FD';
+  const bg = isGirl ? '#FFEDE6' : '#E5F4F1';
+  const fg = isGirl ? '#D9503A' : '#0B5E58';
+  const ring = isGirl ? '#F6C6B8' : '#B9E4DD';
+  const initial = (name || '?').trim()[0]?.toUpperCase() || '?';
 
-  return (
-    <View style={[styles.wrap, { width: size, height: size }]}>
-      <Svg width={size} height={size} style={{ position: 'absolute' }}>
-        <Circle cx={size / 2} cy={size / 2} r={size / 2} fill={bg} />
-        <Circle cx={size / 2} cy={size / 2} r={size / 2 - 1.5} fill="none" stroke={ring} strokeWidth={2} />
-        <Circle cx={size / 2} cy={size / 2} r={size * 0.3} fill={ring} opacity={0.35} />
-      </Svg>
-      <Ionicons name={isGirl ? 'happy' : 'happy-outline'} size={size * 0.52} color={fg} />
-      <View style={[styles.badge, { backgroundColor: fg }]}>
-        <Text style={styles.initials}>{(name || '?')[0]?.toUpperCase()}</Text>
+  if (photoUri) {
+    return (
+      <View style={[styles.wrap, { width: size, height: size, borderRadius: size / 2, borderWidth: 2, borderColor: ring, overflow: 'hidden', backgroundColor: bg }]}>
+        <Image source={{ uri: photoUri }} style={{ width: '100%', height: '100%' }} resizeMode="cover" accessibilityIgnoresInvertColors />
       </View>
+    );
+  }
+  return (
+    <View style={[styles.wrap, { width: size, height: size, borderRadius: size / 2, borderWidth: 2, borderColor: ring, backgroundColor: bg }]}>
+      <Text style={{ fontFamily: FONT.extrabold, fontWeight: '800', color: fg, fontSize: Math.round(size * 0.42) }}>{initial}</Text>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   wrap: { alignItems: 'center', justifyContent: 'center' },
-  badge: {
-    position: 'absolute', bottom: -1, right: -1,
-    minWidth: 18, height: 18, borderRadius: 9,
-    alignItems: 'center', justifyContent: 'center',
-    paddingHorizontal: 3,
-  },
-  initials: { fontSize: 10, fontFamily: FONT.bold, fontWeight: '700', color: '#fff' },
 });

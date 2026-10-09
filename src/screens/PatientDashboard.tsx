@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, ScrollView, RefreshControl } from 'react-native';
+import { Alert, View, Text, TouchableOpacity, StyleSheet, ScrollView, RefreshControl } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useLanguage } from '../context/LanguageContext';
@@ -7,19 +7,33 @@ import { usePatient } from '../context/PatientContext';
 import { supabase } from '../lib/supabase';
 import { HYPO_THRESHOLD } from '../rules/sickDayRules';
 import { toBSDateTimeDisplay } from '../utils/bsDateDisplay';
-import { computeGlucoseStats } from '../utils/glucoseStats';
+import { computeGlucoseStats, toMgdl } from '../utils/glucoseStats';
 import { computeIOB } from '../utils/insulinOnBoard';
 import { generateGlucoseReport } from '../utils/pdfReport';
+import { exportPatientCsv } from '../utils/csvExport';
+import { fetchRecentInsulinDoses } from '../utils/insulinLogs';
+import { loadReminderPrefs, getNextReminder } from '../utils/reminders';
+import { computeLoggingStreak } from '../utils/streak';
+import { isMotivationOptOut } from '../utils/motivation';
+import { sendCaregiverAlert } from '../utils/caregiverAlert';
 import { glucoseToMgDl } from '../utils/dosingCalc';
 import ISPADBadge from '../components/ISPADBadge';
 import ChildAvatar from '../components/ChildAvatar';
-import DhakaDivider from '../components/DhakaDivider';
+import { pickPatientPhoto } from '../utils/patientPhoto';
 import GlucoseTrendChart from '../components/GlucoseTrendChart';
 import TirDonut from '../components/TirDonut';
 import AnimatedPressable from '../components/AnimatedPressable';
 import { usePreferences } from '../context/PreferencesContext';
 import { toDisplayNumber } from '../utils/nepaliNumber';
-import { FONT,  T, card, section, avatar } from '../theme';import type { PatientProfile, GlucoseLog, SickDayEpisode } from '../types';
+import GlucoseHero from '../components/GlucoseHero';
+import QuickActions from '../components/QuickActions';
+import InsightCard, { buildInsight } from '../components/InsightCard';
+import { D2, RD, statusForMgdl } from '../design/tokens';
+import { useTabBarSpace } from '../design/useTabBarSpace';
+import { FONT,  T, card, section, avatar } from '../theme';import type { PatientProfile, GlucoseLog, SickDayEpisode, InsulinLog } from '../types';
+
+/** Centered content column — keeps the layout composed on tablet/desktop widths. */
+const contentCol = { width: '100%' as const, maxWidth: 640, alignSelf: 'center' as const };
 
 export default function PatientDashboard({ route, navigation }: any) {
   const patient: PatientProfile = usePatient() || (route.params as any)?.patient;
@@ -27,10 +41,19 @@ export default function PatientDashboard({ route, navigation }: any) {
   const { theme: TH } = usePreferences();
   const isNe = language === 'ne';
   const insets = useSafeAreaInsets();
+  const tabSpace = useTabBarSpace();
   const [latestGlucose, setLatestGlucose] = useState<GlucoseLog | null>(null);
   const [history, setHistory] = useState<GlucoseLog[]>([]);
   const [activeSickDay, setActiveSickDay] = useState<SickDayEpisode | null>(null);
   const [refreshing, setRefreshing] = useState(false);
+  const [rangeDays, setRangeDays] = useState<1 | 7 | 30>(30);
+  const [insulinLogs, setInsulinLogs] = useState<InsulinLog[]>([]);
+  const [nextReminder, setNextReminder] = useState<{ key: 'breakfast' | 'lunch' | 'dinner' | 'bedtime'; hour: number; minute: number } | null>(null);
+  const [ageBand, setAgeBand] = useState<string | null>(null);
+  const [motivationOptOut, setMotivationOptOut] = useState(false);
+  const [photoUri, setPhotoUri] = useState<string | null>(patient?.photo_uri ?? null);
+
+  useEffect(() => { setPhotoUri(patient?.photo_uri ?? null); }, [patient?.id]);
 
   const fetchData = useCallback(async () => {
     const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
@@ -44,69 +67,163 @@ export default function PatientDashboard({ route, navigation }: any) {
     setLatestGlucose(latest?.[0] || null);
     setHistory(logs || []);
     setActiveSickDay(sickDay?.[0] || null);
+    setInsulinLogs(await fetchRecentInsulinDoses(patient.id, 24 * 30));
   }, [patient.id]);
 
   useEffect(() => { fetchData(); }, [fetchData]);
+  useEffect(() => {
+    (async () => {
+      const prefs = await loadReminderPrefs();
+      setNextReminder(getNextReminder(prefs));
+      setMotivationOptOut(await isMotivationOptOut());
+      try {
+        const { data } = await supabase.from('patients').select('age_band').eq('id', patient.id).maybeSingle();
+        setAgeBand((data as { age_band?: string | null } | null)?.age_band ?? null);
+      } catch { /* age band is optional */ }
+    })();
+  }, [patient.id]);
   const onRefresh = async () => { setRefreshing(true); await fetchData(); setRefreshing(false); };
+
+  const handleCsvExport = async () => {
+    const res = await exportPatientCsv(patient);
+    if (!res.ok && res.message) Alert.alert(isNe ? 'निर्यात' : 'Export', res.message);
+  };
 
   const latestMgDl = latestGlucose
     ? (() => { try { return glucoseToMgDl(latestGlucose.value, latestGlucose.unit); } catch { return null; } })()
     : null;
   const isHypo = latestMgDl !== null && latestMgDl < HYPO_THRESHOLD;
-  const stats = computeGlucoseStats(history);
-  const iob = computeIOB(history);
+  const rangeMs = rangeDays * 24 * 60 * 60 * 1000;
+  const rangedLogs = history.filter((l) => Date.now() - new Date(l.timestamp).getTime() <= rangeMs);
+  const stats = computeGlucoseStats(rangedLogs, rangeDays);
+  const iob = computeIOB(history, insulinLogs);
+  const rangeLabel = rangeDays === 1
+    ? (isNe ? 'पछिल्लो २४ घण्टा' : 'Last 24 hours')
+    : rangeDays === 7
+      ? (isNe ? 'पछिल्लो ७ दिन' : 'Last 7 days')
+      : (isNe ? 'पछिल्लो ३० दिन' : 'Last 30 days');
+  const reminderLabels: Record<'breakfast' | 'lunch' | 'dinner' | 'bedtime', { en: string; ne: string }> = {
+    breakfast: { en: 'Breakfast check', ne: 'बिहानको जाँच' },
+    lunch: { en: 'Lunch check', ne: 'दिउँसोको जाँच' },
+    dinner: { en: 'Dinner check', ne: 'बेलुकाको जाँच' },
+    bedtime: { en: 'Bedtime check', ne: 'रातको जाँच' },
+  };
+
+  const streak = computeLoggingStreak(history);
+  const isChildMode = ageBand === 'child';
+  const changeAgeBand = async (band: 'child' | 'teen') => {
+    setAgeBand(band);
+    const { error } = await supabase.from('patients').update({ age_band: band }).eq('id', patient.id);
+    if (error) Alert.alert(isNe ? 'त्रुटि' : 'Error', error.message);
+  };
+
+  const changePhoto = async () => {
+    const prev = photoUri;
+    const next = await pickPatientPhoto(isNe, !!photoUri);
+    if (next === undefined) return;
+    setPhotoUri(next);
+    try {
+      const { error } = await supabase.from('patients').update({ photo_uri: next }).eq('id', patient.id);
+      if (error) throw error;
+    } catch {
+      setPhotoUri(prev);
+      Alert.alert(isNe ? 'त्रुटि' : 'Error', isNe ? 'फोटो सुरक्षित गर्न सकिएन — फेरि प्रयास गर्नुहोस्' : 'Could not save the photo. Please try again.');
+    }
+  };
+
+  const heroStatus = statusForMgdl(latestMgDl);
+  const lowCount7d = history.filter((l) => {
+    try {
+      return toMgdl(l.value, l.unit) < HYPO_THRESHOLD && Date.now() - new Date(l.timestamp).getTime() < 7 * 864e5;
+    } catch { return false; }
+  }).length;
+  const insight = buildInsight(stats, lowCount7d, isNe);
   const actions: { icon: keyof typeof Ionicons.glyphMap; color: string; label: string; route: string; border: string }[] = [
-    { icon: 'water-outline', color: T.blue, label: isNe ? 'ग्लुकोज' : 'Log Glucose', route: 'Log', border: T.border },
-    { icon: 'restaurant-outline', color: T.teal, label: isNe ? 'खाना र डोज' : 'Food & Dose', route: 'Food', border: T.teal },
-    { icon: 'thermometer-outline', color: T.orange, label: isNe ? 'बिमारी दिन' : 'Sick Day', route: 'SickDayWizard', border: T.orange },
-    { icon: 'medical-outline', color: T.purple, label: isNe ? 'इन्सुलिन' : 'Regimen', route: 'RegimenSettings', border: T.border },
-    { icon: 'book-outline', color: T.blue, label: isNe ? 'शिक्षा' : 'Education', route: 'Learn', border: T.border },
-    { icon: 'medkit-outline', color: T.blue, label: isNe ? 'स्वास्थ्य केन्द्र' : 'Nearby Care', route: 'HealthCenters', border: T.border },
+    { icon: 'medkit-outline', color: D2.teal, label: isNe ? 'स्वास्थ्य केन्द्र' : 'Nearby Care', route: 'HealthCenters', border: T.border },
     { icon: 'call-outline', color: T.red, label: isNe ? 'हेल्पलाइन' : 'Helpline', route: 'Helpline', border: T.red },
-    { icon: 'chatbubble-ellipses-outline', color: T.blue, label: isNe ? 'सन्देश' : 'Messages', route: 'Messages', border: T.border },
+    { icon: 'chatbubble-ellipses-outline', color: D2.teal, label: isNe ? 'सन्देश' : 'Messages', route: 'Messages', border: T.border },
     { icon: 'warning-outline', color: T.red, label: isNe ? 'आपतकाल' : 'Emergency', route: 'Emergency', border: T.red },
     { icon: 'barcode-outline', color: T.teal, label: isNe ? 'बारकोड' : 'Scan Barcode', route: 'BarcodeScanner', border: T.border },
-    { icon: 'people-outline', color: T.blue, label: isNe ? 'समुदाय' : 'Community', route: 'Community', border: T.border },
+    { icon: 'people-outline', color: D2.teal, label: isNe ? 'समुदाय' : 'Community', route: 'Community', border: T.border },
   ];
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: TH.bg }]} edges={['top', 'bottom']}>
       <ScrollView
-        contentContainerStyle={[styles.content, { paddingBottom: 60 + insets.bottom }]}
+        contentContainerStyle={[styles.content, contentCol, { paddingBottom: Math.max(tabSpace.contentPaddingBottom, 60 + insets.bottom) + 24 }]}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={TH.blue} colors={[TH.blue]} progressBackgroundColor={TH.surface} />}
       >
         {/* Avatar header */}
         <View style={styles.profileHeader}>
-          <ChildAvatar name={patient.name} sex={patient.sex} size={56} />
+          <TouchableOpacity
+            accessibilityRole="button"
+            accessibilityLabel={isNe ? 'बिरामी सूचीमा फर्कनुहोस्' : 'Back to patients'}
+            hitSlop={8}
+            style={styles.backCircle}
+            onPress={() => {
+              const parent = navigation?.getParent?.();
+              if (parent?.canGoBack?.()) { parent.goBack(); return; }
+              if (navigation?.canGoBack?.()) { navigation.goBack(); return; }
+              navigation?.navigate?.('Home');
+            }}
+          >
+            <Ionicons name="chevron-back" size={20} color={D2.tealDeep} />
+          </TouchableOpacity>
+          <TouchableOpacity
+            accessibilityRole="button"
+            accessibilityLabel={isNe ? 'बच्चाको फोटो परिवर्तन गर्नुहोस्' : "Change child's photo"}
+            onPress={changePhoto}
+            activeOpacity={0.85}
+            style={styles.photoWrap}
+          >
+            <View>
+              <ChildAvatar name={patient.name} sex={patient.sex} size={56} photoUri={photoUri} />
+              <View style={styles.photoEditBadge}><Ionicons name="camera" size={11} color="#fff" /></View>
+            </View>
+          </TouchableOpacity>
           <View style={styles.profileInfo}>
             <Text style={styles.name}>{patient.name}</Text>
             <Text style={styles.subtitle}>
-              {patient.insulin_type || (isNe ? 'इन्सुलिन' : 'Insulin')} · {patient.sex}
+              {[patient.basal_insulin, patient.bolus_insulin].filter(Boolean).join(' + ') || patient.insulin_type || (isNe ? 'इन्सुलिन' : 'Insulin')} · {patient.sex}
             </Text>
           </View>
         </View>
 
-        <View style={{ marginBottom: 16 }}>
-          <DhakaDivider />
+        {/* Age-band mode (guardian-changeable) */}
+        <View style={styles.modeRow}>
+          <Text style={styles.modeLabel}>{isNe ? 'मोड:' : 'Mode:'}</Text>
+          {([
+            { id: 'child' as const, label: isNe ? 'बालबालिका (६–९)' : 'Child (6–9)' },
+            { id: 'teen' as const, label: isNe ? 'किशोर (१०–१७)' : 'Teen (10–17)' },
+          ]).map((m) => (
+            <TouchableOpacity key={m.id} style={[styles.modeChip, ageBand === m.id && styles.modeChipActive]} onPress={() => changeAgeBand(m.id)}>
+              <Text style={[styles.modeChipText, ageBand === m.id && styles.modeChipTextActive]}>{m.label}</Text>
+            </TouchableOpacity>
+          ))}
         </View>
 
-        {/* Glucose stat card */}
-        <View style={[styles.glucoseCard, isHypo && styles.hypoCard]}>
-          <Text style={styles.cardLabel}>{isNe ? 'पछिल्लो ग्लुकोज' : 'Latest Glucose'}</Text>
-          {latestGlucose ? (
-            <View>
-              <Text style={[styles.glucoseValue, isHypo && styles.hypoText]}>
-                {latestGlucose.value}
-                <Text style={styles.unit}> {latestGlucose.unit === 'mmol' ? 'mmol/L' : 'mg/dL'}</Text>
-              </Text>
-              <Text style={styles.timestamp}>{toBSDateTimeDisplay(latestGlucose.timestamp)}</Text>
-              {iob > 0 && (
-                <Text style={styles.iobText}>{isNe ? 'सक्रिय इन्सुलिन' : 'Active insulin'}: {iob} U</Text>
-              )}            </View>
-          ) : (
-            <Text style={styles.noData}>{isNe ? 'कुनै लग छैन' : t('noLogsYet')}</Text>
-          )}
-        </View>
+        {/* Warm Dawn glucose hero */}
+        <GlucoseHero
+          valueText={latestGlucose
+            ? (latestGlucose.unit === 'mmol' ? String(Math.round(latestGlucose.value * 10) / 10) : String(Math.round(latestGlucose.value)))
+            : null}
+          unitLabel={latestGlucose?.unit === 'mmol' ? 'mmol/L' : 'mg/dL'}
+          status={heroStatus}
+          updatedText={latestGlucose ? toBSDateTimeDisplay(latestGlucose.timestamp) : undefined}
+          activeInsulinU={iob > 0 ? iob : undefined}
+          onPress={() => navigation.navigate('Log', { patientId: patient.id })}
+          onLogPress={() => navigation.navigate('Log', { patientId: patient.id })}
+        />
+
+        {/* Quick actions */}
+        <QuickActions
+          actions={[
+            { key: 'log', label: 'Log', labelNe: 'लग', icon: 'add', circleBg: D2.tealTint, iconColor: D2.teal, onPress: () => navigation.navigate('Log', { patientId: patient.id }) },
+            { key: 'food', label: 'Food', labelNe: 'खाना', icon: 'fast-food', circleBg: D2.coralTint, iconColor: D2.coral, onPress: () => navigation.navigate('Food', { patientId: patient.id }) },
+            { key: 'sick', label: 'Sick Day', labelNe: 'बिमारी दिन', icon: 'thermometer', circleBg: D2.marigoldTint, iconColor: D2.marigoldDeep, onPress: () => navigation.navigate('SickDayWizard', { patientId: patient.id }) },
+            { key: 'insulin', label: 'Insulin', labelNe: 'इन्सुलिन', icon: 'eyedrop', circleBg: D2.purpleTint, iconColor: D2.purple, onPress: () => navigation.navigate('RegimenSettings', { patientId: patient.id }) },
+          ]}
+        />
 
         {/* Hypo alert */}
         {isHypo && (
@@ -116,6 +233,17 @@ export default function PatientDashboard({ route, navigation }: any) {
             <Text style={styles.hypoStep}>2. {isNe ? '१५ मिनेट पर्खनुहोस्' : 'Wait 15 minutes'}</Text>
             <Text style={styles.hypoStep}>3. {isNe ? 'पुन: जाँच गर्नुहोस्' : 'Recheck glucose'}</Text>
             <Text style={styles.hypoStep}>4. {isNe ? 'आवश्यक परे ९८५१३५०८८३ मा फोन गर्नुहोस्' : 'Call 9851350883 if needed'}</Text>
+            <TouchableOpacity
+              style={styles.notifyBtn}
+              onPress={() => sendCaregiverAlert(
+                isNe
+                  ? `सानो वीर सूचना: ${patient.name} को ग्लुकोज ${latestGlucose?.value ?? ''} ${latestGlucose?.unit === 'mmol' ? 'mmol/L' : 'mg/dL'} — कम छ। कृपया जाँच गर्नुहोस्।`
+                  : `Sano Bir alert: ${patient.name}'s glucose is ${latestGlucose?.value ?? ''} ${latestGlucose?.unit === 'mmol' ? 'mmol/L' : 'mg/dL'} (low). Please check on them.`
+              )}
+            >
+              <Ionicons name="logo-whatsapp" size={16} color="#fff" />
+              <Text style={styles.notifyBtnText}>{isNe ? 'WhatsApp मा जानकारी दिनुहोस्' : 'Notify caregiver (WhatsApp)'}</Text>
+            </TouchableOpacity>
           </View>
         )}
 
@@ -132,11 +260,43 @@ export default function PatientDashboard({ route, navigation }: any) {
           </TouchableOpacity>
         )}
 
-        {/* 30-day trends + HbA1c */}
-        {history.length >= 2 && (
+        {/* Next reminder */}
+        {nextReminder && (
+          <View style={styles.reminderCard}>
+            <Ionicons name="alarm-outline" size={18} color={D2.teal} />
+            <Text style={styles.reminderText}>
+              {isNe ? 'अर्को सम्झना' : 'Next reminder'}: {isNe ? reminderLabels[nextReminder.key].ne : reminderLabels[nextReminder.key].en} · {String(nextReminder.hour).padStart(2, '0')}:{String(nextReminder.minute).padStart(2, '0')}
+            </Text>
+          </View>
+        )}
+
+        {!motivationOptOut && streak >= 2 && (
+          <View style={styles.streakCard}>
+            <Ionicons name="flame-outline" size={18} color={T.orange} />
+            <Text style={styles.streakText}>
+              {isNe ? `${streak} दिनको लग शृंखला — शाबास!` : `${streak}-day logging streak — keep it up!`}
+            </Text>
+          </View>
+        )}
+
+        <InsightCard insight={insight} />
+
+        {/* Trends + statistics (range-selectable) */}
+        {rangedLogs.length >= 2 && (
           <View style={styles.trendCard}>
-            <Text style={styles.cardLabel}>{isNe ? 'पछिल्लो ३० दिनको तथ्यांक' : 'Last 30 days'}</Text>
-            <TirDonut pct={stats.timeInRangePct} color={TH.teal} label={isNe ? 'समय दायरामा (TIR)' : 'Time in Range'} />
+            <View style={styles.rangeRow}>
+              {([
+                { d: 1 as const, en: 'Day', ne: 'दिन' },
+                { d: 7 as const, en: 'Week', ne: 'हप्ता' },
+                { d: 30 as const, en: 'Month', ne: 'महिना' },
+              ]).map((r) => (
+                <TouchableOpacity key={r.d} style={[styles.rangeChip, rangeDays === r.d && styles.rangeChipActive]} onPress={() => setRangeDays(r.d)}>
+                  <Text style={[styles.rangeChipText, rangeDays === r.d && styles.rangeChipTextActive]}>{isNe ? r.ne : r.en}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+            <Text style={styles.cardLabel}>{rangeLabel}</Text>
+            <TirDonut pct={stats.timeInRangePct} gradient={[D2.tealBright, D2.teal, D2.tealDeep]} size={tabSpace.isWide ? 176 : 156} strokeWidth={tabSpace.isWide ? 18 : 14} label={isNe ? 'समय दायरामा (TIR)' : 'Time in Range'} />
             <View style={styles.statRow}>
               <View style={styles.statTile}>
                 <Text style={styles.statValue}>{toDisplayNumber(stats.timeInRangePct, isNe)}%</Text>
@@ -151,19 +311,42 @@ export default function PatientDashboard({ route, navigation }: any) {
                 <Text style={styles.statLabel}>{isNe ? 'अनुमानित HbA1c' : 'Est. HbA1c'}</Text>
               </View>
             </View>
-            <GlucoseTrendChart logs={history} />
+            {!isChildMode && (<View style={styles.statRow}>
+              <View style={styles.statTile}>
+                <Text style={styles.statValue}>{toDisplayNumber(stats.sdMgdl, isNe)}</Text>
+                <Text style={styles.statLabel}>{isNe ? 'मानक विचलन (SD)' : 'SD mg/dL'}</Text>
+              </View>
+              <View style={styles.statTile}>
+                <Text style={styles.statValue}>{toDisplayNumber(stats.cvPct, isNe)}%</Text>
+                <Text style={styles.statLabel}>{isNe ? 'भिन्नता गुणांक (CV)' : 'CV %'}</Text>
+              </View>
+              <View style={styles.statTile}>
+                <Text style={styles.statValue}>{toDisplayNumber(stats.checksPerDay, isNe)}</Text>
+                <Text style={styles.statLabel}>{isNe ? 'दैनिक जाँच संख्या' : 'Checks/day'}</Text>
+              </View>
+            </View>)}
+            <GlucoseTrendChart logs={rangedLogs} />
             <Text style={styles.provenance}>
               {isNe ? 'गणना: ISPAD 2022 दिशानिर्देश अनुसार' : 'Calculated per ISPAD 2022 target range (70–180 mg/dL)'}
             </Text>
+            {!isChildMode && (
+            <Text style={styles.provenance}>
+              {isNe ? `जोखिम सूचकांक: LBGI ${stats.lbgi} · HBGI ${stats.hbgi}` : `Risk indices: LBGI ${stats.lbgi} · HBGI ${stats.hbgi}`}
+            </Text>
+            )}
             <TouchableOpacity style={styles.pdfBtn} onPress={() => generateGlucoseReport(patient, history)} activeOpacity={0.8}>
               <Ionicons name="document-text-outline" size={18} color="#fff" />
               <Text style={styles.pdfBtnText}>{isNe ? 'PDF रिपोर्ट निकाल्नुहोस्' : 'Export PDF Report'}</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.csvBtn} onPress={handleCsvExport} activeOpacity={0.8}>
+              <Ionicons name="download-outline" size={18} color={D2.teal} />
+              <Text style={styles.csvBtnText}>{isNe ? 'CSV डाटा निकाल्नुहोस्' : 'Export CSV (records)'}</Text>
             </TouchableOpacity>
           </View>
         )}
 
         {/* Action grid */}
-        <Text style={styles.sectionLabel}>{isNe ? 'द्रुत कार्यहरू' : t('quickLog')}</Text>
+        <Text style={styles.sectionLabel}>{isNe ? 'अन्य' : 'More'}</Text>
         <View style={styles.actionGrid}>
           {actions.map((a, i) => (
             <AnimatedPressable
@@ -180,13 +363,6 @@ export default function PatientDashboard({ route, navigation }: any) {
           ))}
         </View>
 
-        <View style={styles.cgmCard}>
-          <Ionicons name="bluetooth-outline" size={18} color={T.muted} />
-          <Text style={styles.cgmText}>
-            {isNe ? 'CGM जडान (Dexcom/Libre) — चाँडै आउँदैछ' : 'Connect CGM (Dexcom/Libre) — coming soon'}
-          </Text>
-        </View>
-
         <ISPADBadge />
         <View style={{ height: 60 }} />
       </ScrollView>
@@ -198,9 +374,12 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: T.bg },
   content: { padding: 16, paddingTop: 10 },
 
+  backCircle: { width: 36, height: 36, borderRadius: 18, backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: '#EDE0D4', alignItems: 'center', justifyContent: 'center' },
+  photoWrap: { marginRight: 10 },
+  photoEditBadge: { position: 'absolute', bottom: -2, right: -2, width: 20, height: 20, borderRadius: 10, backgroundColor: D2.teal, alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: '#fff' },
   profileHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 20 },
-  profileAv: { ...avatar, width: 56, height: 56, borderRadius: 28, backgroundColor: T.blueLight },
-  profileAvText: { fontSize: 26, fontFamily: FONT.bold, fontWeight: '700', color: T.blue },
+  profileAv: { ...avatar, width: 56, height: 56, borderRadius: 28, backgroundColor: D2.tealTint },
+  profileAvText: { fontSize: 26, fontFamily: FONT.bold, fontWeight: '700', color: D2.teal },
   profileInfo: { flex: 1 },
   name: { fontSize: 22, fontFamily: FONT.extrabold, fontWeight: '800', color: T.text },
   subtitle: { fontSize: 14, fontFamily: FONT.regular, color: T.muted, marginTop: 2 },
@@ -225,29 +404,23 @@ const styles = StyleSheet.create({
 
   trendCard: { ...card },
   statRow: { flexDirection: 'row', gap: 8, marginBottom: 8 },
-  statTile: { flex: 1, backgroundColor: T.blueLight, borderRadius: 12, paddingVertical: 12, alignItems: 'center' },
-  statValue: { fontSize: 20, fontFamily: FONT.extrabold, fontWeight: '800', color: T.blueDark },
-  statLabel: { fontSize: 10, fontFamily: FONT.semibold, color: T.blueDark, marginTop: 2, textAlign: 'center', fontWeight: '600' },
+  statTile: { flex: 1, backgroundColor: '#FFFFFF', borderRadius: 14, paddingVertical: 12, alignItems: 'center', borderWidth: 1, borderColor: T.border },
+  statValue: { fontSize: 20, fontFamily: FONT.extrabold, fontWeight: '800', color: T.text },
+  statLabel: { fontSize: 10, fontFamily: FONT.semibold, color: T.muted, marginTop: 2, textAlign: 'center', fontWeight: '600' },
   provenance: { fontSize: 10, fontFamily: FONT.regular, color: T.muted, textAlign: 'center', marginTop: 2, fontStyle: 'italic' },
   pdfBtn: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8,
-    backgroundColor: T.blue, borderRadius: 28, paddingVertical: 12, marginTop: 12,
+    backgroundColor: D2.teal, borderRadius: 28, paddingVertical: 12, marginTop: 12,
   },
   pdfBtnText: { color: '#fff', fontSize: 15, fontFamily: FONT.bold, fontWeight: '700' },
 
-  cgmCard: {
-    flexDirection: 'row', alignItems: 'center', gap: 8,
-    backgroundColor: T.surface, borderRadius: 12, padding: 14,
-    borderWidth: 1, borderColor: T.border, marginTop: 16,
-  },
-  cgmText: { fontSize: 13, fontFamily: FONT.regular, color: T.muted },
   sectionLabel: { ...section, paddingHorizontal: 4 },
   actionGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
   actionCard: {
     width: '31%',
-    minHeight: 92,
-    backgroundColor: T.surface,
-    borderRadius: 12,
+    minHeight: 96,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
     padding: 14,
     alignItems: 'center',
     borderWidth: 1,
@@ -259,4 +432,26 @@ const styles = StyleSheet.create({
     elevation: 1,
   },
   actionText: { fontSize: 11, fontFamily: FONT.semibold, fontWeight: '600', color: T.text, textAlign: 'center' },
+  rangeRow: { flexDirection: 'row', gap: 6, marginBottom: 10, alignSelf: 'flex-start' },
+  rangeChip: { borderRadius: 16, paddingHorizontal: 14, paddingVertical: 6, backgroundColor: D2.tealTint },
+  rangeChipActive: { backgroundColor: D2.teal },
+  rangeChipText: { fontSize: 12, fontFamily: FONT.semibold, fontWeight: '600', color: D2.tealDeep },
+  rangeChipTextActive: { color: '#fff' },
+  reminderCard: { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: T.surface, borderRadius: 12, padding: 14, borderWidth: 1, borderColor: T.border, marginBottom: 16 },
+  reminderText: { fontSize: 13, fontFamily: FONT.semibold, fontWeight: '600', color: T.text, flex: 1 },
+  csvBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: T.surface, borderRadius: 28, paddingVertical: 12, marginTop: 10, borderWidth: 1.5, borderColor: D2.teal },
+  csvBtnText: { color: D2.tealDeep, fontSize: 15, fontFamily: FONT.bold, fontWeight: '700' },
+  modeRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 14, flexWrap: 'wrap' },
+  modeLabel: { fontSize: 12, fontFamily: FONT.semibold, fontWeight: '600', color: T.muted },
+  modeChip: { borderRadius: 16, paddingHorizontal: 12, paddingVertical: 6, backgroundColor: T.surface, borderWidth: 1, borderColor: T.border },
+  modeChipActive: { backgroundColor: D2.teal, borderColor: D2.teal },
+  modeChipText: { fontSize: 12, fontFamily: FONT.semibold, fontWeight: '600', color: T.text },
+  modeChipTextActive: { color: '#fff' },
+  streakCard: { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: '#FEF7E0', borderRadius: 12, padding: 14, borderWidth: 1, borderColor: '#f9ab00', marginBottom: 16 },
+  streakText: { fontSize: 13, fontFamily: FONT.semibold, fontWeight: '600', color: '#92400E', flex: 1 },
+  notifyBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: '#25D366', borderRadius: 10, paddingVertical: 10, marginTop: 10 },
+  notifyBtnText: { color: '#fff', fontSize: 13, fontFamily: FONT.semibold, fontWeight: '600' },
+  statusRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 6 },
+  statusPill: { borderRadius: 999, paddingHorizontal: 10, paddingVertical: 3 },
+  statusPillText: { fontSize: 12, fontFamily: FONT.bold, fontWeight: '700' },
 });

@@ -14,7 +14,7 @@ export default function ISPADBadge({ label }: { label?: string }) {
     <View style={styles.badge}>
       <Text style={styles.dot}>✓</Text>
       <Text style={styles.text}>
-        {label || (isNe ? 'ISPAD 2022 दिशानिर्देशमा आधारित' : 'Based on ISPAD 2022 Guidelines')}
+        {label || (isNe ? 'ISPAD दिशानिर्देशमा आधारित' : 'Based on ISPAD Guidelines (2022/2024)')}
       </Text>
     </View>
   );

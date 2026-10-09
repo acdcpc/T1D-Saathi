@@ -3,25 +3,24 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Ionicons } from '@expo/vector-icons';
 import { PatientProvider } from '../context/PatientContext';
 import { useLanguage } from '../context/LanguageContext';
-import { T } from '../theme';
+import { FONT, T } from '../theme';
 import PatientDashboard from '../screens/PatientDashboard';
 import LogGlucoseScreen from '../screens/LogGlucoseScreen';
 import FoodEstimatorScreen from '../screens/FoodEstimatorScreen';
-import EducationScreen from '../screens/EducationScreen';
+import FloatingTabBar from '../components/FloatingTabBar';
 import type { PatientProfile } from '../types';
 
 const Tab = createBottomTabNavigator();
 
-const ICONS: Record<string, keyof typeof Ionicons.glyphMap> = {
-  Dashboard: 'home-outline',
-  Log: 'water-outline',
-  Food: 'camera-outline',
-  Learn: 'book-outline',
+const ICONS: Record<string, { outline: keyof typeof Ionicons.glyphMap; filled: keyof typeof Ionicons.glyphMap }> = {
+  Dashboard: { outline: 'home-outline', filled: 'home' },
+  Log: { outline: 'water-outline', filled: 'water' },
+  Food: { outline: 'camera-outline', filled: 'camera' },
 };
 
 /**
- * Patient-scoped bottom tab navigation:
- * Home | Log | Food | Learn  (Emergency stays a global SOS FAB).
+ * Patient-scoped bottom tab navigation: Home | Glucose | Food.
+ * (Education is currently disabled — re-enable by restoring the Learn route.)
  */
 export default function ParentTabs({ route }: any) {
   const { patient } = route.params as { patient: PatientProfile };
@@ -33,25 +32,12 @@ export default function ParentTabs({ route }: any) {
       <Tab.Navigator
         screenOptions={({ route }) => ({
           headerShown: false,
-          tabBarActiveTintColor: T.blue,
-          tabBarInactiveTintColor: T.muted,
-          tabBarStyle: {
-            backgroundColor: T.surface,
-            borderTopColor: T.border,
-            height: 64,
-            paddingBottom: 8,
-            paddingTop: 6,
-          },
-          tabBarLabelStyle: { fontSize: 11, fontWeight: '600' },
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name={ICONS[route.name]} size={size} color={color} />
-          ),
         })}
+        tabBar={(props) => <FloatingTabBar {...props} />}
       >
-        <Tab.Screen name="Dashboard" component={PatientDashboard} options={{ tabBarLabel: isNe ? 'गृह' : 'Home' }} />
-        <Tab.Screen name="Log" component={LogGlucoseScreen} options={{ tabBarLabel: isNe ? 'लग' : 'Log' }} />
-        <Tab.Screen name="Food" component={FoodEstimatorScreen} options={{ tabBarLabel: isNe ? 'खाना' : 'Food' }} />
-        <Tab.Screen name="Learn" component={EducationScreen} options={{ tabBarLabel: isNe ? 'सिकाइ' : 'Learn' }} />
+        <Tab.Screen name="Dashboard" component={PatientDashboard} />
+        <Tab.Screen name="Log" component={LogGlucoseScreen} />
+        <Tab.Screen name="Food" component={FoodEstimatorScreen} />
       </Tab.Navigator>
     </PatientProvider>
   );

@@ -1,12 +1,12 @@
-// src/theme.ts — Shared design tokens for T1D Saathi
+// src/theme.ts — Shared design tokens for Sano Bir
 import { MMOL_TO_MGDL } from './utils/dosingCalc';
 // Aligned with Kapoori Ka design language (warm, earthy, accessible)
 // Import as: import { T, card, pill, section, primBtn, input } from '../theme';
 
 export const T = {
   // Primary palette — clinical but warm (Kapoori Ka aligned)
-  blue: '#1a73e8',         // primary — clinical blue (replaces Kapoori's terracotta for medical context)
-  blueLight: '#E6F4FE',    // light blue — info banners, secondary highlights
+  blue: '#0D9488',         // primary — Warm Dawn teal (legacy blue retired)
+  blueLight: '#E5F4F1',    // light teal — info banners, secondary highlights
   teal: '#0D9488',         // success — healthy readings (replaces Kapoori's green)
   red: '#C0392B',          // danger — hypo/DKA alerts (matches Kapoori's red)
   orange: '#F59E0B',       // warning — borderline readings
@@ -27,20 +27,22 @@ export const T = {
   redDark: '#991B1B',
   amberLight: '#FEF3C7',
   amberDark: '#92400E',
-  blueLightBg: '#DBEAFE',
-  blueDark: '#1E40AF',
+  blueLightBg: '#E5F4F1',
+  blueDark: '#0B5E58',
 };
 
 // ── Core building blocks (mirroring Kapoori Ka) ──────────────────
 
 export const card = {
-  backgroundColor: T.surface,
-  borderRadius: 16,
+  backgroundColor: '#FFFFFF',
+  borderRadius: 18,
   padding: 16,
+  borderWidth: 1,
+  borderColor: T.border,
   shadowColor: T.shadow,
-  shadowOpacity: 0.10,
-  shadowRadius: 8,
-  shadowOffset: { width: 0, height: 2 },
+  shadowOpacity: 0.08,
+  shadowRadius: 10,
+  shadowOffset: { width: 0, height: 3 },
   elevation: 2,
   marginBottom: 10,
 };

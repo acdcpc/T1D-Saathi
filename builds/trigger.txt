@@ -1,0 +1,16 @@
+APK build trigger — commit a change to this file (or to the workflow itself) to start a new test build.
+Last trigger: 2026-10-07 — Sano Bir rebrand test build.
+
+Trigger v2 — 2026-10-07: rebuild to include food database v2 (commit 26e7809).
+
+Trigger v3 — 2026-10-07: rebuild with round 7 UX fixes.
+
+Trigger v4 — 2026-10-08: fix patient card layout (flex:1 on cardRow).
+
+Trigger v5 — 2026-10-09: full rebuild — round 8 (bolus dose, Log fixes, admin console) + round 9 (clinician regimen editing, family requests, clinician push alerts) + patient-card flex fix.
+
+Trigger v6 — 2026-10-09: patient-card width-chain fix (card column + cardRow row-only; yoga-sim verified; supersedes v5).
+
+Trigger v7 — 2026-10-09: round 11 — signup confirm-password + forgot-password flow; clinician bolus per-dose + auto TDD/ISF/ICR.
+
+Trigger v8 — 2026-10-09: rounds 11+12 — auth flows (signup confirm + forgot password), clinician auto TDD/ISF/ICR + per-dose bolus, patient intake (weight/height/age-in-years/diagnosis precision).

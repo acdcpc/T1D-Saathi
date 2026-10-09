@@ -99,7 +99,7 @@ async function testPhoto(file, label, expected) {
 // ─── Run ─────────────────────────────────────────────────────────
 (async () => {
   console.log('╔══════════════════════════════════════════════════════════════════════════╗');
-  console.log('║   T1D Saathi — Food Color Classifier: REAL-PHOTO Accuracy Test          ║');
+  console.log('║   Sano Bir — Food Color Classifier: REAL-PHOTO Accuracy Test          ║');
   console.log('║   Photos: real Unsplash images (NOT synthetic swatches)                 ║');
   console.log('╚══════════════════════════════════════════════════════════════════════════╝\n');
 

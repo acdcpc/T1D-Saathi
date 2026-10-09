@@ -5,7 +5,7 @@
 import type { NepaliFoodItem } from '../data/nepaliFoods';
 
 // Keyword → Nepali food name mapping
-const KEYWORD_TO_FOODS: Record<string, string[]> = {
+export const KEYWORD_TO_FOODS: Record<string, string[]> = {
   "rice": [
     "Bhat (steamed rice)",
     "Dal Bhat (lentils & rice)",

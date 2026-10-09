@@ -17,7 +17,7 @@ const supabaseAnonKey =
 
 // Config check — fail early with a clear message
 if (!supabaseUrl || !supabaseAnonKey) {
-  const msg = '[T1D Saathi] Supabase not configured. Ensure supabaseUrl and supabaseAnonKey are set in app.json extra or .env.';
+  const msg = '[Sano Bir] Supabase not configured. Ensure supabaseUrl and supabaseAnonKey are set in app.json extra or .env.';
   console.error(msg);
 }
 
@@ -56,6 +56,9 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
     autoRefreshToken: true,
     persistSession: true,
     detectSessionInUrl: Platform.OS === 'web',
+    // Explicit implicit flow: Google sign-in parses access_token/refresh_token from the redirect
+    // fragment (see AuthContext.parseTokensFromUrl). PKCE would return ?code= instead.
+    flowType: 'implicit',
   },
 });
 

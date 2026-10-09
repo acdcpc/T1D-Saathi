@@ -1,3 +1,4 @@
+
 # Learn more https://docs.github.com/en/get-started/getting-started-with-git/ignoring-files
 
 # dependencies
@@ -47,3 +48,16 @@ T1D-Saathi-v1.0.0.apk
 *.apk
 *.aab
 *.ipa
+# clinician portal local config
+portal/config.js
+
+# internal agent handoff notes (keep out of the public repo)
+AGENT_HANDOFF*.md
+docs/AGENT_HANDOFF.md
+
+# Firebase client config files (kept local per project setup)
+google-services.json
+GoogleService-Info.plist
+
+# web preview build output
+dist-preview/

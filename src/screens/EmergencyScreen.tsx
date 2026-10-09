@@ -7,6 +7,8 @@ import ISPADBadge from '../components/ISPADBadge';
 import { useLanguage } from '../context/LanguageContext';
 import { FONT,  T, card, section } from '../theme';
 
+const contentCol = { width: '100%' as const, maxWidth: 640, alignSelf: 'center' as const };
+
 const HELPLINE = '9851350883';
 
 export default function EmergencyScreen({ navigation }: any) {
@@ -19,6 +21,18 @@ export default function EmergencyScreen({ navigation }: any) {
   };
 
   const protocols: { icon: keyof typeof Ionicons.glyphMap; color: string; title: string; subtitle: string; steps: string[] }[] = [
+    {
+      icon: 'trending-down',
+      color: T.orange,
+      title: isNe ? 'हल्का हाइपो — १५/१५ नियम' : 'Mild Hypoglycemia — 15/15 rule',
+      subtitle: isNe ? 'ग्लुकोज < ७० mg/dL, होस् ठीक छ' : 'Glucose below 70 mg/dL, awake and alert',
+      steps: [
+        isNe ? '१५ ग्राम छिटो चिनी लिनुहोस् (३–४ ग्लुकोज ट्याब्लेट, १ चम्चा चिनी, वा १५० मिली जुस)' : 'Take 15 g fast sugar (3–4 glucose tablets, 1 tbsp sugar, or 150 ml juice)',
+        isNe ? '१५ मिनेट पर्खनुहोस्, पुनः ग्लुकोज जाँच गर्नुहोस्' : 'Wait 15 minutes, then recheck glucose',
+        isNe ? 'अझै ७० भन्दा कम भए फेरि १५ ग्राम दिनुहोस्' : 'If still below 70 mg/dL, repeat another 15 g',
+        isNe ? 'बेहोस वा गम्भीर लक्षण भए तलको गम्भीर हाइपो प्रोटोकल हेर्नुहोस्' : 'If unconscious or severe symptoms, use the severe hypo protocol below',
+      ],
+    },
     {
       icon: 'alert-circle',
       color: T.red,
@@ -59,7 +73,7 @@ export default function EmergencyScreen({ navigation }: any) {
 
   return (
     <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
-      <ScrollView contentContainerStyle={styles.content}>
+      <ScrollView contentContainerStyle={[styles.content, contentCol]}>
         <View style={styles.headerRow}>
           <TouchableOpacity onPress={() => navigation.goBack()}>
             <Text style={styles.backArrow}>‹</Text>

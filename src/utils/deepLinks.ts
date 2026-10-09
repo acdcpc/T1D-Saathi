@@ -1,4 +1,4 @@
-// Deep-link handling for T1D Saathi (expo-linking).
+// Deep-link handling for Sano Bir (expo-linking).
 // Supported links:
 //   com.t1dsaathi.app://patient/<id>   → open that patient's dashboard
 //   com.t1dsaathi.app://emergency     → open emergency screen
