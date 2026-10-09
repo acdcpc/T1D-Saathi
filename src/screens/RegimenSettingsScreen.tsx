@@ -4,12 +4,14 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useLanguage } from '../context/LanguageContext';
+import { useAuth } from '../context/AuthContext';
 import { supabase } from '../lib/supabase';
 import Dropdown from '../components/Dropdown';
 import type { InsulinRegimen } from '../types';
 import { FONT, T } from '../theme';
 import BackBar from '../components/BackBar';
 import GradientButton from '../components/GradientButton';
+import { notifyCliniciansRequest } from '../utils/pushAlerts';
 
 const contentCol = { width: '100%' as const, maxWidth: 640, alignSelf: 'center' as const };
 
@@ -32,6 +34,7 @@ const ICR_CONSTANT = 500;
 export default function RegimenSettingsScreen({ route, navigation }: any) {
   const { patientId } = route.params;
   const { t, language } = useLanguage();
+  const { user } = useAuth();
   const insets = useSafeAreaInsets();
 
   const [regimen, setRegimen] = useState<InsulinRegimen | null>(null);
@@ -48,6 +51,9 @@ export default function RegimenSettingsScreen({ route, navigation }: any) {
   const [carbRatio, setCarbRatio] = useState('');
   const [target, setTarget] = useState('');
   const [maxBolus, setMaxBolus] = useState('');
+  const [reviewNote, setReviewNote] = useState('');
+  const [reviewSent, setReviewSent] = useState(false);
+  const [lastRequestStatus, setLastRequestStatus] = useState<string | null>(null);
 
   useEffect(() => {
     (async () => {
@@ -73,6 +79,16 @@ export default function RegimenSettingsScreen({ route, navigation }: any) {
         setTarget(data.correction_target ? String(data.correction_target) : '');
         setMaxBolus(data.max_bolus ? String(data.max_bolus) : '');
       }
+      try {
+        const { data: reqRow } = await supabase
+          .from('regimen_requests')
+          .select('status,created_at')
+          .eq('patient_id', patientId)
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .maybeSingle();
+        setLastRequestStatus((reqRow as { status?: string } | null)?.status || null);
+      } catch { /* best-effort; the table exists after the round-9 migration */ }
       setLoading(false);
     })();
   }, [patientId]);
@@ -123,8 +139,37 @@ export default function RegimenSettingsScreen({ route, navigation }: any) {
     const { error } = await supabase.from('insulin_regimens').insert(entry);
     if (error) Alert.alert(t('error'), error.message);
     else {
-      Alert.alert(t('success'), 'Regimen updated');
+      try {
+        await supabase.from('regimen_requests').insert({
+          patient_id: patientId,
+          requested_by: user?.id || null,
+          kind: 'change',
+          note: null,
+        });
+      } catch { /* best effort */ }
+      notifyCliniciansRequest(patientId, 'Regimen updated by family — review requested');
+      Alert.alert(t('success'), language === 'ne'
+        ? 'रेजिमेन अपडेट भयो। समीक्षाको लागि चिकित्सकलाई जानकारी गराइयो।'
+        : 'Regimen updated. Your clinician has been notified for review.');
       navigation.goBack();
+    }
+  };
+
+  const handleRequestReview = async () => {
+    try {
+      const { error } = await supabase.from('regimen_requests').insert({
+        patient_id: patientId,
+        requested_by: user?.id || null,
+        kind: 'review',
+        note: reviewNote.trim() || null,
+      });
+      if (error) { Alert.alert(t('error'), error.message); return; }
+      await notifyCliniciansRequest(patientId, reviewNote.trim() || undefined);
+      setReviewSent(true);
+      setReviewNote('');
+      setLastRequestStatus('pending');
+    } catch (e: any) {
+      Alert.alert(t('error'), e?.message || 'Could not send request');
     }
   };
 
@@ -138,6 +183,12 @@ export default function RegimenSettingsScreen({ route, navigation }: any) {
       <BackBar navigation={navigation} />
       <Text style={styles.title}>{t('insulinRegimen')}</Text>
       <Text style={styles.notice}>New regimen settings remain unavailable for dosing until reviewed and approved by a clinician.</Text>
+      {lastRequestStatus === 'pending' && (
+        <Text style={styles.pendingBanner}>{language === 'ne' ? 'समीक्षा अनुरोध गरिएको — चिकित्सकको प्रतीक्षामा' : 'Review requested — waiting for your clinician'}</Text>
+      )}
+      {lastRequestStatus === 'resolved' && (
+        <Text style={styles.resolvedBanner}>{language === 'ne' ? 'चिकित्सकले समीक्षा गर्नुभयो' : 'Reviewed by clinician'}</Text>
+      )}
 
       <Text style={styles.label}>Regimen type</Text>
       <View style={styles.row}>
@@ -227,6 +278,24 @@ export default function RegimenSettingsScreen({ route, navigation }: any) {
       <TextInput style={styles.input} value={maxBolus} onChangeText={setMaxBolus} keyboardType="numeric" placeholder="e.g. 10" />
       <Text style={styles.hintSmall}>Used to warn on unusually large doses. Set this together with your clinician.</Text>
 
+      <View style={styles.reviewCard}>
+        <Text style={styles.reviewTitle}>{language === 'ne' ? 'चिकित्सक समीक्षा अनुरोध' : 'Request clinician review'}</Text>
+        <Text style={styles.reviewHint}>{language === 'ne' ? 'रेजिमेनबारे चिकित्सकको सल्लाह चाहिए? अनुरोध पठाउनुहोस् — चिकित्सकलाई सूचना जान्छ।' : 'Want your clinician to review your regimen? Send a request — your clinician gets a notification.'}</Text>
+        <TextInput
+          style={[styles.input, styles.reviewInput]}
+          value={reviewNote}
+          onChangeText={setReviewNote}
+          placeholder={language === 'ne' ? 'वैकल्पिक नोट (जस्तै: बिहानको रिडिङ उच्च छ)' : 'Optional note (e.g. high readings after breakfast)'}
+          multiline
+        />
+        <TouchableOpacity accessibilityRole="button" style={styles.reviewBtn} onPress={handleRequestReview}>
+          <Text style={styles.reviewBtnText}>{reviewSent ? (language === 'ne' ? '✓ अनुरोध पठाइयो' : '✓ Request sent') : (language === 'ne' ? 'अनुरोध पठाउनुहोस्' : 'Send review request')}</Text>
+        </TouchableOpacity>
+        {reviewSent ? (
+          <Text style={styles.reviewSentText}>{language === 'ne' ? 'चिकित्सकलाई जानकारी जानेछ — समीक्षा पछि डोज सहायता खुल्छ।' : 'Your clinician will be notified — dose help unlocks after their review.'}</Text>
+        ) : null}
+      </View>
+
       <GradientButton label={t('save')} onPress={handleSave} style={{ marginTop: 24 }} />
     </ScrollView>
   );
@@ -256,4 +325,13 @@ const styles = StyleSheet.create({
   saveBtn: { backgroundColor: '#0D9488', borderRadius: 12, padding: 16, alignItems: 'center', marginTop: 24 },
   saveText: { color: '#fff', fontSize: 17, fontFamily: FONT.semibold, fontWeight: '600' },
   hintSmall: { fontSize: 11, fontFamily: FONT.regular, color: '#5f6368', marginTop: 6, fontStyle: 'italic' },
+  pendingBanner: { backgroundColor: '#FEF3C7', color: '#92400E', borderRadius: 10, padding: 10, fontSize: 12, lineHeight: 17, marginTop: 8 },
+  resolvedBanner: { backgroundColor: '#E6F7F4', color: '#0B5E58', borderRadius: 10, padding: 10, fontSize: 12, lineHeight: 17, marginTop: 8 },
+  reviewCard: { backgroundColor: '#fff', borderRadius: 12, padding: 14, borderWidth: 1, borderColor: '#dadce0', marginTop: 28 },
+  reviewTitle: { fontSize: 15, fontFamily: FONT.bold, fontWeight: '700', color: '#202124', marginBottom: 6 },
+  reviewHint: { fontSize: 12, fontFamily: FONT.regular, color: '#5f6368', lineHeight: 17, marginBottom: 8 },
+  reviewInput: { minHeight: 64, textAlignVertical: 'top' },
+  reviewBtn: { backgroundColor: '#0D9488', borderRadius: 10, padding: 12, alignItems: 'center', marginTop: 10 },
+  reviewBtnText: { color: '#fff', fontSize: 14, fontFamily: FONT.semibold, fontWeight: '600' },
+  reviewSentText: { fontSize: 12, fontFamily: FONT.regular, color: '#0B5E58', marginTop: 8 },
 });

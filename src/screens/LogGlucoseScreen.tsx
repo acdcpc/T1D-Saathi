@@ -14,7 +14,7 @@ import { supabase } from '../lib/supabase';
 import { saveGlucoseEntry } from '../utils/glucoseEntries';
 import { saveInsulinDose } from '../utils/insulinLogs';
 import { sendCaregiverAlert } from '../utils/caregiverAlert';
-import { sendPushAlertToCaregivers } from '../utils/pushAlerts';
+import { sendPushAlertToCaregivers, notifyCliniciansRequest } from '../utils/pushAlerts';
 import { HYPO_THRESHOLD, HYPO_RECHECK_MINUTES, convertGlucose } from '../rules/sickDayRules';
 import { calculateDosing, DosingValidationError } from '../utils/dosingCalc';
 import type { InsulinRegimen, UnitSystem } from '../types';
@@ -46,7 +46,24 @@ export default function LogGlucoseScreen({ route, navigation }: any) {
   const [activityMinutes, setActivityMinutes] = useState('');
   const [longActing, setLongActing] = useState('');
   const [doseNotice, setDoseNotice] = useState<{ reason: 'not_approved' | 'no_regimen' | 'check_inputs'; detail: string } | null>(null);
+  const [reviewRequested, setReviewRequested] = useState(false);
   const scrollRef = useRef<ScrollView>(null);
+
+  const handleRequestReview = async () => {
+    try {
+      const { error } = await supabase.from('regimen_requests').insert({
+        patient_id: patientId,
+        requested_by: user?.id || null,
+        kind: 'review',
+        note: null,
+      });
+      if (error) { Alert.alert(t('error'), error.message); return; }
+      await notifyCliniciansRequest(patientId);
+      setReviewRequested(true);
+    } catch (e: any) {
+      Alert.alert(t('error'), e?.message || 'Could not send request');
+    }
+  };
 
   useEffect(() => {
     (async () => {
@@ -262,6 +279,13 @@ export default function LogGlucoseScreen({ route, navigation }: any) {
                 : (isNe ? 'यी मानहरूबाट डोज गणना गर्न सकिएन। ग्लुकोज रिडिङ र रेजिमेन सेटिङ (लक्ष्य / TDD) जाँचेर फेरि प्रयास गर्नुहोस्।' : 'Dose cannot be calculated from these values. Check the glucose reading and your regimen settings (target / TDD), then try again.')}
           </Text>
           <Text style={styles.noticeDetail}>{doseNotice.detail}</Text>
+          {doseNotice.reason === 'not_approved' && (reviewRequested ? (
+            <Text style={styles.requestSentText}>{isNe ? '✓ अनुरोध पठाइयो — चिकित्सकलाई जानकारी गयो' : '✓ Request sent — clinician notified'}</Text>
+          ) : (
+            <TouchableOpacity style={styles.requestReviewBtn} onPress={handleRequestReview} accessibilityRole="button">
+              <Text style={styles.requestReviewBtnText}>{isNe ? 'चिकित्सक समीक्षा अनुरोध' : 'Request clinician review'}</Text>
+            </TouchableOpacity>
+          ))}
         </View>
       )}
 
@@ -368,4 +392,7 @@ const styles = StyleSheet.create({
   noticeTitle: { fontSize: 15, fontFamily: FONT.bold, fontWeight: '700', color: '#7A5B22', marginBottom: 6 },
   noticeText: { fontSize: 14, fontFamily: FONT.regular, color: '#4A3A16', lineHeight: 20 },
   noticeDetail: { fontSize: 12, fontFamily: FONT.regular, color: '#8A7A56', marginTop: 8 },
+  requestReviewBtn: { backgroundColor: '#0D9488', borderRadius: 10, padding: 10, alignItems: 'center', marginTop: 10 },
+  requestReviewBtnText: { color: '#fff', fontSize: 13, fontFamily: FONT.semibold, fontWeight: '600' },
+  requestSentText: { fontSize: 13, fontFamily: FONT.regular, color: '#0B5E58', marginTop: 10 },
 });

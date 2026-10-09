@@ -35,3 +35,12 @@ export async function sendPushAlertToCaregivers(patientId: string, value: string
     });
   } catch { /* best effort */ }
 }
+
+/** Ask clinicians/staff to review a regimen (best effort; the request row is the source of truth). */
+export async function notifyCliniciansRequest(patientId: string, note?: string): Promise<void> {
+  try {
+    await supabase.functions.invoke('notify-clinicians', {
+      body: { patient_id: patientId, note: note || '', sender_token: lastToken },
+    });
+  } catch { /* best effort */ }
+}

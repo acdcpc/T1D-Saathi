@@ -65,3 +65,12 @@ No future change should introduce a default TDD, default glucose, default correc
 | Unapproved-regimen UX | "Calculate" on an unapproved regimen shows explicit guidance (how to unlock: clinician approves; where) instead of a silent no-op. Gate itself unchanged. | — (copy review) |
 | Rounding & display | 0.1 U half-up from the unrounded sum; tiny true doses (e.g. 0.04 U) may display 0.0 U; individually-rounded parts may not sum to the rounded total (±0.1 U display artifact). | Pen-device rounding policy (0.5 U / 1 U pens) |
 | Max bolus semantics | `max_bolus` compares against the TOTAL suggested bolus (meal + correction); warning only, does not block. | Clinician confirmation: max applies to total vs correction-only |
+
+## Round 9 additions (2026-10-09) — clinician-side regimen editing + family requests + clinician alerts
+
+| Decision | Current branch behavior | Approval still required |
+|---|---|---|
+| Clinician direct editing | Clinicians (care-team) and staff can edit ALL regimen fields from the clinician patient view; saving writes `approved_by_clinician=true`, `approved_by=self` (RLS enforces this shape). Saving = approval, stated in UI copy. | Confirm workflow intent: any clinician save (incl. small edits) re-approves and immediately unlocks family dose help (vs. a separate two-step review state) |
+| Clinician-created regimens | New RLS INSERT policies: care-team clinicians may create regimens only marked approved-by-self; staff (admin) may insert. | — |
+| Family review requests | `regimen_requests` (review/change, optional note): created on explicit request AND automatically on every family regimen save; clinicians see them in the patient view; resolved manually or automatically on save/approve. | Nothing clinical (process only) |
+| Clinician push alerts | `notify-clinicians` edge fn sends Expo pushes to assigned clinicians + full-access staff when a request is filed (best effort; request row is the source of truth). | — |

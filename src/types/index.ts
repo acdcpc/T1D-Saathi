@@ -23,6 +23,12 @@ export interface InsulinRegimen {
   basal_insulin?: string | null; basal_dose?: number | null; bolus_insulin?: string | null;
   bolus_dose?: number | null;
 }
+export interface RegimenRequest {
+  id: string; patient_id: string; requested_by?: string | null;
+  kind: 'review' | 'change'; note?: string | null;
+  status: 'pending' | 'resolved' | 'declined';
+  created_at: string; resolved_at?: string | null; resolved_by?: string | null;
+}
 export interface InsulinLog {
   id: string; patient_id: string; user_id: string; units: number;
   insulin_type: 'rapid' | 'long' | 'mixed' | 'other';
