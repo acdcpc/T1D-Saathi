@@ -8,3 +8,5 @@ Trigger v3 — 2026-10-07: rebuild with round 7 UX fixes.
 Trigger v4 — 2026-10-08: fix patient card layout (flex:1 on cardRow).
 
 Trigger v5 — 2026-10-09: full rebuild — round 8 (bolus dose, Log fixes, admin console) + round 9 (clinician regimen editing, family requests, clinician push alerts) + patient-card flex fix.
+
+Trigger v6 — 2026-10-09: patient-card width-chain fix (card column + cardRow row-only; yoga-sim verified; supersedes v5).
