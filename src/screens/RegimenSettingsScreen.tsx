@@ -12,6 +12,7 @@ import { FONT, T } from '../theme';
 import BackBar from '../components/BackBar';
 import GradientButton from '../components/GradientButton';
 import { notifyCliniciansRequest } from '../utils/pushAlerts';
+import { computeTddFromDoses } from '../utils/regimenMath';
 
 const contentCol = { width: '100%' as const, maxWidth: 640, alignSelf: 'center' as const };
 
@@ -99,12 +100,15 @@ export default function RegimenSettingsScreen({ route, navigation }: any) {
   const autoIsf = tddValid ? Math.round((ISF_CONSTANT / tddNum) * 10) / 10 : null;
   const autoIcr = tddValid ? Math.round((ICR_CONSTANT / tddNum) * 10) / 10 : null;
 
-  // Basal + bolus sum, shown as a hint only when both fields are filled in.
-  // Never auto-overwrites the clinician-confirmed TDD.
+  // Estimated TDD hint from doses + frequency (bolus is entered per dose).
+  // Never auto-overwrites the confirmed TDD field.
   const basalNum = parseFloat(dose);
   const bolusNum = parseFloat(bolusDose);
-  const showTddHint = Number.isFinite(basalNum) && basalNum > 0 && Number.isFinite(bolusNum) && bolusNum > 0;
-  const combinedDose = showTddHint ? Math.round((basalNum + bolusNum) * 10) / 10 : null;
+  const estimatedTdd = computeTddFromDoses(
+    Number.isFinite(basalNum) ? basalNum : null,
+    Number.isFinite(bolusNum) ? bolusNum : null,
+    frequency,
+  );
 
   const handleSave = async () => {
     const tddValue = parseFloat(tdd);
@@ -217,13 +221,13 @@ export default function RegimenSettingsScreen({ route, navigation }: any) {
       <Text style={styles.label}>Long-acting (basal) dose (units/day)</Text>
       <TextInput style={styles.input} value={dose} onChangeText={setDose} keyboardType="numeric" />
 
-      <Text style={styles.label}>Rapid-acting (bolus) dose (units/day)</Text>
+      <Text style={styles.label}>Rapid-acting (bolus) dose (units per dose)</Text>
       <TextInput style={styles.input} value={bolusDose} onChangeText={setBolusDose} keyboardType="numeric" />
-      {showTddHint ? (
+      {estimatedTdd != null ? (
         <Text style={styles.hintSmall}>
           {language === 'ne'
-            ? `बेसल + बोलस = ${combinedDose} U/दिन — धेरै चिकित्सकहरू यो जोडलाई कुल दैनिक डोज (TDD) मान्छन्। आफ्नो TDD चिकित्सकसँग पुष्टि गर्नुहोस्।`
-            : `Basal + bolus = ${combinedDose} U/day — many clinicians use this sum as the total daily dose (TDD). Confirm your TDD with your clinician.`}
+            ? `अनुमानित TDD: बेसल + बोलस × आवृत्ति = ${estimatedTdd} U/दिन। आफ्नो TDD चिकित्सकसँग पुष्टि गर्नुहोस्।`
+            : `Estimated TDD: basal + bolus × frequency = ${estimatedTdd} U/day. Confirm your TDD with your clinician.`}
         </Text>
       ) : null}
 

@@ -8,6 +8,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useLanguage } from '../context/LanguageContext';
 import { supabase } from '../lib/supabase';
 import BSDatePicker from '../components/BSDatePicker';
+import { computeTddFromDoses } from '../utils/regimenMath';
 import { FONT,  T, input, section, primBtn } from '../theme';
 import BackBar from '../components/BackBar';
 import ChildAvatar from '../components/ChildAvatar';
@@ -111,12 +112,27 @@ export default function AddPatientScreen({ navigation }: any) {
   const [insulinError, setInsulinError] = useState<string | null>(null);
   const [tddError, setTddError] = useState<string | null>(null);
   const [ageBand, setAgeBand] = useState('');
+  const [weightKg, setWeightKg] = useState('');
+  const [heightCm, setHeightCm] = useState('');
+  const [dobMode, setDobMode] = useState<'date' | 'years'>('date');
+  const [ageYears, setAgeYears] = useState('');
+  const [diagnosisMode, setDiagnosisMode] = useState<'exact' | 'lt_month' | 'lt_year' | 'gt_year' | 'unknown'>('exact');
+  const [weightError, setWeightError] = useState<string | null>(null);
+  const [dobAgeError, setDobAgeError] = useState<string | null>(null);
 
   // ── Auto-calculated dosing (ISPAD rules) ──
   const tddNum = parseFloat(tdd);
   const tddValid = !Number.isNaN(tddNum) && tddNum > 0;
   const autoIsf = tddValid ? Math.round((ISF_CONSTANT / tddNum) * 10) / 10 : null;
   const autoIcr = tddValid ? Math.round((ICR_CONSTANT / tddNum) * 10) / 10 : null;
+
+  // TDD auto = basal (U/day) + bolus (U/dose) × frequency (doses/day). Bolus is entered per dose.
+  const recalcTdd = (basal: string, bolus: string, freq: string) => {
+    const next = computeTddFromDoses(parseFloat(basal), parseFloat(bolus), freq);
+    if (next == null) return; // sliding scale / incomplete → keep the manual value
+    setTdd(String(next));
+    if (tddError) setTddError(null);
+  };
 
   const toggleComorbid = (c: string) => {
     setComorbid(prev => prev.includes(c) ? prev.filter(x => x !== c) : [...prev, c]);
@@ -128,15 +144,21 @@ export default function AddPatientScreen({ navigation }: any) {
     return list.length > 0 ? list : null;
   };
 
-  // Suggest the age band from the date of birth (owner can still override).
+  // Suggest the age band from date of birth OR age-in-years (owner can still override).
   useEffect(() => {
-    if (ageBand || !dob) return;
-    const d = new Date(dob);
-    if (Number.isNaN(d.getTime())) return;
-    const years = (Date.now() - d.getTime()) / (365.25 * 24 * 3600 * 1000);
+    if (ageBand) return;
+    let years: number | null = null;
+    if (dobMode === 'years') {
+      const n = parseFloat(ageYears);
+      if (Number.isFinite(n) && n >= 0) years = n;
+    } else if (dob) {
+      const d = new Date(dob);
+      if (!Number.isNaN(d.getTime())) years = (Date.now() - d.getTime()) / (365.25 * 24 * 3600 * 1000);
+    }
+    if (years == null) return;
     if (years >= 6 && years <= 9) setAgeBand('Child (6–9)');
     else if (years >= 10 && years <= 17) setAgeBand('Teen (10–17)');
-  }, [dob, ageBand]);
+  }, [dob, dobMode, ageYears, ageBand]);
 
   const pickPhoto = async () => {
     const next = await pickPatientPhoto(language === 'ne', !!photoUri);
@@ -152,13 +174,32 @@ export default function AddPatientScreen({ navigation }: any) {
     const hasBolus = !!bolusInsulin && bolusInsulin !== 'None';
     if (!hasBasal && !hasBolus) { setInsulinError('Select at least one insulin (basal and/or bolus)'); ok = false; } else setInsulinError(null);
     if (!tddValid) { setTddError('Enter a valid Total Daily Dose (TDD)'); ok = false; } else setTddError(null);
+    const weightNum = parseFloat(weightKg);
+    if (!Number.isFinite(weightNum) || weightNum <= 0 || weightNum > 150) {
+      setWeightError(language === 'ne' ? 'तौल आवश्यक छ (के.जी.) — महत्त्वपूर्ण' : 'Weight (kg) is required — this is important');
+      ok = false;
+    } else setWeightError(null);
+    if (dobMode === 'years') {
+      const y = parseFloat(ageYears);
+      if (!Number.isFinite(y) || y <= 0 || y > 25) {
+        setDobAgeError(language === 'ne' ? 'उमेर (वर्ष) लेख्नुहोस्' : 'Enter the age in years');
+        ok = false;
+      } else setDobAgeError(null);
+    }
     if (!ok) return;
 
     setLoading(true);
+    const birthDate = dobMode === 'date' ? (dob || null) : (() => {
+      const y = Math.floor(parseFloat(ageYears));
+      const year = new Date().getFullYear() - y;
+      return `${year}-01-01`;
+    })();
+    const diagnosisDateValue = diagnosisMode === 'exact' ? (diagnosisDate || null) : null;
+    const heightNum = parseFloat(heightCm);
     const patientData = {
       user_id: user.id,
       name: name.trim(),
-      date_of_birth: dob || null,
+      date_of_birth: birthDate,
       photo_uri: photoUri || null,
       sex,
       comorbid_conditions: comorbidList(),
@@ -170,9 +211,13 @@ export default function AddPatientScreen({ navigation }: any) {
       bolus_dose: parseFloat(bolusDose) || null,
       insulin_frequency: insulinFreq || null,
       insulin_delivery: delivery,
-      diagnosis_date: diagnosisDate || null,
+      diagnosis_date: diagnosisDateValue,
       dka_history: dkaDesc.trim() ? [{ date: new Date().toISOString(), description: dkaDesc.trim() }] : null,
       age_band: ageBand === 'Child (6–9)' ? 'child' : ageBand === 'Teen (10–17)' ? 'teen' : null,
+      weight_kg: weightNum,
+      height_cm: Number.isFinite(heightNum) && heightNum > 0 ? heightNum : null,
+      dob_precision: dobMode === 'date' ? (dob ? 'exact' : null) : 'approx_years',
+      diagnosis_precision: diagnosisMode,
     };
 
     const { error } = await supabase.from('patients').insert(patientData);
@@ -237,11 +282,31 @@ export default function AddPatientScreen({ navigation }: any) {
         </View>
       </View>
 
-      <BSDatePicker
-        label={t('dateOfBirth')}
-        value={dob}
-        onChange={(ad, bs) => setDob(ad)}
-      />
+      <Text style={styles.label}>{t('dateOfBirth')}</Text>
+      <View style={styles.chipRow}>
+        {(['date', 'years'] as const).map((m) => (
+          <TouchableOpacity key={m} style={[styles.chip, dobMode === m && styles.chipActive]} onPress={() => { setDobMode(m); setDobAgeError(null); }}>
+            <Text style={[styles.chipText, dobMode === m && styles.chipTextActive]}>{m === 'date' ? (language === 'ne' ? 'जन्म मिति थाहा छ' : 'I know the birth date') : (language === 'ne' ? 'वर्ष मात्र' : 'Years only')}</Text>
+          </TouchableOpacity>
+        ))}
+      </View>
+      {dobMode === 'date' ? (
+        <View style={{ marginTop: 8 }}>
+          <BSDatePicker value={dob} onChange={(ad, bs) => setDob(ad)} />
+        </View>
+      ) : (
+        <>
+          <TextInput
+            style={[styles.input, dobAgeError && styles.inputError, { marginTop: 8 }]}
+            value={ageYears}
+            onChangeText={(v) => { setAgeYears(v); if (dobAgeError) setDobAgeError(null); }}
+            placeholder={language === 'ne' ? 'उमेर (वर्ष) — जस्तै: 8' : 'Age in years — e.g. 8'}
+            keyboardType="numeric"
+          />
+          {dobAgeError ? <Text style={styles.errorText}>{dobAgeError}</Text> : null}
+          <Text style={styles.hintSmall}>{language === 'ne' ? 'जन्म मिति थाहा नभए वर्ष मात्र हाल्नुहोस् — नजिकको जन्म मिति अनुमान गरिन्छ।' : "If the exact date isn't known, just enter the age — we'll estimate the birth date."}</Text>
+        </>
+      )}
 
       <Text style={styles.label}>{t('sex')}</Text>
       <View style={styles.chipRow}>
@@ -252,6 +317,31 @@ export default function AddPatientScreen({ navigation }: any) {
         ))}
       </View>
 
+      <View style={styles.doseRow}>
+        <View style={styles.doseCol}>
+          <Text style={styles.label}>{language === 'ne' ? 'तौल (के.जी.) *' : 'Weight (kg) *'}</Text>
+          <TextInput
+            style={[styles.input, weightError && styles.inputError]}
+            value={weightKg}
+            onChangeText={(v) => { setWeightKg(v); if (weightError) setWeightError(null); }}
+            placeholder={language === 'ne' ? 'जस्तै: 25' : 'e.g. 25'}
+            keyboardType="numeric"
+          />
+        </View>
+        <View style={styles.doseCol}>
+          <Text style={styles.label}>{language === 'ne' ? 'उचाई (से.मी.) — वैकल्पिक' : 'Height (cm) — optional'}</Text>
+          <TextInput
+            style={styles.input}
+            value={heightCm}
+            onChangeText={setHeightCm}
+            placeholder={language === 'ne' ? 'जस्तै: 120' : 'e.g. 120'}
+            keyboardType="numeric"
+          />
+        </View>
+      </View>
+      {weightError ? <Text style={styles.errorText}>{weightError}</Text> : null}
+      <Text style={styles.hintSmall}>{language === 'ne' ? 'तौल महत्त्वपूर्ण छ (डोज निर्णयका लागि); उचाई वैकल्पिक।' : 'Weight is important (used for clinical decisions); height is optional.'}</Text>
+
       <Text style={styles.label}>{language === 'ne' ? 'उमेर समूह' : 'Age band'}</Text>
       <View style={styles.chipRow}>
         {['Child (6–9)', 'Teen (10–17)'].map((b) => (
@@ -261,11 +351,25 @@ export default function AddPatientScreen({ navigation }: any) {
         ))}
       </View>
 
-      <BSDatePicker
-        label={t('diagnosisDate')}
-        value={diagnosisDate}
-        onChange={(ad, bs) => setDiagnosisDate(ad)}
-      />
+      <Text style={styles.label}>{t('diagnosisDate')}</Text>
+      <View style={styles.chipRow}>
+        {([
+          ['exact', language === 'ne' ? 'ठ्याक्कै मिति थाहा छ' : 'Exact date known'],
+          ['lt_month', language === 'ne' ? '१ महिना भन्दा कम अघि' : 'Less than a month ago'],
+          ['lt_year', language === 'ne' ? '१ वर्ष भन्दा कम अघि' : 'Less than a year ago'],
+          ['gt_year', language === 'ne' ? '१ वर्ष भन्दा बढी अघि' : 'More than a year ago'],
+          ['unknown', language === 'ne' ? 'थाहा छैन' : "Don't know"],
+        ] as const).map(([k, label]) => (
+          <TouchableOpacity key={k} style={[styles.chip, diagnosisMode === k && styles.chipActive]} onPress={() => setDiagnosisMode(k)}>
+            <Text style={[styles.chipText, diagnosisMode === k && styles.chipTextActive]}>{label}</Text>
+          </TouchableOpacity>
+        ))}
+      </View>
+      {diagnosisMode === 'exact' ? (
+        <View style={{ marginTop: 8 }}>
+          <BSDatePicker value={diagnosisDate} onChange={(ad, bs) => setDiagnosisDate(ad)} />
+        </View>
+      ) : null}
 
       <Text style={styles.section}>{t('insulinRegimen')}</Text>
 
@@ -289,11 +393,11 @@ export default function AddPatientScreen({ navigation }: any) {
       <View style={styles.doseRow}>
         <View style={styles.doseCol}>
           <Text style={styles.label}>{language === 'ne' ? 'लामो (बेसल) इन्सुलिन डोज — युनिट/दिन' : 'Long-acting (basal) dose (units per day)'}</Text>
-          <TextInput style={styles.input} value={insulinDose} onChangeText={setInsulinDose} placeholder={language === 'ne' ? 'जस्तै: १२' : 'e.g. 12'} keyboardType="numeric" />
+          <TextInput style={styles.input} value={insulinDose} onChangeText={(v) => { setInsulinDose(v); recalcTdd(v, bolusDose, insulinFreq); }} placeholder={language === 'ne' ? 'जस्तै: १२' : 'e.g. 12'} keyboardType="numeric" />
         </View>
         <View style={styles.doseCol}>
-          <Text style={styles.label}>{language === 'ne' ? 'छिटो (बोलस) इन्सुलिन डोज — युनिट/दिन' : 'Rapid-acting (bolus) dose (units per day)'}</Text>
-          <TextInput style={styles.input} value={bolusDose} onChangeText={setBolusDose} placeholder={language === 'ne' ? 'जस्तै: ४' : 'e.g. 4'} keyboardType="numeric" />
+          <Text style={styles.label}>{language === 'ne' ? 'छिटो (बोलस) इन्सुलिन डोज — प्रति डोज युनिट' : 'Rapid-acting (bolus) dose (units per dose)'}</Text>
+          <TextInput style={styles.input} value={bolusDose} onChangeText={(v) => { setBolusDose(v); recalcTdd(insulinDose, v, insulinFreq); }} placeholder={language === 'ne' ? 'जस्तै: ४' : 'e.g. 4'} keyboardType="numeric" />
         </View>
       </View>
 
@@ -301,7 +405,7 @@ export default function AddPatientScreen({ navigation }: any) {
         label={t('frequency')}
         options={FREQUENCY_OPTIONS}
         value={insulinFreq}
-        onChange={setInsulinFreq}
+        onChange={(v) => { setInsulinFreq(v); recalcTdd(insulinDose, bolusDose, v); }}
         placeholder="Select frequency"
       />
 
@@ -323,6 +427,7 @@ export default function AddPatientScreen({ navigation }: any) {
         keyboardType="numeric"
       />
       {tddError ? <Text style={styles.errorText}>{tddError}</Text> : null}
+      <Text style={styles.hintSmall}>{language === 'ne' ? 'स्वतः गणना: बेसल + बोलस × आवृत्ति (प्रति दिन)' : 'Auto-calculated: basal + bolus × frequency (per day)'}</Text>
 
       {/* Auto-calculated dosing — read-only, derived from TDD */}
       <View style={styles.autoCard}>

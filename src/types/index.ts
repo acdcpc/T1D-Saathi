@@ -8,6 +8,9 @@ export interface PatientProfile {
   insulin_type: string; insulin_dose: number; insulin_frequency: string;
   basal_insulin?: string | null; bolus_insulin?: string | null;
   bolus_dose?: number | null;
+  weight_kg?: number | null; height_cm?: number | null;
+  dob_precision?: 'exact' | 'approx_years' | null;
+  diagnosis_precision?: 'exact' | 'lt_month' | 'lt_year' | 'gt_year' | 'unknown' | null;
   insulin_delivery: 'pen' | 'syringe' | 'pump'; diagnosis_date: string;
   dka_history?: DKAHistoryEntry[]; documents?: string[];
   created_at: string; updated_at: string;
