@@ -74,3 +74,14 @@ No future change should introduce a default TDD, default glucose, default correc
 | Clinician-created regimens | New RLS INSERT policies: care-team clinicians may create regimens only marked approved-by-self; staff (admin) may insert. | — |
 | Family review requests | `regimen_requests` (review/change, optional note): created on explicit request AND automatically on every family regimen save; clinicians see them in the patient view; resolved manually or automatically on save/approve. | Nothing clinical (process only) |
 | Clinician push alerts | `notify-clinicians` edge fn sends Expo pushes to assigned clinicians + full-access staff when a request is filed (best effort; request row is the source of truth). | — |
+
+## Round 11 (2026-10-09) — clinician auto-calculations
+- Clinician regimen form auto-suggests **ISF (correction factor) = 1800 ÷ TDD** and **I:C = 500 ÷ TDD** when basal/bolus doses or frequency change (standard starting estimates per ISPAD-style rules; fully editable; save = clinician approval). TDD auto = basal + bolus/dose × frequency.
+- Assumption logged: owner's "correction factor" = ISF (same clinical parameter); labeled "ISF / correction factor" in UI.
+- Existing `bolus_dose` rows entered under the previous units/day label require clinician re-entry under the new units-per-dose semantics when editing.
+
+## Round 12 (2026-10-09) — intake data quality
+- Weight (kg) required at intake (0–150 validated); height optional. (Not yet used in dosing math.)
+- Years-only age → estimated DOB (Jan 1 of birth year) + `dob_precision='approx_years'`; affects age-band suggestion and the under-5 sick-day red flag with ±1-year precision — acceptable for triage, flagged approximate.
+- Diagnosis-date precision options (exact / <1 mo / <1 yr / >1 yr / unknown): qualitative choices store precision only — no invented dates.
+- Intake TDD now auto = basal + bolus/dose × frequency (consistent with clinician form); ISF/I:C estimates remain 1800/500 rules with clinician review.
