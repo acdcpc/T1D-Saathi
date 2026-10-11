@@ -14,3 +14,5 @@ Trigger v6 — 2026-10-09: patient-card width-chain fix (card column + cardRow r
 Trigger v7 — 2026-10-09: round 11 — signup confirm-password + forgot-password flow; clinician bolus per-dose + auto TDD/ISF/ICR.
 
 Trigger v8 — 2026-10-09: rounds 11+12 — auth flows (signup confirm + forgot password), clinician auto TDD/ISF/ICR + per-dose bolus, patient intake (weight/height/age-in-years/diagnosis precision).
+
+Trigger v9 — 2026-10-11: round 13 — clinician console log out + user-side switch (dual view).
