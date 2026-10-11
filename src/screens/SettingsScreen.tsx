@@ -3,6 +3,7 @@ import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Alert,
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../context/AuthContext';
+import { useStaffView } from '../context/StaffViewContext';
 import { useLanguage } from '../context/LanguageContext';
 import { usePreferences } from '../context/PreferencesContext';
 import { FONT, T, card, section, primBtn } from '../theme';
@@ -18,6 +19,7 @@ import type { Language } from '../types';
 
 export default function SettingsScreen({ navigation }: any) {
   const { signOut, role, user } = useAuth();
+  const { setPersonalView } = useStaffView();
   const { language, setLanguage, t } = useLanguage();
   const { highContrast, largeButtons, fontScale, theme: TH, setHighContrast, setLargeButtons, setFontScale } = usePreferences();
   const isNe = language === 'ne';
@@ -307,6 +309,16 @@ export default function SettingsScreen({ navigation }: any) {
         {(role === 'clinician' || isAdmin) && (
           <>
             <Text style={styles.sectionLabel}>{isNe ? 'स्टाफ' : 'Staff'}</Text>
+            {role === 'clinician' && (
+              <TouchableOpacity style={styles.rowCard} onPress={() => setPersonalView(false)}>
+                <Ionicons name="medkit-outline" size={20} color={T.blue} />
+                <View style={{ flex: 1, marginLeft: 10 }}>
+                  <Text style={styles.rowTitle}>{isNe ? 'क्लिनिसियन कन्सोल' : 'Clinician console'}</Text>
+                  <Text style={styles.rowSub}>{isNe ? 'बिरामी सूची र औषधि स्वीकृति' : 'Patient list & regimen approvals'}</Text>
+                </View>
+                <Ionicons name="chevron-forward" size={18} color={T.muted} />
+              </TouchableOpacity>
+            )}
             <TouchableOpacity style={styles.rowCard} onPress={() => navigation.navigate('AdminConsole')}>
               <Ionicons name="shield-checkmark-outline" size={20} color={T.blue} />
               <View style={{ flex: 1, marginLeft: 10 }}>

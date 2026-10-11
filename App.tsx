@@ -5,6 +5,7 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { AuthProvider, useAuth } from './src/context/AuthContext';
 import { LanguageProvider } from './src/context/LanguageContext';
 import { PreferencesProvider } from './src/context/PreferencesContext';
+import { StaffViewProvider, useStaffView } from './src/context/StaffViewContext';
 import { useNetworkSync } from './src/utils/useNetworkSync';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { useAppFonts } from './src/lib/fonts';
@@ -56,6 +57,7 @@ function GlobalHandlers() {
 
 function AppNavigator() {
   const { user, role, recoveryMode } = useAuth();
+  const { personalView } = useStaffView();
   useNetworkSync(60000);
 
   return (
@@ -69,7 +71,7 @@ function AppNavigator() {
         <Stack.Screen name="ResetPassword" component={ResetPasswordScreen} />
       ) : !role ? (
         <Stack.Screen name="RoleSplash" component={RoleSplash} />
-      ) : role === 'clinician' ? (
+      ) : role === 'clinician' && !personalView ? (
         <>
           <Stack.Screen name="ClinicianPatientList" component={ClinicianPatientListScreen} />
           <Stack.Screen name="ClinicianPatientDetail" component={ClinicianPatientDetailScreen} />
@@ -96,6 +98,8 @@ function AppNavigator() {
           <Stack.Screen name="Consent" component={ConsentScreen} />
           <Stack.Screen name="InviteClinician" component={InviteClinicianScreen} />
           <Stack.Screen name="AdminConsole" component={AdminConsoleScreen} />
+          <Stack.Screen name="ClinicianPatientList" component={ClinicianPatientListScreen} />
+          <Stack.Screen name="ClinicianPatientDetail" component={ClinicianPatientDetailScreen} />
         </>
       )}
     </Stack.Navigator>
@@ -115,6 +119,7 @@ export default function App() {
       <LanguageProvider>
         <PreferencesProvider>
           <AuthProvider>
+          <StaffViewProvider>
             <ErrorBoundary>
               <View style={{ flex: 1 }} testID="app-root">
                 <NavigationContainer ref={navigationRef}>
@@ -123,6 +128,7 @@ export default function App() {
                 </NavigationContainer>
               </View>
             </ErrorBoundary>
+          </StaffViewProvider>
           </AuthProvider>
         </PreferencesProvider>
       </LanguageProvider>

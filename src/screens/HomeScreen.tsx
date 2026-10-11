@@ -17,6 +17,7 @@ import { D2 } from '../design/tokens';
 import ConflictDialog from '../components/ConflictDialog';
 import AnimatedPressable from '../components/AnimatedPressable';
 import { usePreferences } from '../context/PreferencesContext';
+import { useStaffView } from '../context/StaffViewContext';
 import { checkAppVersion } from '../utils/versionCheck';
 import { toBSDisplay } from '../utils/bsDateDisplay';
 import type { PatientProfile } from '../types';
@@ -26,6 +27,7 @@ const contentCol = { width: '100%' as const, maxWidth: 640, alignSelf: 'center' 
 
 export default function HomeScreen({ navigation }: any) {
   const { user, role } = useAuth();
+  const { setPersonalView } = useStaffView();
   const { t, language } = useLanguage();
   const { theme: TH, scale } = usePreferences();
   const isNe = language === 'ne';
@@ -284,10 +286,18 @@ export default function HomeScreen({ navigation }: any) {
               </View>
 
               {(role === 'clinician' || isAdmin) && (
-                <TouchableOpacity style={styles.emptyStaffBtn} onPress={() => navigation.navigate('AdminConsole')} accessibilityRole="button">
-                  <Ionicons name="shield-checkmark-outline" size={16} color={D2.tealDeep} />
-                  <Text style={styles.emptyStaffText}>{isNe ? 'एडमिन कन्सोल खोल्नुहोस्' : 'Open admin console'}</Text>
-                </TouchableOpacity>
+                <View>
+                  {role === 'clinician' && (
+                    <TouchableOpacity style={styles.emptyStaffBtn} onPress={() => setPersonalView(false)} accessibilityRole="button">
+                      <Ionicons name="medkit-outline" size={16} color={D2.tealDeep} />
+                      <Text style={styles.emptyStaffText}>{isNe ? 'क्लिनिसियन कन्सोल' : 'Clinician console'}</Text>
+                    </TouchableOpacity>
+                  )}
+                  <TouchableOpacity style={[styles.emptyStaffBtn, { marginTop: role === 'clinician' ? 10 : 26 }]} onPress={() => navigation.navigate('AdminConsole')} accessibilityRole="button">
+                    <Ionicons name="shield-checkmark-outline" size={16} color={D2.tealDeep} />
+                    <Text style={styles.emptyStaffText}>{isNe ? 'एडमिन कन्सोल खोल्नुहोस्' : 'Open admin console'}</Text>
+                  </TouchableOpacity>
+                </View>
               )}
             </View>
           }
@@ -331,9 +341,9 @@ export default function HomeScreen({ navigation }: any) {
               {(role === 'clinician' || isAdmin) && (
                 <View style={styles.staffCard}>
                   <Text style={styles.staffTitle}>{isNe ? 'स्टाफ पहुँच' : 'Staff access'}</Text>
-                  <TouchableOpacity style={styles.staffBtn} onPress={() => navigation.navigate('ClinicianPatientList')} accessibilityRole="button">
+                  <TouchableOpacity style={styles.staffBtn} onPress={() => (role === 'clinician' ? setPersonalView(false) : navigation.navigate('ClinicianPatientList'))} accessibilityRole="button">
                     <Ionicons name="medkit-outline" size={16} color={D2.tealDeep} />
-                    <Text style={styles.staffBtnText}>{isNe ? 'क्लिनिसियन क्षेत्र' : 'Clinician area'}</Text>
+                    <Text style={styles.staffBtnText}>{isNe ? 'क्लिनिसियन कन्सोल' : 'Clinician console'}</Text>
                     <Ionicons name="chevron-forward" size={14} color={D2.faint} />
                   </TouchableOpacity>
                   <TouchableOpacity style={styles.staffBtn} onPress={() => navigation.navigate('AdminConsole')} accessibilityRole="button">

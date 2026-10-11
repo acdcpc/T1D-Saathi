@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { View, Text, FlatList, TouchableOpacity, StyleSheet, RefreshControl, TextInput, Alert } from 'react-native';
 import { useAuth } from '../context/AuthContext';
+import { useStaffView } from '../context/StaffViewContext';
 import { useLanguage } from '../context/LanguageContext';
 import { supabase } from '../lib/supabase';
 import BackBar from '../components/BackBar';
@@ -10,8 +11,9 @@ import type { PatientProfile } from '../types';
 import { FONT, T } from '../theme';
 
 export default function ClinicianPatientListScreen({ navigation }: any) {
-  const { user } = useAuth();
+  const { user, signOut } = useAuth();
   const { t, language } = useLanguage();
+  const { setPersonalView } = useStaffView();
   const isNe = language === 'ne';
   const [patients, setPatients] = useState<PatientProfile[]>([]);
   const [refreshing, setRefreshing] = useState(false);
@@ -58,6 +60,17 @@ export default function ClinicianPatientListScreen({ navigation }: any) {
     fetchPatients();
   };
 
+  const handleLogout = () => {
+    Alert.alert(
+      isNe ? 'लग आउट' : 'Log out',
+      isNe ? 'के तपाई निश्चित हुनुहुन्छ?' : 'Are you sure?',
+      [
+        { text: isNe ? 'रद्द' : 'Cancel', style: 'cancel' },
+        { text: isNe ? 'लग आउट' : 'Log out', style: 'destructive', onPress: () => { void signOut(); } },
+      ],
+    );
+  };
+
   return (
     <View style={styles.container}>
       <View style={styles.topBar}><BackBar navigation={navigation} /></View>
@@ -66,6 +79,26 @@ export default function ClinicianPatientListScreen({ navigation }: any) {
         <TouchableOpacity style={styles.adminBtn} onPress={() => navigation.navigate('AdminConsole')} accessibilityRole="button">
           <Ionicons name="shield-checkmark-outline" size={14} color={D2.tealDeep} />
           <Text style={styles.adminBtnText}>{isNe ? 'एडमिन कन्सोल' : 'Admin console'}</Text>
+        </TouchableOpacity>
+      </View>
+      <View style={styles.actionRow}>
+        <TouchableOpacity
+          style={styles.userSideBtn}
+          onPress={() => setPersonalView(true)}
+          accessibilityRole="button"
+          accessibilityLabel={isNe ? 'प्रयोगकर्ता पक्ष' : 'User side'}
+        >
+          <Ionicons name="people-outline" size={14} color={D2.tealDeep} />
+          <Text style={styles.userSideBtnText}>{isNe ? 'प्रयोगकर्ता पक्ष' : 'User side'}</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={styles.logoutBtn}
+          onPress={handleLogout}
+          accessibilityRole="button"
+          accessibilityLabel={isNe ? 'लग आउट' : 'Log out'}
+        >
+          <Ionicons name="log-out-outline" size={14} color={T.red} />
+          <Text style={styles.logoutBtnText}>{isNe ? 'लग आउट' : 'Log out'}</Text>
         </TouchableOpacity>
       </View>
       <View style={styles.redeemCard}>
@@ -111,6 +144,11 @@ const styles = StyleSheet.create({
   adminBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, borderWidth: 1.5, borderColor: '#0D9488', borderRadius: 999, paddingHorizontal: 12, paddingVertical: 6 },
   adminBtnText: { fontSize: 12.5, fontFamily: FONT.semibold, fontWeight: '600', color: '#0B5E58' },
   topBar: { paddingHorizontal: 20, paddingTop: 64 },
+  actionRow: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 20, paddingTop: 6, paddingBottom: 2 },
+  userSideBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, borderWidth: 1.5, borderColor: '#0D9488', backgroundColor: '#EFF9F7', borderRadius: 999, paddingHorizontal: 12, paddingVertical: 6 },
+  userSideBtnText: { fontSize: 12.5, fontFamily: FONT.semibold, fontWeight: '600', color: '#0B5E58' },
+  logoutBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, borderWidth: 1.5, borderColor: '#F3C2BA', backgroundColor: '#FDF3F1', borderRadius: 999, paddingHorizontal: 12, paddingVertical: 6 },
+  logoutBtnText: { fontSize: 12.5, fontFamily: FONT.semibold, fontWeight: '600', color: '#B3261E' },
   list: { padding: 16 },
   card: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#fff', borderRadius: 12, padding: 16, marginBottom: 10, borderWidth: 1, borderColor: '#e8eaed' },
   avatar: { width: 44, height: 44, borderRadius: 22, backgroundColor: '#E5F4F1', justifyContent: 'center', alignItems: 'center', marginRight: 14 },
