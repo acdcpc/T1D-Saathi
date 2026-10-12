@@ -60,8 +60,14 @@ function AppNavigator() {
   const { personalView } = useStaffView();
   useNetworkSync(60000);
 
+  // Flipping between the clinician console and the family side must land on the
+  // new stack's initial route. Without a fresh key, React Navigation keeps the
+  // current route (ClinicianPatientList exists in both stacks), so the switch
+  // looks like a no-op on device and web.
+  const navigatorKey = role === 'clinician' && !personalView ? 'clinician' : 'family';
+
   return (
-    <Stack.Navigator screenOptions={{ headerShown: false }}>
+    <Stack.Navigator key={navigatorKey} screenOptions={{ headerShown: false }}>
       {!user ? (
         <>
           <Stack.Screen name="Onboarding" component={OnboardingScreen} />
