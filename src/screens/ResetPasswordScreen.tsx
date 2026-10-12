@@ -8,6 +8,7 @@ import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
 import { FONT, T, input } from '../theme';
 import GradientButton from '../components/GradientButton';
+import PasswordInput from '../components/PasswordInput';
 
 /**
  * Shown when the app receives a password-recovery link
@@ -55,23 +56,27 @@ export default function ResetPasswordScreen() {
       <View style={[styles.card, { marginBottom: Math.max(insets.bottom ?? 0, 24) }]}>
         <Text style={styles.title}>{isNe ? 'नयाँ पासवर्ड सेट गर्नुहोस्' : 'Set a new password'}</Text>
         <Text style={styles.sub}>{isNe ? 'कम्तिमा ६ अक्षरको नयाँ पासवर्ड लेख्नुहोस्।' : 'Choose a new password (at least 6 characters).'}</Text>
-        <TextInput
-          style={[styles.field, error && styles.fieldError, { color: T.text }]}
+        <PasswordInput
+          isNe={isNe}
+          error={!!error}
+          errorStyle={styles.fieldError}
+          style={[styles.field, { color: T.text }]}
           placeholder={isNe ? 'नयाँ पासवर्ड' : 'New password'}
           accessibilityLabel={isNe ? 'नयाँ पासवर्ड' : 'New password'}
           value={password}
           onChangeText={(v) => { setPassword(v); if (error) setError(null); }}
-          secureTextEntry
           textContentType="newPassword"
           placeholderTextColor={T.muted}
         />
-        <TextInput
-          style={[styles.field, error && styles.fieldError, { color: T.text }]}
+        <PasswordInput
+          isNe={isNe}
+          error={!!error}
+          errorStyle={styles.fieldError}
+          style={[styles.field, { color: T.text }]}
           placeholder={isNe ? 'पासवर्ड पुनः लेख्नुहोस्' : 'Confirm new password'}
           accessibilityLabel={isNe ? 'पासवर्ड पुनः लेख्नुहोस्' : 'Confirm new password'}
           value={confirm}
           onChangeText={(v) => { setConfirm(v); if (error) setError(null); }}
-          secureTextEntry
           textContentType="newPassword"
           placeholderTextColor={T.muted}
         />

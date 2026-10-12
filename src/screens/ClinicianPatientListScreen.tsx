@@ -5,6 +5,7 @@ import { useStaffView } from '../context/StaffViewContext';
 import { useLanguage } from '../context/LanguageContext';
 import { supabase } from '../lib/supabase';
 import BackBar from '../components/BackBar';
+import ChildAvatar from '../components/ChildAvatar';
 import { Ionicons } from '@expo/vector-icons';
 import { D2 } from '../design/tokens';
 import type { PatientProfile } from '../types';
@@ -20,6 +21,35 @@ export default function ClinicianPatientListScreen({ navigation }: any) {
   const [loading, setLoading] = useState(true);
   const [code, setCode] = useState('');
   const [redeeming, setRedeeming] = useState(false);
+
+  /** Compact clinical meta line for a patient row: age · sex · weight (falls back to insulin info). */
+  const metaLine = (item: PatientProfile): string => {
+    const parts: string[] = [];
+    const dob = item?.date_of_birth;
+    if (dob) {
+      const d = new Date(dob);
+      if (!isNaN(d.getTime())) {
+        const now = new Date();
+        let years = now.getFullYear() - d.getFullYear();
+        if (now.getMonth() < d.getMonth() || (now.getMonth() === d.getMonth() && now.getDate() < d.getDate())) years--;
+        if (years >= 0) {
+          const approx = item?.dob_precision === 'approx_years' ? '~' : '';
+          if (years < 2) {
+            let months = (now.getFullYear() - d.getFullYear()) * 12 + (now.getMonth() - d.getMonth());
+            if (now.getDate() < d.getDate()) months--;
+            parts.push(`${approx}${Math.max(0, months)} ${isNe ? 'महिना' : 'mo'}`);
+          } else {
+            parts.push(`${approx}${years} ${isNe ? 'वर्ष' : 'yrs'}`);
+          }
+        }
+      }
+    }
+    const sexLbl = item?.sex === 'male' ? t('male') : item?.sex === 'female' ? t('female') : item?.sex === 'other' ? (isNe ? 'अन्य' : 'Other') : null;
+    if (sexLbl) parts.push(sexLbl);
+    if (item?.weight_kg != null) parts.push(`${item.weight_kg} kg`);
+    if (parts.length) return parts.join(' · ');
+    return [item?.basal_insulin, item?.bolus_insulin].filter(Boolean).join(' + ') || item?.insulin_type || '—';
+  };
 
   const fetchPatients = useCallback(async () => {
     if (!user) return;
@@ -123,10 +153,12 @@ export default function ClinicianPatientListScreen({ navigation }: any) {
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={async () => { setRefreshing(true); await fetchPatients(); setRefreshing(false); }} />}
         renderItem={({ item }) => (
           <TouchableOpacity style={styles.card} onPress={() => navigation.navigate('ClinicianPatientDetail', { patientId: item.id, patientName: item.name })}>
-            <View style={styles.avatar}><Text style={styles.avatarText}>{item.name[0]?.toUpperCase()}</Text></View>
+            <View style={styles.avatarWrap}>
+              <ChildAvatar name={item.name} sex={item.sex} size={44} photoUri={item.photo_uri} />
+            </View>
             <View style={styles.cardText}>
               <Text style={styles.patientName}>{item.name}</Text>
-              <Text style={styles.meta}>{[item.basal_insulin, item.bolus_insulin].filter(Boolean).join(' + ') || item.insulin_type || '—'} · {item.sex}</Text>
+              <Text style={styles.meta}>{metaLine(item)}</Text>
             </View>
             <Text style={styles.chevron}>›</Text>
           </TouchableOpacity>
@@ -151,8 +183,7 @@ const styles = StyleSheet.create({
   logoutBtnText: { fontSize: 12.5, fontFamily: FONT.semibold, fontWeight: '600', color: '#B3261E' },
   list: { padding: 16 },
   card: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#fff', borderRadius: 12, padding: 16, marginBottom: 10, borderWidth: 1, borderColor: '#e8eaed' },
-  avatar: { width: 44, height: 44, borderRadius: 22, backgroundColor: '#E5F4F1', justifyContent: 'center', alignItems: 'center', marginRight: 14 },
-  avatarText: { fontSize: 20, fontFamily: FONT.bold, fontWeight: '700', color: '#0D9488' },
+  avatarWrap: { marginRight: 14 },
   cardText: { flex: 1 },
   patientName: { fontSize: 17, fontFamily: FONT.semibold, fontWeight: '600', color: '#202124' },
   meta: { fontSize: 13, fontFamily: FONT.regular, color: '#5f6368', marginTop: 2 },

@@ -8,6 +8,7 @@ import { toBSDateTimeDisplay, toBSDisplay } from '../utils/bsDateDisplay';
 import { FONT, T } from '../theme';
 import BackBar from '../components/BackBar';
 import Dropdown from '../components/Dropdown';
+import ChildAvatar from '../components/ChildAvatar';
 import { computeTddFromDoses, isfFromTdd, icrFromTdd } from '../utils/regimenMath';
 
 interface InsulinRow { id: string; units: number; insulin_type: string; source: string; timestamp: string; }
@@ -53,6 +54,12 @@ export default function ClinicianPatientDetailScreen({ route, navigation }: any)
   const [eIcr, setEIcr] = useState('');
   const [eTarget, setETarget] = useState('');
   const [eMaxBolus, setEMaxBolus] = useState('');
+  const [patient, setPatient] = useState<{
+    name?: string; sex?: string | null; photo_uri?: string | null;
+    date_of_birth?: string | null; dob_precision?: string | null;
+    weight_kg?: number | null; height_cm?: number | null;
+    diagnosis_date?: string | null; diagnosis_precision?: string | null;
+  } | null>(null);
 
   /**
    * Recompute TDD / ISF / I:C when the clinician updates doses or frequency.
@@ -107,6 +114,23 @@ export default function ClinicianPatientDetailScreen({ route, navigation }: any)
         .order('timestamp', { ascending: false })
         .limit(20);
 
+      // Patient demographics (weight/height/sex/age/photo) — retry without the
+      // newer intake columns when the migration is not applied yet.
+      const patFull = await supabase
+        .from('patients')
+        .select('name,sex,photo_uri,date_of_birth,dob_precision,weight_kg,height_cm,diagnosis_date,diagnosis_precision')
+        .eq('id', patientId)
+        .maybeSingle();
+      let pat: any = patFull.data;
+      if (patFull.error) {
+        const patBasic = await supabase
+          .from('patients')
+          .select('name,sex,photo_uri,date_of_birth')
+          .eq('id', patientId)
+          .maybeSingle();
+        pat = patBasic.data;
+      }
+
       // Family requests (safe when the regimen_requests migration is not applied yet).
       let reqRows: RegimenRequestRow[] = [];
       try {
@@ -126,6 +150,7 @@ export default function ClinicianPatientDetailScreen({ route, navigation }: any)
       setRegimen(reg);
       setInsulinRows(ins.error ? [] : ((ins.data as InsulinRow[]) || []));
       setRequests(reqRows);
+      setPatient(pat);
       setLoading(false);
     })();
   }, [patientId]);
@@ -261,10 +286,51 @@ export default function ClinicianPatientDetailScreen({ route, navigation }: any)
     return val < 70 ? '#ea4335' : '#202124';
   };
 
+  const sexLabel = patient?.sex === 'male' ? t('male') : patient?.sex === 'female' ? t('female') : patient?.sex === 'other' ? (isNe ? 'अन्य' : 'Other') : null;
+  const ageLabel = (() => {
+    if (!patient?.date_of_birth) return null;
+    const d = new Date(patient.date_of_birth);
+    if (isNaN(d.getTime())) return null;
+    const now = new Date();
+    let years = now.getFullYear() - d.getFullYear();
+    if (now.getMonth() < d.getMonth() || (now.getMonth() === d.getMonth() && now.getDate() < d.getDate())) years--;
+    if (years < 0) return null;
+    const approx = patient.dob_precision === 'approx_years' ? '~' : '';
+    if (years < 2) {
+      let months = (now.getFullYear() - d.getFullYear()) * 12 + (now.getMonth() - d.getMonth());
+      if (now.getDate() < d.getDate()) months--;
+      months = Math.max(0, months);
+      return `${approx}${months} ${isNe ? 'महिना' : months === 1 ? 'month' : 'months'}`;
+    }
+    return `${approx}${years} ${isNe ? 'वर्ष' : years === 1 ? 'year' : 'years'}`;
+  })();
+  const diagnosisLabel = (() => {
+    const p = patient?.diagnosis_precision;
+    if (p === 'exact' && patient?.diagnosis_date) return toBSDisplay(patient.diagnosis_date);
+    if (p === 'lt_month') return isNe ? '१ महिना भन्दा कम अघि' : 'Less than a month ago';
+    if (p === 'lt_year') return isNe ? '१ वर्ष भन्दा कम अघि' : 'Less than a year ago';
+    if (p === 'gt_year') return isNe ? '१ वर्ष भन्दा बढी अघि' : 'More than a year ago';
+    return null;
+  })();
+
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
       <BackBar navigation={navigation} />
-      <Text style={styles.title}>{patientName}</Text>
+      <View style={styles.patientHead}>
+        <ChildAvatar name={patientName} sex={patient?.sex ?? undefined} size={56} photoUri={patient?.photo_uri} />
+        <View style={styles.patientHeadCol}>
+          <Text style={styles.title}>{patientName}</Text>
+        </View>
+      </View>
+
+      <View style={styles.detailsCard}>
+        <Text style={styles.detailsTitle}>{isNe ? 'बच्चाको जानकारी' : 'Child details'}</Text>
+        <View style={styles.regimenRow}><Text style={styles.regimenLabel}>{isNe ? 'उमेर' : 'Age'}</Text><Text style={styles.regimenValue}>{ageLabel ?? '—'}</Text></View>
+        <View style={styles.regimenRow}><Text style={styles.regimenLabel}>{t('sex')}</Text><Text style={styles.regimenValue}>{sexLabel ?? '—'}</Text></View>
+        <View style={styles.regimenRow}><Text style={styles.regimenLabel}>{isNe ? 'तौल' : 'Weight'}</Text><Text style={styles.regimenValue}>{patient?.weight_kg != null ? `${patient.weight_kg} kg` : '—'}</Text></View>
+        <View style={styles.regimenRow}><Text style={styles.regimenLabel}>{isNe ? 'उचाई' : 'Height'}</Text><Text style={styles.regimenValue}>{patient?.height_cm != null ? `${patient.height_cm} cm` : '—'}</Text></View>
+        {diagnosisLabel ? (<View style={styles.regimenRow}><Text style={styles.regimenLabel}>{t('diagnosisDate')}</Text><Text style={styles.regimenValue}>{diagnosisLabel}</Text></View>) : null}
+      </View>
 
       <View style={styles.guideCard}>
         <Text style={styles.guideTitle}>{isNe ? 'के गर्ने' : 'What to do'}</Text>
@@ -418,7 +484,11 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: T.bg },
   content: { padding: 20, paddingTop: 90, paddingBottom: 60 },
   centered: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  title: { fontSize: 24, fontFamily: FONT.extrabold, fontWeight: '800', color: '#202124', marginBottom: 20 },
+  title: { fontSize: 24, fontFamily: FONT.extrabold, fontWeight: '800', color: '#202124' },
+  patientHead: { flexDirection: 'row', alignItems: 'center', marginBottom: 14 },
+  patientHeadCol: { flex: 1, marginLeft: 12 },
+  detailsCard: { backgroundColor: '#fff', borderRadius: 12, padding: 14, borderWidth: 1, borderColor: '#EDE0D4', marginBottom: 12 },
+  detailsTitle: { fontSize: 14, fontFamily: FONT.bold, fontWeight: '700', color: '#0B5E58', marginBottom: 6 },
   section: { fontSize: 18, fontFamily: FONT.bold, fontWeight: '700', color: '#202124', marginTop: 16, marginBottom: 10 },
   guideCard: { backgroundColor: '#E6F7F4', borderRadius: 12, padding: 14, borderWidth: 1, borderColor: '#B8E6DF', marginBottom: 4 },
   guideTitle: { fontSize: 15, fontFamily: FONT.bold, fontWeight: '700', color: '#0B5E58', marginBottom: 8 },

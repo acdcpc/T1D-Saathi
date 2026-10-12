@@ -9,6 +9,7 @@ import { useLanguage } from '../context/LanguageContext';
 import { usePreferences } from '../context/PreferencesContext';
 import { FONT,  T, primBtn, input } from '../theme';
 import GradientButton from '../components/GradientButton';
+import PasswordInput from '../components/PasswordInput';
 import { D2 } from '../design/tokens';
 
 export default function LoginScreen({ navigation }: any) {
@@ -206,13 +207,15 @@ export default function LoginScreen({ navigation }: any) {
           {emailError ? <Text style={styles.errorText}>{emailError}</Text> : null}
           {!resetMode && (
             <>
-              <TextInput
-                style={[styles.field, passwordError && styles.fieldError, { color: TH.text, fontSize: 15 * fontScale }]}
+              <PasswordInput
+                isNe={isNe}
+                error={!!passwordError}
+                errorStyle={styles.fieldError}
+                style={[styles.field, { color: TH.text, fontSize: 15 * fontScale }]}
                 placeholder={isNe ? 'पासवर्ड' : 'Password'}
                 accessibilityLabel={isNe ? 'पासवर्ड' : 'Password'}
                 value={password}
                 onChangeText={(v) => { setPassword(v); if (passwordError) setPasswordError(null); if (confirmError) setConfirmError(null); }}
-                secureTextEntry
                 textContentType="password"
                 returnKeyType="done"
                 placeholderTextColor={TH.muted}
@@ -222,13 +225,15 @@ export default function LoginScreen({ navigation }: any) {
               )}
               {isSignup ? (
                 <>
-                  <TextInput
-                    style={[styles.field, confirmError && styles.fieldError, { color: TH.text, fontSize: 15 * fontScale }]}
+                  <PasswordInput
+                    isNe={isNe}
+                    error={!!confirmError}
+                    errorStyle={styles.fieldError}
+                    style={[styles.field, { color: TH.text, fontSize: 15 * fontScale }]}
                     placeholder={isNe ? 'पासवर्ड पुनः लेख्नुहोस्' : 'Confirm password'}
                     accessibilityLabel={isNe ? 'पासवर्ड पुनः लेख्नुहोस्' : 'Confirm password'}
                     value={confirmPassword}
                     onChangeText={(v) => { setConfirmPassword(v); if (confirmError) setConfirmError(null); }}
-                    secureTextEntry
                     textContentType="newPassword"
                     returnKeyType="done"
                     placeholderTextColor={TH.muted}
