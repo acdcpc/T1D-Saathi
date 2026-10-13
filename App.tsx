@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { View, Text, ActivityIndicator } from 'react-native';
 import { NavigationContainer, createNavigationContainerRef } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
@@ -65,6 +65,24 @@ function AppNavigator() {
   // current route (ClinicianPatientList exists in both stacks), so the switch
   // looks like a no-op on device and web.
   const navigatorKey = role === 'clinician' && !personalView ? 'clinician' : 'family';
+
+  // Device-proven gap (A24, v10): changing the Navigator key alone does NOT
+  // re-land the stack on the target route (the current route state is kept, so
+  // the console/user-side flip looked like a no-op). When personalView flips,
+  // force the root route explicitly after the screen-set swaps.
+  const prevPersonalViewRef = useRef(personalView);
+  useEffect(() => {
+    if (prevPersonalViewRef.current === personalView) return;
+    prevPersonalViewRef.current = personalView;
+    if (!user || !role) return;
+    const target = role === 'clinician' && !personalView ? 'ClinicianPatientList' : 'Home';
+    const t = setTimeout(() => {
+      if (navigationRef.current?.isReady()) {
+        navigationRef.current.resetRoot({ index: 0, routes: [{ name: target }] });
+      }
+    }, 60);
+    return () => clearTimeout(t);
+  }, [personalView, user, role]);
 
   return (
     <Stack.Navigator key={navigatorKey} screenOptions={{ headerShown: false }}>
