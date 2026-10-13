@@ -178,6 +178,7 @@ export const translations = {
     childName: 'बिरामीको नाम',
     dateOfBirth: 'जन्म मिति',
     sex: 'लिङ्ग',
+    diagnosisDate: 'निदान भएको मिति',
     male: 'पुरुष',
     female: 'महिला',
     save: 'सुरक्षित गर्नुहोस्',

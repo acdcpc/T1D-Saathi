@@ -9,6 +9,11 @@ export default function BackBar({ navigation, label }: { navigation?: any; label
   const { language } = useLanguage();
   const isNe = language === 'ne';
   const text = label || (isNe ? 'पछाडि' : 'Back');
+
+  // Hide on stacks with nothing to go back to (e.g. the clinician console root),
+  // so the control never renders as a dead button.
+  if (navigation?.canGoBack && !navigation.canGoBack()) return null;
+
   return (
     <TouchableOpacity
       accessibilityRole="button"
