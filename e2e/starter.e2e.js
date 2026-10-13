@@ -1,5 +1,5 @@
 // Detox smoke test — launches the app and asserts the root renders.
-describe('T1D Saathi', () => {
+describe('Sano Bir', () => {
   beforeAll(async () => {
     await device.launchApp();
   });

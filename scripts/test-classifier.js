@@ -88,7 +88,7 @@ const TEST_CASES = [
 
 // ─── Run tests ────────────────────────────────────────────────────
 console.log('╔════════════════════════════════════════════════════════════════╗');
-console.log('║     T1D Saathi — Food Color Classifier Accuracy Test          ║');
+console.log('║     Sano Bir — Food Color Classifier Accuracy Test          ║');
 console.log('╚════════════════════════════════════════════════════════════════╝\n');
 
 let top1Correct = 0;

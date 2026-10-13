@@ -18,6 +18,8 @@ interface Post {
   created_at: string;
 }
 
+const contentCol = { width: '100%' as const, maxWidth: 640, alignSelf: 'center' as const };
+
 export default function CommunityScreen({ navigation }: any) {
   const { user } = useAuth();
   const { language } = useLanguage();
@@ -57,7 +59,7 @@ export default function CommunityScreen({ navigation }: any) {
 
   return (
     <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
-      <View style={styles.header}>
+      <View style={[styles.header, contentCol]}>
         <TouchableOpacity onPress={() => navigation.goBack()} hitSlop={12} style={{ padding: 8 }}>
           <Ionicons name="arrow-back" size={22} color={T.text} />
         </TouchableOpacity>
@@ -65,7 +67,7 @@ export default function CommunityScreen({ navigation }: any) {
         <View style={{ width: 30 }} />
       </View>
 
-      <View style={styles.composer}>
+      <View style={[styles.composer, contentCol]}>
         <TextInput
           style={styles.input}
           value={draft}
@@ -86,7 +88,7 @@ export default function CommunityScreen({ navigation }: any) {
           data={posts}
           keyExtractor={(p) => p.id}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={T.blue} colors={[T.blue]} />}
-          contentContainerStyle={styles.list}
+          contentContainerStyle={[styles.list, contentCol]}
           ListEmptyComponent={
             <EmptyState
               icon="family"

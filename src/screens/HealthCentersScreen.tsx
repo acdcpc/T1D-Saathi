@@ -8,11 +8,14 @@ import { cacheGet, cacheSet } from '../utils/cache';
 import EmptyState from '../components/EmptyState';
 import type { Hospital } from '../types';
 import { FONT, T } from '../theme';
+import BackBar from '../components/BackBar';
 
 const CACHE_KEY = '@t1d_hospitals';
 const CACHE_TTL_MS = 24 * 60 * 60 * 1000; // 24h
 
-export default function HealthCentersScreen({ route }: any) {
+const contentCol = { width: '100%' as const, maxWidth: 640, alignSelf: 'center' as const };
+
+export default function HealthCentersScreen({ route, navigation }: any) {
   const patientId = route?.params?.patientId;
   const { t, language } = useLanguage();
   const isNe = language === 'ne';
@@ -54,10 +57,11 @@ export default function HealthCentersScreen({ route }: any) {
 
   return (
     <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
-      <Text style={styles.title}>{isNe ? 'नजिकको स्वास्थ्य केन्द्र' : 'Find Care Near Me'}</Text>
+      <BackBar navigation={navigation} />
+      <Text style={[styles.title, contentCol]}>{isNe ? 'नजिकको स्वास्थ्य केन्द्र' : 'Find Care Near Me'}</Text>
 
       {patientId && (
-        <View style={styles.viewToggle}>
+        <View style={[styles.viewToggle, contentCol]}>
           <TouchableOpacity style={[styles.toggleBtn, viewMode === 'assigned' && styles.toggleActive]} onPress={() => setViewMode('assigned')}>
             <Text style={[styles.toggleText, viewMode === 'assigned' && styles.toggleActiveText]}>{isNe ? 'मेरो अस्पताल' : 'My Hospital'}</Text>
           </TouchableOpacity>
@@ -79,7 +83,7 @@ export default function HealthCentersScreen({ route }: any) {
         <FlatList
           data={hospitals}
           keyExtractor={(h) => h.id}
-          contentContainerStyle={styles.list}
+          contentContainerStyle={[styles.list, contentCol]}
           renderItem={({ item: h }) => (
             <View style={styles.card}>
               {viewMode === 'assigned' && (

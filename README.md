@@ -1,6 +1,6 @@
-# 🩺 T1D Saathi — Type 1 Diabetes Companion for Nepali Families
+# 🩺 Sano Bir (सानो वीर) — Type 1 Diabetes Companion for Nepali Families
 
-**T1D Saathi** is a mobile app built for Nepali children with Type 1 Diabetes and their families. It helps parents and caregivers track glucose, count carbs from photos of Nepali meals, follow ISPAD sick-day guidelines, find nearby health centers, and connect with clinicians — all in Nepali and English.
+**Sano Bir** (सानो वीर, "little hero") is a mobile app built for Nepali children with Type 1 Diabetes and their families. It helps parents and caregivers track glucose, count carbs from photos of Nepali meals, follow ISPAD sick-day guidelines, find nearby health centers, and connect with clinicians — all in Nepali and English.
 
 ---
 
@@ -153,7 +153,7 @@ eas build --platform android --profile preview
 
 ## Design System
 
-T1D Saathi's visual design is aligned with the Kapoori Ka design language:
+Sano Bir's visual design is aligned with the Kapoori Ka design language:
 - **Palette**: Warm parchment backgrounds (`#F7F1EB`), clinical blue primary (`#1a73e8`), warm shadows (`#C4956A`)
 - **Cards**: 16px border radius, warm shadow, off-white surface
 - **Inputs**: 12px border radius, 1.5px warm border, 14px padding

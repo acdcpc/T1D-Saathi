@@ -6,6 +6,11 @@ export interface PatientProfile {
   sex: 'male' | 'female' | 'other'; photo_uri?: string;
   comorbid_conditions?: string[]; medications?: string;
   insulin_type: string; insulin_dose: number; insulin_frequency: string;
+  basal_insulin?: string | null; bolus_insulin?: string | null;
+  bolus_dose?: number | null;
+  weight_kg?: number | null; height_cm?: number | null;
+  dob_precision?: 'exact' | 'approx_years' | null;
+  diagnosis_precision?: 'exact' | 'lt_month' | 'lt_year' | 'gt_year' | 'unknown' | null;
   insulin_delivery: 'pen' | 'syringe' | 'pump'; diagnosis_date: string;
   dka_history?: DKAHistoryEntry[]; documents?: string[];
   created_at: string; updated_at: string;
@@ -16,11 +21,28 @@ export interface InsulinRegimen {
   frequency: string; delivery_method: 'pen' | 'syringe' | 'pump';
   effective_date: string; isf?: number; carb_ratio?: number; tdd?: number;
   correction_target?: number; approved_by_clinician?: boolean; approved_at?: string; approved_by?: string;
+  max_bolus?: number;
+  regimen_type?: 'mdi' | 'pump' | 'premix';
+  basal_insulin?: string | null; basal_dose?: number | null; bolus_insulin?: string | null;
+  bolus_dose?: number | null;
+}
+export interface RegimenRequest {
+  id: string; patient_id: string; requested_by?: string | null;
+  kind: 'review' | 'change'; note?: string | null;
+  status: 'pending' | 'resolved' | 'declined';
+  created_at: string; resolved_at?: string | null; resolved_by?: string | null;
+}
+export interface InsulinLog {
+  id: string; patient_id: string; user_id: string; units: number;
+  insulin_type: 'rapid' | 'long' | 'mixed' | 'other';
+  source: 'manual' | 'food_estimator' | 'sick_day' | 'other';
+  notes?: string; timestamp: string; client_event_id?: string;
 }
 export interface GlucoseLog {
   id: string; patient_id: string; user_id: string; value: number;
   unit: UnitSystem; context: 'routine' | 'sick_day'; timestamp: string;
   carbs?: number; insulin_given?: number; notes?: string;
+  source?: string; mood?: string; activity_type?: string; activity_minutes?: number;
 }
 export interface KetoneLog {
   id: string; patient_id: string; user_id: string; value?: number;

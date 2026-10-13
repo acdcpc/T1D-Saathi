@@ -1,4 +1,4 @@
-# T1D Saathi — Full Setup Instructions
+# Sano Bir — Full Setup Instructions
 
 ## Quick Start (you need to run these in your Terminal, not here)
 
@@ -9,7 +9,7 @@
 firebase login
 
 # Create the project
-firebase projects:create t1d-heal-2026 --display-name "T1D Saathi"
+firebase projects:create t1d-heal-2026 --display-name "Sano Bir"
 
 # Add web app to get Firebase config
 firebase apps:create web T1D-Saathi

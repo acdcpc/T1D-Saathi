@@ -4,11 +4,15 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons } from '@expo/vector-icons';
 import { useLanguage } from '../context/LanguageContext';
 import { usePatient } from '../context/PatientContext';
-import { FONT } from '../theme';
+import { FONT, T } from '../theme';
+import BackBar from '../components/BackBar';
+import { useTabBarSpace } from '../design/useTabBarSpace';
 import { toDisplayNumber } from '../utils/nepaliNumber';
 
+const contentCol = { width: '100%' as const, maxWidth: 640, alignSelf: 'center' as const };
+
 const TOPICS: { id: string; topic: string; topic_ne: string; icon: keyof typeof Ionicons.glyphMap; color: string; order: number; audience?: string }[] = [
-  { id: '1', topic: 'Diagnosis & Pathophysiology', topic_ne: 'निदान र रोगविज्ञान', icon: 'flask-outline', color: '#1a73e8', order: 1 },
+  { id: '1', topic: 'Diagnosis & Pathophysiology', topic_ne: 'निदान र रोगविज्ञान', icon: 'flask-outline', color: '#0D9488', order: 1 },
   { id: '2', topic: 'Dietary Guidance', topic_ne: 'आहार मार्गदर्शन', icon: 'nutrition-outline', color: '#0D9488', order: 2 },
   { id: '3', topic: 'Insulin Therapy & Management', topic_ne: 'इन्सुलिन थेरापी', icon: 'medical-outline', color: '#C0392B', order: 3 },
   { id: '4', topic: 'Psychosocial (Patient)', topic_ne: 'मनोसामाजिक (बिरामी)', icon: 'happy-outline', color: '#7C3AED', order: 4, audience: 'patient' },
@@ -20,6 +24,7 @@ export default function EducationScreen({ route, navigation }: any) {
   const patientId = (route.params as any)?.patientId || usePatient()?.id || '';
   const { t, language } = useLanguage();
   const isNe = language === 'ne';
+  const tabSpace = useTabBarSpace();
   const [completed, setCompleted] = useState<string[]>([]);
 
   useEffect(() => {
@@ -40,7 +45,8 @@ export default function EducationScreen({ route, navigation }: any) {
   const pct = Math.round((completed.length / TOPICS.length) * 100);
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { paddingBottom: tabSpace.contentPaddingBottom }]}>
+      <BackBar navigation={navigation} />
       <Text style={styles.title}>{t('educationLibrary')}</Text>
       <Text style={styles.subtitle}>{isNe ? 'विषय थिच्नुहोस् — पढेपछि चिन्ह लगाउनुहोस्' : 'Tap a topic to mark it as read'}</Text>
 
@@ -57,7 +63,7 @@ export default function EducationScreen({ route, navigation }: any) {
       <FlatList
         data={TOPICS}
         keyExtractor={(item) => item.id}
-        contentContainerStyle={styles.list}
+        contentContainerStyle={[styles.list, contentCol]}
         renderItem={({ item }) => {
           const done = completed.includes(item.id);
           return (
@@ -80,10 +86,13 @@ export default function EducationScreen({ route, navigation }: any) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#F0F7FF', padding: 20, paddingTop: 90 },
-  title: { fontSize: 24, fontFamily: FONT.extrabold, fontWeight: '800', color: '#202124', marginBottom: 4 },
-  subtitle: { fontSize: 13, fontFamily: FONT.regular, color: '#5f6368', marginBottom: 14 },
-  progressWrap: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 16 },
+  container: { flex: 1, backgroundColor: T.bg, padding: 20, paddingTop: 64 },
+  title: {
+    width: '100%', maxWidth: 640, alignSelf: 'center', fontSize: 24, fontFamily: FONT.extrabold, fontWeight: '800', color: '#202124', marginBottom: 4 },
+  subtitle: {
+    width: '100%', maxWidth: 640, alignSelf: 'center', fontSize: 13, fontFamily: FONT.regular, color: '#5f6368', marginBottom: 14 },
+  progressWrap: {
+    width: '100%', maxWidth: 640, alignSelf: 'center', flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 16 },
   progressBar: { flex: 1, height: 8, borderRadius: 4, backgroundColor: '#e8eaed', overflow: 'hidden' },
   progressFill: { height: '100%', borderRadius: 4, backgroundColor: '#0D9488' },
   progressText: { fontSize: 13, fontFamily: FONT.semibold, fontWeight: '600', color: '#5f6368' },
@@ -93,7 +102,7 @@ const styles = StyleSheet.create({
   cardText: { flex: 1 },
   cardTitle: { fontSize: 16, fontFamily: FONT.semibold, fontWeight: '600', color: '#202124' },
   audience: { fontSize: 12, fontFamily: FONT.regular, color: '#5f6368', marginTop: 2 },
-  quizBtn: { backgroundColor: '#1a73e8', borderRadius: 12, padding: 16, alignItems: 'center', marginTop: 10, flexDirection: 'row', justifyContent: 'center', gap: 8 },
+  quizBtn: { backgroundColor: '#0D9488', borderRadius: 12, padding: 16, alignItems: 'center', marginTop: 10, flexDirection: 'row', justifyContent: 'center', gap: 8 },
   iconTile: { width: 44, height: 44, borderRadius: 12, alignItems: 'center', justifyContent: 'center', marginRight: 14 },
   quizText: { color: '#fff', fontSize: 17, fontFamily: FONT.semibold, fontWeight: '600' },
 });

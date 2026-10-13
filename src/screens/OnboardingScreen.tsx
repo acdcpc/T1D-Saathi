@@ -61,8 +61,8 @@ export default function OnboardingScreen({ navigation }: any) {
       <ScrollView contentContainerStyle={styles.content}>
         <View style={styles.topRow}>
           <View>
-            <Text style={styles.brand}>T1D साथी</Text>
-            <Text style={styles.brandTagline}>{isNe ? 'तपाईंको मधुमेह सहयात्री' : 'Your Diabetes Companion'}</Text>
+            <Text style={styles.brand}>{isNe ? 'सानो वीर' : 'Sano Bir'}</Text>
+            <Text style={styles.brandTagline}>{isNe ? 'हरेक बच्चा वीर छ' : 'Every child is brave'}</Text>
           </View>
           <TouchableOpacity onPress={finish}>
             <Text style={styles.skip}>{isNe ? 'छोड्नुहोस्' : 'Skip'}</Text>

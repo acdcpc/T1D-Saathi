@@ -13,6 +13,9 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useLanguage } from '../context/LanguageContext';
 import { supabase } from '../lib/supabase';
 import { safeInsert } from '../utils/offlineQueue';
+import { fetchRecentInsulinDoses, saveInsulinDose } from '../utils/insulinLogs';
+import { computeIOB } from '../utils/insulinOnBoard';
+import { useTabBarSpace } from '../design/useTabBarSpace';
 import { searchNepaliFoods, NEPALI_FOODS } from '../data/nepaliFoods';
 import { classifyFoodPhoto, type ModelSuggestion, type ModelResult } from '../utils/foodModelClassifier';
 import { calculateDosing, checkMealCoverage, DosingValidationError, glucoseToMgDl } from '../utils/dosingCalc';
@@ -20,10 +23,12 @@ import {
   adjustItemPortion, recalculateTotals,
   validateCalories, type FoodItem, type MealEstimateResult,
 } from '../utils/visionEstimator';
-import type { InsulinRegimen } from '../types';
-import { FONT } from '../theme';
+import type { GlucoseLog, InsulinLog, InsulinRegimen } from '../types';
+import { FONT, T } from '../theme';
 
 type Step = 'photo' | 'identify' | 'dosing';
+
+const contentCol = { width: '100%' as const, maxWidth: 640, alignSelf: 'center' as const };
 
 const PORTIONS = [0.25, 0.5, 0.75, 1, 1.25, 1.5, 2];
 const PORTION_LABELS: Record<number, string> = {
@@ -35,6 +40,7 @@ export default function FoodEstimatorScreen({ route }: any) {
   const { user } = useAuth();
   const { t, language } = useLanguage();
   const insets = useSafeAreaInsets();
+  const tabSpace = useTabBarSpace();
 
   const [step, setStep] = useState<Step>('photo');
   const [imageUri, setImageUri] = useState<string | null>(null);
@@ -45,6 +51,12 @@ export default function FoodEstimatorScreen({ route }: any) {
   const [currentGlucose, setCurrentGlucose] = useState('');
   const [glucoseUnit, setGlucoseUnit] = useState<'mgdl' | 'mmol'>('mgdl');
   const [plannedInsulin, setPlannedInsulin] = useState('');
+  const [recentGlucose, setRecentGlucose] = useState<GlucoseLog[]>([]);
+  const [recentInsulin, setRecentInsulin] = useState<InsulinLog[]>([]);
+  const [stackingIob, setStackingIob] = useState(0);
+  const [doseToSave, setDoseToSave] = useState('');
+  const [savedDose, setSavedDose] = useState(false);
+  const [savingDose, setSavingDose] = useState(false);
 
   // Estimate state
   const [estimate, setEstimate] = useState<MealEstimateResult | null>(null);
@@ -67,13 +79,25 @@ export default function FoodEstimatorScreen({ route }: any) {
       const [{ data: reg }, { data: ds }] = await Promise.all([
         supabase
           .from('insulin_regimens').select('*')
-          .eq('patient_id', patientId).order('effective_date', { ascending: false }).limit(1).single(),
+          .eq('patient_id', patientId).order('effective_date', { ascending: false }).limit(1).maybeSingle(),
         supabase
           .from('dosing_settings').select('*')
           .eq('patient_id', patientId).maybeSingle(),
       ]);
       setRegimen(reg);
       setDosingSettings(ds);
+      setRecentInsulin(await fetchRecentInsulinDoses(patientId, 8));
+      try {
+        const since6h = new Date(Date.now() - 6 * 3600 * 1000).toISOString();
+        const { data: recentGlucoseLogs } = await supabase
+          .from('glucose_logs')
+          .select('id,patient_id,user_id,value,unit,context,timestamp,carbs,insulin_given,notes')
+          .eq('patient_id', patientId)
+          .gte('timestamp', since6h)
+          .order('timestamp', { ascending: true })
+          .limit(100);
+        setRecentGlucose(recentGlucoseLogs || []);
+      } catch { /* recent glucose is optional for stacking checks */ }
     })();
   }, [patientId]);
 
@@ -233,11 +257,14 @@ export default function FoodEstimatorScreen({ route }: any) {
     try {
       const dosing = calculateDosing(glucoseMgdl, totals.total_carbs_g, {
         tdd: regimen.tdd,
-        icr_constant: 500,
-        isf_constant: 1800,
+        // Clinician overrides (Settings → Insulin regimen) win over the standard
+        // 1800/500 rules when set — pass them as effective constants (constant ÷ TDD).
+        icr_constant: Number.isFinite(Number(regimen.carb_ratio)) && Number(regimen.carb_ratio) > 0 ? Number(regimen.carb_ratio) * regimen.tdd : 500,
+        isf_constant: Number.isFinite(Number(regimen.isf)) && Number(regimen.isf) > 0 ? Number(regimen.isf) * regimen.tdd : 1800,
         target_glucose: regimen.correction_target,
         approved_by_clinician: true,
         regimen_id: regimen.id,
+        max_bolus: regimen.max_bolus,
         glucose_timestamp: new Date().toISOString(),
       });
 
@@ -246,6 +273,9 @@ export default function FoodEstimatorScreen({ route }: any) {
 
       setDosingResult(dosing);
       setCoverageCheck(coverage);
+      setStackingIob(computeIOB(recentGlucose, recentInsulin));
+      setDoseToSave(String(dosing.totalDose));
+      setSavedDose(false);
 
       // Save meal log with confirmed data (corrected from estimate if edited)
     const confirmedData = {
@@ -294,10 +324,27 @@ export default function FoodEstimatorScreen({ route }: any) {
     }
   };
 
+  const handleSaveDose = async () => {
+    if (!user || savingDose) return;
+    const units = parseFloat(doseToSave);
+    if (!Number.isFinite(units) || units <= 0) {
+      Alert.alert('Invalid dose', 'Enter the dose in units before saving.');
+      return;
+    }
+    setSavingDose(true);
+    const res = await saveInsulinDose({ patient_id: patientId, user_id: user.id, units, insulin_type: 'rapid', source: 'food_estimator' });
+    setSavingDose(false);
+    if (!res.saved) {
+      Alert.alert('Not saved', res.message || 'The dose could not be saved.');
+      return;
+    }
+    setSavedDose(true);
+  };
+
   // ═══ RENDER: Step 1 — Photo ═══
   if (step === 'photo') {
     return (
-      <ScrollView style={s.container} contentContainerStyle={[s.content, { paddingTop: insets.top + 16, paddingBottom: insets.bottom + 40 }]}>
+      <ScrollView style={s.container} contentContainerStyle={[s.content, contentCol, { paddingTop: insets.top + 16, paddingBottom: tabSpace.contentPaddingBottom + 24 }]}>
         <Text style={s.title}>🍽️ Food Photo Estimator</Text>
         <Text style={s.hint}>Take a clear photo of the meal. For best results, center the plate and include the plate edge.</Text>
 
@@ -331,13 +378,13 @@ export default function FoodEstimatorScreen({ route }: any) {
   // ═══ RENDER: Step 2 — Identify foods from photo ═══
   if (step === 'identify') {
     return (
-      <ScrollView style={s.container} contentContainerStyle={[s.content, { paddingTop: insets.top + 16, paddingBottom: insets.bottom + 40 }]}>
+      <ScrollView style={s.container} contentContainerStyle={[s.content, contentCol, { paddingTop: insets.top + 16, paddingBottom: tabSpace.contentPaddingBottom + 24 }]}>
         <Text style={s.title}>🍽️ What foods are on this plate?</Text>
         <ISPADBadge />
 
         {modelLoading && (
           <View style={s.modelLoadingRow}>
-            <ActivityIndicator size="small" color="#1a73e8" />
+            <ActivityIndicator size="small" color="#0D9488" />
             <Text style={s.modelLoadingText}>Analyzing photo…</Text>
           </View>
         )}
@@ -471,7 +518,7 @@ export default function FoodEstimatorScreen({ route }: any) {
   // ═══ RENDER: Step 3 — Dosing Results ═══
   if (step === 'dosing' && dosingResult) {
     return (
-      <ScrollView style={s.container} contentContainerStyle={[s.content, { paddingTop: insets.top + 16, paddingBottom: insets.bottom + 40 }]}>
+      <ScrollView style={s.container} contentContainerStyle={[s.content, contentCol, { paddingTop: insets.top + 16, paddingBottom: tabSpace.contentPaddingBottom + 24 }]}>
         <Text style={s.title}>Dosing Results</Text>
         <ISPADBadge />
 
@@ -489,6 +536,24 @@ export default function FoodEstimatorScreen({ route }: any) {
           <View style={s.divider} />
           <View style={s.resultRow}><Text style={s.rLabelBold}>Total Suggested</Text><Text style={s.rTotal}>{dosingResult.totalDose} units</Text></View>
         </View>
+
+        {dosingResult.exceedsMaxBolus && (
+          <View style={[s.warningCard, s.blockCard]}>
+            <Text style={[s.warningTitle, s.blockTitle]}>Exceeds maximum bolus</Text>
+            <Text style={s.warningText}>
+              This total is above the clinician-set maximum bolus ({dosingResult.maxBolus} U). Do not give this dose without checking with your clinician.
+            </Text>
+          </View>
+        )}
+
+        {stackingIob >= 0.1 && !dosingResult.exceedsMaxBolus && (
+          <View style={s.warningCard}>
+            <Text style={s.warningTitle}>Possible insulin stacking</Text>
+            <Text style={s.warningText}>
+              Active insulin from recent doses is about {stackingIob} U. Adding this dose soon may raise the risk of low glucose — follow your clinician-approved timing plan.
+            </Text>
+          </View>
+        )}
 
         {notApproved && (
           <View style={s.warningCard}>
@@ -518,6 +583,19 @@ export default function FoodEstimatorScreen({ route }: any) {
           </Text>
         </View>
 
+        {!dosingResult.exceedsMaxBolus && (
+          <View style={s.resultCard}>
+            <Text style={s.resultSection}>Save this dose</Text>
+            <Text style={s.saveDoseHint}>Confirm the dose you actually gave, so records and active-insulin estimates stay accurate.</Text>
+            <View style={s.saveDoseRow}>
+              <TextInput style={[s.insulinInput, s.saveDoseInput]} value={doseToSave} onChangeText={setDoseToSave} keyboardType="numeric" placeholder="0" />
+              <TouchableOpacity style={[s.saveDoseBtn, (savedDose || savingDose) && s.saveDoseBtnDone]} onPress={handleSaveDose} disabled={savedDose || savingDose}>
+                <Text style={s.saveDoseBtnText}>{savedDose ? '✓ Saved' : savingDose ? '…' : 'Save dose'}</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        )}
+
         <TouchableOpacity style={s.doneBtn} onPress={() => { setImageUri(null); setStep('photo'); setItems([]); setEstimate(null); }}>
           <Text style={s.doneBtnText}>Done — Log Another Meal</Text>
         </TouchableOpacity>
@@ -530,19 +608,19 @@ export default function FoodEstimatorScreen({ route }: any) {
 
 // ─── Styles ───
 const s = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#F0F7FF' },
+  container: { flex: 1, backgroundColor: T.bg },
   content: { padding: 20, paddingTop: 60 },
   centered: { justifyContent: 'center', alignItems: 'center' },
   title: { fontSize: 24, fontFamily: FONT.extrabold, fontWeight: '800', color: '#202124', marginBottom: 8 },
   hint: { fontSize: 14, fontFamily: FONT.regular, color: '#5f6368', marginBottom: 20, lineHeight: 20 },
   preview: { width: '100%', height: 250, borderRadius: 12, marginBottom: 16, backgroundColor: '#e8eaed' },
   row: { flexDirection: 'row', gap: 12, marginBottom: 12 },
-  primaryBtn: { flex: 1, backgroundColor: '#1a73e8', borderRadius: 12, padding: 16, alignItems: 'center' },
+  primaryBtn: { flex: 1, backgroundColor: '#0D9488', borderRadius: 12, padding: 16, alignItems: 'center' },
   primaryText: { color: '#fff', fontSize: 16, fontFamily: FONT.semibold, fontWeight: '600' },
   secondaryBtn: { backgroundColor: '#e8eaed' },
   secondaryText: { color: '#3c4043', fontSize: 16, fontFamily: FONT.semibold, fontWeight: '600' },
   skipBtn: { paddingVertical: 14, alignItems: 'center' },
-  skipText: { color: '#1a73e8', fontSize: 14, fontFamily: FONT.regular },
+  skipText: { color: '#0D9488', fontSize: 14, fontFamily: FONT.regular },
   disclaimer: { fontSize: 11, fontFamily: FONT.regular, color: '#5f6368', textAlign: 'center', marginTop: 10 },
 
   // Review step
@@ -563,7 +641,7 @@ const s = StyleSheet.create({
   portionHint: { fontSize: 10, fontFamily: FONT.regular, color: '#5f6368', marginBottom: 6, fontStyle: 'italic' },
   portionRow: { flexDirection: 'row', gap: 6, marginBottom: 10 },
   portionChip: { backgroundColor: '#e8eaed', borderRadius: 8, paddingHorizontal: 10, paddingVertical: 5 },
-  portionActive: { backgroundColor: '#1a73e8' },
+  portionActive: { backgroundColor: '#0D9488' },
   portionChipText: { fontSize: 12, fontFamily: FONT.semibold, color: '#3c4043', fontWeight: '600' },
   portionChipActiveText: { color: '#fff' },
   itemMacros: { flexDirection: 'row', gap: 12 },
@@ -571,11 +649,11 @@ const s = StyleSheet.create({
   calWarning: { fontSize: 11, fontFamily: FONT.regular, color: '#ea4335', marginTop: 4, fontStyle: 'italic' },
 
   // Totals
-  totalsCard: { backgroundColor: '#e8f0fe', borderRadius: 12, padding: 16, marginVertical: 14, borderWidth: 1, borderColor: '#d2e3fc' },
-  totalsTitle: { fontSize: 16, fontFamily: FONT.bold, fontWeight: '700', color: '#1a73e8', marginBottom: 8 },
+  totalsCard: { backgroundColor: '#E5F4F1', borderRadius: 12, padding: 16, marginVertical: 14, borderWidth: 1, borderColor: '#B8E6DF' },
+  totalsTitle: { fontSize: 16, fontFamily: FONT.bold, fontWeight: '700', color: '#0D9488', marginBottom: 8 },
   macroGrid: { flexDirection: 'row', gap: 10 },
   macroBox: { flex: 1, backgroundColor: '#fff', borderRadius: 8, padding: 10, alignItems: 'center' },
-  macroValue: { fontSize: 20, fontFamily: FONT.bold, fontWeight: '700', color: '#1a73e8' },
+  macroValue: { fontSize: 20, fontFamily: FONT.bold, fontWeight: '700', color: '#0D9488' },
   macroLabel: { fontSize: 10, fontFamily: FONT.regular, color: '#5f6368', marginTop: 2 },
 
   // Search
@@ -584,7 +662,7 @@ const s = StyleSheet.create({
   searchItem: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#fff', borderRadius: 8, padding: 12, marginBottom: 6, borderWidth: 1, borderColor: '#e8eaed' },
   searchName: { fontSize: 14, fontFamily: FONT.semibold, fontWeight: '600', color: '#202124' },
   searchMeta: { fontSize: 11, fontFamily: FONT.regular, color: '#5f6368' },
-  searchCarbs: { fontSize: 14, fontFamily: FONT.semibold, fontWeight: '600', color: '#1a73e8' },
+  searchCarbs: { fontSize: 14, fontFamily: FONT.semibold, fontWeight: '600', color: '#0D9488' },
   plus: { color: '#80868b', fontSize: 14, fontFamily: FONT.regular },
 
   // Dosing inputs
@@ -595,49 +673,57 @@ const s = StyleSheet.create({
   glucoseInputFlex: { flex: 1, textAlign: 'center' },
   unitToggle: { flexDirection: 'row', gap: 4, borderRadius: 8, backgroundColor: '#e8eaed', padding: 3 },
   unitBtn: { borderRadius: 6, paddingHorizontal: 10, paddingVertical: 8 },
-  unitActive: { backgroundColor: '#1a73e8' },
+  unitActive: { backgroundColor: '#0D9488' },
   unitText: { fontSize: 12, fontFamily: FONT.semibold, fontWeight: '600', color: '#3c4043' },
   unitTextActive: { color: '#fff' },
-  confirmBtn: { backgroundColor: '#1a73e8', marginTop: 24, marginBottom: 8 },
+  confirmBtn: { backgroundColor: '#0D9488', marginTop: 24, marginBottom: 8 },
   smallNote: { fontSize: 11, fontFamily: FONT.regular, color: '#5f6368', textAlign: 'center', marginTop: 8 },
 
   // Results
   resultCard: { backgroundColor: '#fff', borderRadius: 12, padding: 16, marginBottom: 14, borderWidth: 1, borderColor: '#e8eaed' },
-  doseCard: { borderColor: '#1a73e8', borderWidth: 2 },
+  doseCard: { borderColor: '#0D9488', borderWidth: 2 },
   resultSection: { fontSize: 15, fontFamily: FONT.bold, fontWeight: '700', color: '#202124', marginBottom: 10 },
   resultRow: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 6 },
   rLabel: { fontSize: 14, fontFamily: FONT.regular, color: '#5f6368' },
   rLabelBold: { fontSize: 16, fontFamily: FONT.bold, fontWeight: '700', color: '#202124' },
   rValue: { fontSize: 14, fontFamily: FONT.semibold, fontWeight: '600', color: '#202124' },
-  rValueBold: { fontSize: 16, fontFamily: FONT.semibold, fontWeight: '600', color: '#1a73e8' },
-  rTotal: { fontSize: 22, fontFamily: FONT.extrabold, fontWeight: '800', color: '#1a73e8' },
+  rValueBold: { fontSize: 16, fontFamily: FONT.semibold, fontWeight: '600', color: '#0D9488' },
+  rTotal: { fontSize: 22, fontFamily: FONT.extrabold, fontWeight: '800', color: '#0D9488' },
   doseMeal: { fontSize: 13, fontFamily: FONT.regular, color: '#5f6368', marginBottom: 8 },
   divider: { height: 1, backgroundColor: '#e8eaed', marginVertical: 8 },
   warningCard: { backgroundColor: '#fef7e0', borderRadius: 12, padding: 16, marginBottom: 14, borderWidth: 1, borderColor: '#f9ab00' },
   warningTitle: { fontSize: 16, fontFamily: FONT.bold, fontWeight: '700', color: '#e37400', marginBottom: 8 },
   warningText: { fontSize: 13, fontFamily: FONT.regular, color: '#202124', lineHeight: 18 },
-  noteCard: { backgroundColor: '#e8f0fe', borderRadius: 10, padding: 12, marginBottom: 14, borderWidth: 1, borderColor: '#d2e3fc' },
-  noteTitle: { fontSize: 14, fontFamily: FONT.semibold, fontWeight: '600', color: '#1a73e8', marginBottom: 4 },
+  noteCard: { backgroundColor: '#E5F4F1', borderRadius: 10, padding: 12, marginBottom: 14, borderWidth: 1, borderColor: '#B8E6DF' },
+  noteTitle: { fontSize: 14, fontFamily: FONT.semibold, fontWeight: '600', color: '#0D9488', marginBottom: 4 },
   noteText: { fontSize: 12, fontFamily: FONT.regular, color: '#3c4043', lineHeight: 16 },
   doneBtn: { backgroundColor: '#34a853', borderRadius: 12, padding: 16, alignItems: 'center', marginTop: 10 },
   doneBtnText: { color: '#fff', fontSize: 17, fontFamily: FONT.semibold, fontWeight: '600' },
-  identifyBtn: { backgroundColor: '#1a73e8', marginBottom: 12 },
+  identifyBtn: { backgroundColor: '#0D9488', marginBottom: 12 },
   modelLoadingRow: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 10, marginBottom: 8 },
   modelLoadingText: { fontSize: 13, fontFamily: FONT.regular, color: '#5f6368', fontStyle: 'italic' },
   modelErrorRow: { backgroundColor: '#fef7e0', borderRadius: 8, padding: 10, marginBottom: 10, borderWidth: 1, borderColor: '#f9ab00' },
   modelErrorText: { fontSize: 12, fontFamily: FONT.regular, color: '#e37400' },
-  modelSuggestionsCard: { backgroundColor: '#f0f7ff', borderRadius: 12, padding: 14, marginBottom: 16, borderWidth: 1, borderColor: '#d2e3fc' },
-  modelSuggestionsTitle: { fontSize: 14, fontFamily: FONT.bold, fontWeight: '700', color: '#1a73e8', marginBottom: 2 },
+  modelSuggestionsCard: { backgroundColor: '#f0f7ff', borderRadius: 12, padding: 14, marginBottom: 16, borderWidth: 1, borderColor: '#B8E6DF' },
+  modelSuggestionsTitle: { fontSize: 14, fontFamily: FONT.bold, fontWeight: '700', color: '#0D9488', marginBottom: 2 },
   modelSuggestionsSubtitle: { fontSize: 11, fontFamily: FONT.regular, color: '#5f6368', marginBottom: 10, fontStyle: 'italic', lineHeight: 15 },
   modelChips: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
   modelChip: { borderRadius: 20, paddingHorizontal: 12, paddingVertical: 8, borderWidth: 1, flexDirection: 'row', alignItems: 'center', gap: 8 },
-  modelChipHigh: { backgroundColor: '#e8f0fe', borderColor: '#a8c8fa' },
+  modelChipHigh: { backgroundColor: '#E5F4F1', borderColor: '#a8c8fa' },
   modelChipMed: { backgroundColor: '#f1f3f4', borderColor: '#dadce0' },
   modelChipText: { fontSize: 13, fontFamily: FONT.semibold, fontWeight: '600', color: '#202124' },
   modelChipMeta: { fontSize: 11, fontFamily: FONT.regular, color: '#5f6368' },
-  photoRefCard: { backgroundColor: '#e8f0fe', borderRadius: 12, padding: 12, marginBottom: 14, borderWidth: 1, borderColor: '#d2e3fc', alignItems: 'center' },
+  photoRefCard: { backgroundColor: '#E5F4F1', borderRadius: 12, padding: 12, marginBottom: 14, borderWidth: 1, borderColor: '#B8E6DF', alignItems: 'center' },
   photoRefImg: { width: '100%', height: 160, borderRadius: 8, marginBottom: 8, backgroundColor: '#e8eaed' },
-  photoRefLabel: { fontSize: 12, fontFamily: FONT.semibold, color: '#1a73e8', fontWeight: '600' },
+  photoRefLabel: { fontSize: 12, fontFamily: FONT.semibold, color: '#0D9488', fontWeight: '600' },
 suggestionsTitle: { fontSize: 14, fontFamily: FONT.bold, fontWeight: '700', color: '#5f6368', marginBottom: 8 },
 colorSwatch: { width: 20, height: 20, borderRadius: 10, borderWidth: 1, borderColor: '#c4c4c4' },
+  blockCard: { borderColor: '#ea4335', backgroundColor: '#fce8e6' },
+  blockTitle: { color: '#c5221f' },
+  saveDoseHint: { fontSize: 12, fontFamily: FONT.regular, color: '#5f6368', marginBottom: 8 },
+  saveDoseRow: { flexDirection: 'row', gap: 10, alignItems: 'center' },
+  saveDoseInput: { flex: 1 },
+  saveDoseBtn: { backgroundColor: '#0D9488', borderRadius: 10, paddingHorizontal: 18, paddingVertical: 12 },
+  saveDoseBtnDone: { backgroundColor: '#0D9488' },
+  saveDoseBtnText: { color: '#fff', fontSize: 14, fontFamily: FONT.semibold, fontWeight: '600' },
 });

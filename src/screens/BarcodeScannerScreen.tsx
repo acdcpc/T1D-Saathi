@@ -127,7 +127,7 @@ export default function BarcodeScannerScreen({ navigation }: any) {
         </View>
       )}
 
-      <ScrollView style={styles.results} contentContainerStyle={{ padding: 16 }}>
+      <ScrollView style={styles.results} contentContainerStyle={{ padding: 16, width: '100%', maxWidth: 640, alignSelf: 'center' }}>
         {loading ? (
           <ActivityIndicator color={T.blue} style={{ marginTop: 20 }} />
         ) : error ? (
@@ -179,7 +179,7 @@ const styles = StyleSheet.create({
   centered: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 24, gap: 14 },
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 8 },
   title: { fontSize: 18, fontFamily: FONT.bold, fontWeight: '700', color: T.text },
-  cameraWrap: { height: 260, marginHorizontal: 16, borderRadius: 16, overflow: 'hidden', backgroundColor: '#000' },
+  cameraWrap: { height: 260, width: '92%', maxWidth: 640, alignSelf: 'center', borderRadius: 16, overflow: 'hidden', backgroundColor: '#000' },
   manualWrap: { marginHorizontal: 16, marginTop: 16 },
   manualInput: { backgroundColor: '#fff', borderRadius: 12, borderWidth: 1, borderColor: '#dadce0', paddingHorizontal: 14, paddingVertical: 12, fontSize: 16, fontFamily: FONT.regular, color: T.text, marginBottom: 12 },
   camera: { flex: 1 },

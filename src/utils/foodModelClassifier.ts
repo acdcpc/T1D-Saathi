@@ -69,7 +69,14 @@ async function getModel(): Promise<any | null> {
     if (!modelAsset.localUri) {
       throw new Error('Model asset failed to resolve');
     }
-    modelInstance = await TFLite.loadModel(modelAsset.localUri);
+    // react-native-fast-tflite v3 exports `loadTensorflowModel` (older versions used `loadModel`).
+    if (TFLite.loadTensorflowModel) {
+      modelInstance = await TFLite.loadTensorflowModel(modelAsset.localUri, []);
+    } else if (TFLite.loadModel) {
+      modelInstance = await TFLite.loadModel(modelAsset.localUri);
+    } else {
+      throw new Error('react-native-fast-tflite loader API not found');
+    }
     modelLoading = false;
     return modelInstance;
   } catch (err: any) {
@@ -78,6 +85,11 @@ async function getModel(): Promise<any | null> {
     console.error('[FoodClassifier] Model load failed:', modelError);
     return null;
   }
+}
+
+/** Last model-load error (for debugging / UI hints). */
+export function getModelError(): string | null {
+  return modelError;
 }
 
 // ─── Inference ───────────────────────────────────────────────────

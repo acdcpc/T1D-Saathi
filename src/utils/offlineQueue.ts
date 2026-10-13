@@ -10,7 +10,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { supabase } from '../lib/supabase';
 
-type QueueTable = 'glucose_logs' | 'ketone_logs' | 'meal_logs' | 'sick_day_episodes';
+type QueueTable = 'glucose_logs' | 'ketone_logs' | 'meal_logs' | 'sick_day_episodes' | 'insulin_logs';
 
 export interface QueuedEntry {
   id: string;               // client_event_id (idempotency key)

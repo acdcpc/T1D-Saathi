@@ -1,4 +1,4 @@
-# T1D Saathi — Design & Improvement Roadmap
+# Sano Bir — Design & Improvement Roadmap
 
 Source: design brief (Kapoori Ka design language + ISPAD 2022 clinical rules).
 Note: some brief details are now outdated — vision pipeline is on-device TFLite (free),

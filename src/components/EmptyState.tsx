@@ -25,11 +25,11 @@ function Illustration({ icon }: { icon: Props['icon'] }) {
   if (icon === 'family') {
     return (
       <Svg width={size} height={size} viewBox="0 0 96 96">
-        <Circle cx={48} cy={48} r={44} fill="#E6F4FE" />
-        <Circle cx={38} cy={38} r={9} fill="#1a73e8" />
-        <Path d="M24 66 C26 52 34 46 38 46 C42 46 50 52 52 66 Z" fill="#1a73e8" />
-        <Circle cx={62} cy={34} r={7} fill="#1a73e8" />
-        <Path d="M54 62 C56 50 60 46 62 46 C64 46 68 50 70 62 Z" fill="#1a73e8" />
+        <Circle cx={48} cy={48} r={44} fill="#E5F4F1" />
+        <Circle cx={38} cy={38} r={9} fill="#0D9488" />
+        <Path d="M24 66 C26 52 34 46 38 46 C42 46 50 52 52 66 Z" fill="#0D9488" />
+        <Circle cx={62} cy={34} r={7} fill="#0D9488" />
+        <Path d="M54 62 C56 50 60 46 62 46 C64 46 68 50 70 62 Z" fill="#0D9488" />
       </Svg>
     );
   }
